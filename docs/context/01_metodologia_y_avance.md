@@ -150,3 +150,4 @@ Cada corrida de la Etapa 2 agrega una fila a `results/06_vsp/resumen_escenarios.
 - Documento de metodología completo (diagnóstico, formulaciones, KPIs, plan de trabajo): [`Propuesta_metodologia_reunion.md`](../Propuesta_metodologia_reunion.md).
 - Contexto congelado del Informe 1: [`00_contexto_entrega1.md`](00_contexto_entrega1.md).
 - Preguntas y supuestos pendientes de validar con el profesor/ayudante: [`02_pendientes_profesor.md`](02_pendientes_profesor.md).
+- Guía paso a paso para correr y verificar todo el pipeline (checkpoints, orden de ejecución, troubleshooting): [`03_guia_pruebas.md`](03_guia_pruebas.md).

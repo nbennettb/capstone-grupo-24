@@ -2,7 +2,7 @@
 
 > **Este documento se edita continuamente.** Cada vez que se corre una etapa nueva se agrega una entrada fechada en la bitácora (§4) — no se borran las entradas anteriores. La "foto actual" (estado por etapa, tabla de resultados) sí se actualiza en su lugar. Si vienes de otra sesión de IA o te acabas de sumar al equipo: lee primero [`00_contexto_entrega1.md`](00_contexto_entrega1.md) (qué se entregó en el Informe 1 y qué feedback se recibió) y luego este documento.
 >
-> Última edición: **28/09/2026**.
+> Última edición: **28/09/2026** (Etapa 0 corrida sobre la red completa).
 
 ---
 
@@ -45,7 +45,7 @@ Según la Carta Gantt interna de la propuesta, para el 29-30/09 corresponde: Eta
 
 | Etapa | Estado | Última actualización | Quién | Script(s) | Resultados |
 |---|---|---|---|---|---|
-| 0 — Preprocesamiento | `[ ]` pendiente | — | — | `scripts/3-preprocesamiento_expediciones.py` | `data-processed/expediciones.csv`, `results/03_preprocesamiento/` |
+| 0 — Preprocesamiento | `[x]` hecho | 28/09/2026 | Nicolás (sesión IA) | `scripts/3-preprocesamiento_expediciones.py` | `data-processed/expediciones.csv`, `results/03_preprocesamiento/` |
 | 1 — Clustering C1 (heurística, más cercano) | `[ ]` pendiente | — | — | `scripts/4-clustering_nearest.py` | `data-processed/rutas_cluster_c1.csv` |
 | 1 — Clustering C2 (MILP con capacidad) | `[ ]` pendiente | — | — | `scripts/5-clustering_milp.py` | `data-processed/rutas_cluster_c2.csv` |
 | 2 — VSP asignación de buses | `[ ]` pendiente | — | — | `scripts/6-vsp_asignacion_buses.py` | `data-processed/jornadas_*.csv`, `results/06_vsp/` |
@@ -67,7 +67,16 @@ Según la Carta Gantt interna de la propuesta, para el 29-30/09 corresponde: Eta
 - Reunión presencial: metodología jerárquica de 4 etapas aprobada sin cambios.
 - Se inicializa el repositorio Git, se crea esta documentación de contexto, y se planifica la implementación de las Etapas 0-2.
 
-*(Agregar aquí la próxima entrada cuando se corra la Etapa 0, con fecha, quién la corrió, y el resumen de resultados/incidencias.)*
+### 28/09/2026 — Etapa 0 (preprocesamiento) corrida sobre la red completa
+- `scripts/3-preprocesamiento_expediciones.py` probado primero en checkpoint chico (ruta 101: 171 expediciones, energía y horarios verificados a mano) y luego sobre la red completa.
+- **Bug encontrado y corregido durante la validación:** `stop_times_dia_L.csv` se leía con `dtype=str`, lo que ordenaba `stop_sequence` alfabéticamente ("10" antes que "2") y corrompía el cálculo de paradero de origen/destino en viajes con más de 9 paraderos. Se corrigió casteando `stop_sequence` a `int` antes de ordenar. Detectado porque el conteo de paraderos terminales únicos (988) no calzaba con la cifra de referencia del prototipo (641) — buen ejemplo de por qué los chequeos de sanidad automáticos importan.
+- **Resultado (red completa), todos los chequeos automáticos en verde:**
+  - 64.502 expediciones (== cifra de referencia).
+  - 417 rutas, 641 paraderos terminales únicos (== cifra de referencia).
+  - Concurrencia máxima: 6.539 expediciones simultáneas a las 8:00 (== cifra de referencia).
+  - 0 NaN en distancia/energía; todas las duraciones y horarios consistentes.
+- Outputs: `data-processed/expediciones.csv` (64.502 filas), `data-processed/terminales.csv` (641 filas), `results/03_preprocesamiento/reporte.md` + 2 gráficos (`buses_por_hora.png`, `energia_por_expedicion.png`).
+- **Siguiente paso:** Etapa 2 (VSP) sobre la red completa, modos `ruta` (caso base) y `libre` (cota inferior), usando `expediciones.csv` como input.
 
 ## 5. Cómo reproducir (se completa a medida que existan los scripts)
 

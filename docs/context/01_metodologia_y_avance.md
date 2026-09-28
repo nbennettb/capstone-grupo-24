@@ -2,7 +2,7 @@
 
 > **Este documento se edita continuamente.** Cada vez que se corre una etapa nueva se agrega una entrada fechada en la bitácora (§4) — no se borran las entradas anteriores. La "foto actual" (estado por etapa, tabla de resultados) sí se actualiza en su lugar. Si vienes de otra sesión de IA o te acabas de sumar al equipo: lee primero [`00_contexto_entrega1.md`](00_contexto_entrega1.md) (qué se entregó en el Informe 1 y qué feedback se recibió) y luego este documento.
 >
-> Última edición: **28/09/2026** (Etapa 1 completa: C1 y C2 corridas sobre la red completa).
+> Última edición: **28/09/2026** (ronda de trabajo 28/09 cerrada: Etapas 0, 1 y 2 sin batería, con el "precio del clustering" calculado).
 
 ---
 
@@ -48,7 +48,7 @@ Según la Carta Gantt interna de la propuesta, para el 29-30/09 corresponde: Eta
 | 0 — Preprocesamiento | `[x]` hecho | 28/09/2026 | Nicolás (sesión IA) | `scripts/3-preprocesamiento_expediciones.py` | `data-processed/expediciones.csv`, `results/03_preprocesamiento/` |
 | 1 — Clustering C1 (heurística, más cercano) | `[x]` hecho | 28/09/2026 | Nicolás (sesión IA) | `scripts/4-clustering_nearest.py` | `data-processed/rutas_cluster_c1.csv`, `results/04_clustering_c1/` |
 | 1 — Clustering C2 (MILP con capacidad) | `[x]` hecho | 28/09/2026 | Nicolás (sesión IA) | `scripts/5-clustering_milp.py` | `data-processed/rutas_cluster_c2.csv`, `results/05_clustering_c2/` |
-| 2 — VSP asignación de buses (caso base + cota inferior, sin batería) | `[~]` hecho para `ruta`/`libre`; falta `cluster` (Fase 6) | 28/09/2026 | Nicolás (sesión IA) | `scripts/6-vsp_asignacion_buses.py` | `data-processed/jornadas_ruta.csv`, `jornadas_libre.csv`, `results/06_vsp/` |
+| 2 — VSP asignación de buses (4 escenarios, sin batería) | `[x]` hecho | 28/09/2026 | Nicolás (sesión IA) | `scripts/6-vsp_asignacion_buses.py`, `scripts/7-comparar_escenarios.py` | `data-processed/jornadas_*.csv`, `results/06_vsp/` |
 | 3 — Inserción de recargas | Fuera de alcance de esta ronda (próx. semana) | — | — | — | — |
 | 4 — Programación de carga | Fuera de alcance de esta ronda (próx. semana) | — | — | — | — |
 
@@ -56,15 +56,21 @@ Según la Carta Gantt interna de la propuesta, para el 29-30/09 corresponde: Eta
 
 ## 3. Tabla de resultados (se llena a medida que se corren los scripts)
 
-| Escenario | Buses | Deadhead total (km) | Costo total (USD) | Espera (h) | % jornadas >315 kWh | Tiempo de cómputo | Archivo |
+| Escenario | Buses | Precio vs. `libre` (buses) | Costo total (USD) | Precio vs. `libre` (costo) | % jornadas >315 kWh | Tiempo | Archivo |
 |---|---|---|---|---|---|---|---|
-| **`ruta`** (caso base: cada ruta con sus propios buses) | **8.654** | 207.247 (pullout 98.689 / interlining 10.088 / pullin 98.471) | 2.985.009 | 25.099 | 30,1% | 5 s | `data-processed/jornadas_ruta.csv` |
-| **`libre`** (cota inferior C0: interlining sin restricción de electroterminal) | **7.055** (−18,5%) | 146.540 (pullout 66.580 / interlining 15.256 / pullin 64.704) | 2.546.383 (−14,7%) | 20.365 | 39,6% | 39 s | `data-processed/jornadas_libre.csv` |
-| Cota inferior teórica (máx. expediciones simultáneas, sin costo de deadhead) | 6.539 | — | — | — | — | — | — |
+| **`ruta`** (caso base: cada ruta con sus propios buses) | **8.654** | +1.599 | 2.985.009 | +17,2% | 30,1% | 5 s | `jornadas_ruta.csv` |
+| **`libre`** (cota inferior C0: interlining sin restricción de electroterminal) | **7.055** | +0 (referencia) | 2.546.383 | +0% (referencia) | 39,6% | 39 s | `jornadas_libre.csv` |
+| **`cluster_c1`** (Etapa 1 heurística: electroterminal más cercano) | **7.456** | +401 (+5,7%) | 2.667.425 | +4,8% | 38,9% | 53 s | `jornadas_cluster_c1.csv` |
+| **`cluster_c2`** (Etapa 1 MILP con capacidad) | **7.454** | +399 (+5,7%) | 2.666.875 | +4,7% | 38,2% | 45 s | `jornadas_cluster_c2.csv` |
+| Cota inferior teórica (máx. expediciones simultáneas) | 6.539 | — | — | — | — | — | — |
 
-Gráficos: `results/06_vsp/graficos_ruta.png`, `graficos_libre.png` (distribución de energía y duración por jornada). Cifras completas (desglose de costo por componente): `results/06_vsp/resumen_escenarios.csv`.
+Gráficos: `results/06_vsp/graficos_{ruta,libre,cluster_c1,cluster_c2}.png` (distribución de energía y duración por jornada) y **`results/06_vsp/comparacion_escenarios.png`** (comparación final, el gráfico para llevar a la reunión). Cifras completas: `results/06_vsp/resumen_escenarios.csv` y `precio_del_clustering.csv`.
 
-**Lectura:** permitir interlining entre rutas cercanas (modo `libre`) reduce la flota necesaria en 18,5% y el costo total en 14,7% frente a que cada ruta use solo sus propios buses. Esto confirma que la Etapa 1 (clustering) tiene margen real donde jugar: el "precio del clustering" de cada estrategia (C1, C2) se mide como cuánto se acerca a este resultado `libre` sin su costo de coordinación entre las 417 rutas. **Advertencia:** ~30-40% de las jornadas superan la batería útil (315 kWh) — la Etapa 3 (inserción de recargas) es indispensable, no un detalle menor; con el supuesto de SOC inicial 100% la mayoría debería resolverse con una sola recarga (ver prototipo exploratorio del 28/09 en `Propuesta_metodologia_reunion.md`), pero esto se valida recién cuando se implemente esa etapa.
+**Lectura — este es el resultado central de la ronda de hoy:**
+- Permitir interlining entre rutas cercanas sin restricción (`libre`) reduce la flota en 18,5% y el costo total en 14,7% frente al caso base. Confirma que hay margen real donde jugar.
+- **Ambas estrategias de clustering (C1 y C2) capturan la gran mayoría de ese margen** (7.456 y 7.454 buses, a solo ~5,7% de la cota `libre`) con subproblemas mucho más manejables por electroterminal, en vez de resolver la red completa de una vez. Esto valida la decisión de la reunión del 28/09 de reemplazar el horizonte rodante por esta descomposición.
+- C2 (MILP con capacidad) es marginalmente mejor que C1 (2 buses menos, 550 USD menos) — la diferencia es pequeña porque solo 8 de 417 rutas cambian de electroterminal entre ambas (ver `results/05_clustering_c2/reporte.md`), pero C2 además evita sobrecargar Los Espinos (que en C1 no se controla en absoluto).
+- **Advertencia:** ~30-40% de las jornadas superan la batería útil (315 kWh) en los 4 escenarios — la Etapa 3 (inserción de recargas) es indispensable, no un detalle menor. Con el supuesto de SOC inicial 100% la mayoría debería resolverse con una sola recarga (ver prototipo exploratorio del 28/09 en `Propuesta_metodologia_reunion.md`), pero esto se valida recién cuando se implemente esa etapa.
 
 ## 4. Bitácora
 
@@ -110,6 +116,13 @@ Gráficos: `results/06_vsp/graficos_ruta.png`, `graficos_libre.png` (distribuci�
 - Outputs: `data-processed/rutas_cluster_c1.csv`, `rutas_cluster_c2.csv`, `results/04_clustering_c1/`, `results/05_clustering_c2/` (reportes + gráficos).
 - **Siguiente paso (Fase 6):** re-correr `6-vsp_asignacion_buses.py --modo cluster` con `rutas_cluster_c1.csv` y `rutas_cluster_c2.csv`, y calcular el "precio del clustering" (buses y costo de cada uno frente a `libre`).
 
+### 28/09/2026 — Fase 6: Etapa 2 por clúster + cierre de la ronda de trabajo
+- `6-vsp_asignacion_buses.py --modo cluster` probado primero en un subconjunto chico (3 rutas, con `rutas_cluster_c1.csv`) para validar ese modo por primera vez, antes de correr la red completa con C1 y con C2.
+- Se creó `scripts/7-comparar_escenarios.py`: lee `resumen_escenarios.csv`, genera el gráfico comparativo final (`comparacion_escenarios.png`) y la tabla `precio_del_clustering.csv`, con un chequeo de sanidad automático (`ruta ≥ cluster ≥ libre ≥ cota inferior teórica`).
+- **Resultado final de la ronda (tabla completa en la sección 3):** cluster_c1 = 7.456 buses, cluster_c2 = 7.454 buses — ambos a solo ~5,7% de la cota inferior `libre` (7.055) y muy por debajo del caso base (8.654, +17,2% de costo). Esto **valida cuantitativamente** la metodología jerárquica aprobada en la reunión del 28/09: el clustering por electroterminal captura casi todo el beneficio del interlining con subproblemas mucho más chicos.
+- **Alcance de la ronda 28-30/09 completado hoy mismo** (Etapa 0, Etapa 1 C1+C2, Etapa 2 en los 4 escenarios) — antes de lo planificado para el 30/09. Las Etapas 3 (recargas) y 4 (programación de carga) quedan para los próximos días, ahora con las jornadas de `cluster_c1`/`cluster_c2` ya listas como insumo.
+- **Pendiente para retomar:** decidir con el equipo si la implementación final usa las jornadas de `cluster_c1` o `cluster_c2` (o ambas, para comparar) como base de las Etapas 3-4.
+
 ## 5. Cómo reproducir (se completa a medida que existan los scripts)
 
 ```bash
@@ -121,13 +134,16 @@ python scripts/4-clustering_nearest.py      # C1
 python scripts/5-clustering_milp.py         # C2
 
 # Etapa 2 — asignación de buses (correr una vez por escenario)
-python scripts/6-vsp_asignacion_buses.py --modo ruta      # caso base
-python scripts/6-vsp_asignacion_buses.py --modo libre     # cota inferior (sin clustering)
-python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion c1
-python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion c2
+python scripts/6-vsp_asignacion_buses.py --modo ruta
+python scripts/6-vsp_asignacion_buses.py --modo libre
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1.csv --etiqueta cluster_c1
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c2.csv --etiqueta cluster_c2
+
+# Comparación final (requiere que los 4 escenarios de arriba ya existan)
+python scripts/7-comparar_escenarios.py
 ```
 
-Cada corrida de la Etapa 2 agrega una fila a `results/06_vsp/resumen_escenarios.csv` — no lo sobrescribe.
+Cada corrida de la Etapa 2 agrega una fila a `results/06_vsp/resumen_escenarios.csv` — no lo sobrescribe. Si se vuelve a correr un mismo escenario (misma `--etiqueta`), queda una fila duplicada: al recalcular, filtrar `resumen_escenarios.csv` a la última corrida de cada etiqueta antes de usarlo, o borrar la fila vieja a mano.
 
 ## 6. Referencias
 

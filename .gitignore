@@ -1,10 +1,16 @@
-# --- Datos pesados regenerables (ver scripts/1-filtro_datos_buses.py y 2-filtro_tipo_dia.py) ---
+# --- Datos crudos pesados y sin uso en el pipeline actual ---
+# chile.gpkg (1.3 GB) no lo lee ningun script de scripts/. Los GTFS crudos
+# stop_times.txt/shapes.txt son el insumo de scripts/1-filtro_datos_buses.py,
+# pero sus versiones YA FILTRADAS (data-filtrado/stop_times_bus.csv,
+# stop_times_dia_L.csv, shapes_bus.csv) SI se suben (son el insumo directo
+# de scripts/3-preprocesamiento_expediciones.py en adelante) para que el
+# repo clonado sea reproducible sin depender de tener data-alumnos aparte.
+# Si se necesita regenerar data-filtrado/ desde cero, hay que conseguir
+# data-alumnos/gtfs/{stop_times.txt,shapes.txt} por separado (los entrega
+# el curso) y correr scripts/1-filtro_datos_buses.py y 2-filtro_tipo_dia.py.
 data-alumnos/chile.gpkg
 data-alumnos/gtfs/stop_times.txt
 data-alumnos/gtfs/shapes.txt
-data-filtrado/stop_times_bus.csv
-data-filtrado/stop_times_dia_L.csv
-data-filtrado/shapes_bus.csv
 
 # --- Configuración local de Claude Code (por máquina/sesión, no de equipo) ---
 .claude/settings.local.json

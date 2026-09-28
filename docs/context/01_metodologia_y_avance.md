@@ -2,7 +2,7 @@
 
 > **Este documento se edita continuamente.** Cada vez que se corre una etapa nueva se agrega una entrada fechada en la bitácora (§4) — no se borran las entradas anteriores. La "foto actual" (estado por etapa, tabla de resultados) sí se actualiza en su lugar. Si vienes de otra sesión de IA o te acabas de sumar al equipo: lee primero [`00_contexto_entrega1.md`](00_contexto_entrega1.md) (qué se entregó en el Informe 1 y qué feedback se recibió) y luego este documento.
 >
-> Última edición: **28/09/2026** (Etapa 2 corrida sobre la red completa, modos `ruta` y `libre`).
+> Última edición: **28/09/2026** (Etapa 1 completa: C1 y C2 corridas sobre la red completa).
 
 ---
 
@@ -46,8 +46,8 @@ Según la Carta Gantt interna de la propuesta, para el 29-30/09 corresponde: Eta
 | Etapa | Estado | Última actualización | Quién | Script(s) | Resultados |
 |---|---|---|---|---|---|
 | 0 — Preprocesamiento | `[x]` hecho | 28/09/2026 | Nicolás (sesión IA) | `scripts/3-preprocesamiento_expediciones.py` | `data-processed/expediciones.csv`, `results/03_preprocesamiento/` |
-| 1 — Clustering C1 (heurística, más cercano) | `[ ]` pendiente | — | — | `scripts/4-clustering_nearest.py` | `data-processed/rutas_cluster_c1.csv` |
-| 1 — Clustering C2 (MILP con capacidad) | `[ ]` pendiente | — | — | `scripts/5-clustering_milp.py` | `data-processed/rutas_cluster_c2.csv` |
+| 1 — Clustering C1 (heurística, más cercano) | `[x]` hecho | 28/09/2026 | Nicolás (sesión IA) | `scripts/4-clustering_nearest.py` | `data-processed/rutas_cluster_c1.csv`, `results/04_clustering_c1/` |
+| 1 — Clustering C2 (MILP con capacidad) | `[x]` hecho | 28/09/2026 | Nicolás (sesión IA) | `scripts/5-clustering_milp.py` | `data-processed/rutas_cluster_c2.csv`, `results/05_clustering_c2/` |
 | 2 — VSP asignación de buses (caso base + cota inferior, sin batería) | `[~]` hecho para `ruta`/`libre`; falta `cluster` (Fase 6) | 28/09/2026 | Nicolás (sesión IA) | `scripts/6-vsp_asignacion_buses.py` | `data-processed/jornadas_ruta.csv`, `jornadas_libre.csv`, `results/06_vsp/` |
 | 3 — Inserción de recargas | Fuera de alcance de esta ronda (próx. semana) | — | — | — | — |
 | 4 — Programación de carga | Fuera de alcance de esta ronda (próx. semana) | — | — | — | — |
@@ -99,6 +99,16 @@ Gráficos: `results/06_vsp/graficos_ruta.png`, `graficos_libre.png` (distribuci�
   El número de buses en ambos modos **calza exactamente** con el prototipo exploratorio del 28/09 (8.654 y 7.055), pese a que ahora el modelo sí paga el costo real de pullout/pullin — buena señal de que el modelo está bien migrado. Ver tabla completa en la sección 3 de este documento.
 - Outputs: `data-processed/jornadas_ruta.csv`, `jornadas_libre.csv`, `results/06_vsp/resumen_escenarios.csv`, `results/06_vsp/graficos_{ruta,libre}.png`.
 - **Siguiente paso:** Etapa 1 (clustering C1 y C2), y luego re-correr esta Etapa 2 en modo `cluster` (Fase 6 del plan) para calcular el "precio del clustering" frente a `libre`.
+
+### 28/09/2026 — Etapa 1 (clustering C1 y C2) corrida sobre la red completa
+- Se creó `scripts/common/clustering.py` (centroide por ruta, matriz de distancias ruta-electroterminal) y se refactorizó `6-vsp_asignacion_buses.py` para reusarlo en vez de duplicar la lógica del modo `ruta` (verificado que el resultado no cambió tras el refactor: mismo costo, 42.897 USD, en el checkpoint de 3 rutas).
+- **C1 (`scripts/4-clustering_nearest.py`, heurística del más cercano):** probado primero en una muestra aleatoria reproducible de 20 rutas (semilla 42), luego sobre las 417. Resultado: las 5 electroterminales reciben entre 59 y 113 rutas cada uno.
+- **C2 (`scripts/5-clustering_milp.py`, MILP con capacidad):** la carga de cada ruta (`h_r`, en horas-cargador/día) y su número de buses se leen de `jornadas_ruta.csv` (por eso la Etapa 2 se corrió antes). Se definió explícitamente la unidad de capacidad (horas-cargador/día a ambos lados de la restricción) para no repetir el error de unidades del Informe 1 (ver `02_pendientes_profesor.md` #6).
+  - **Checkpoint de reactividad:** con 20 rutas y `--theta 0.05` (capacidad muy reducida a propósito), el modelo movió rutas fuera de Santa Rosa (de 270 a 178 horas-cargador/día asignadas, justo bajo el límite de 180) — confirma que la restricción de capacidad sí es efectiva antes de confiar en la red completa. También se probó un `--theta` extremo (0.001) para confirmar que el manejo de infactibilidad (mensaje claro con las restricciones en conflicto vía `computeIIS`) funciona.
+  - **Resultado en la red completa (`--theta 1.0`, sin apretar artificialmente):** **Los Espinos queda al 99,5% de su capacidad estimada** (2.867 de 2.880 horas-cargador/día), mientras Vespucio Norte solo usa 38,8%. Esto es un hallazgo real y presentable: incluso con el supuesto optimista de SOC inicial 100% (que hace la demanda de recarga total baja, ver dimensionamiento en `Propuesta_metodologia_reunion.md`), la proxy de carga total diaria muestra que la capacidad **sí puede ser un problema localizado** en al menos un electroterminal, no uniformemente holgada.
+  - Comparado con C1: de las 417 rutas, solo 8 (1,9%) quedan en un electroterminal distinto entre C1 y C2 — la restricción de capacidad mueve pocas rutas, pero las que mueve son las que evitan sobrecargar Los Espinos.
+- Outputs: `data-processed/rutas_cluster_c1.csv`, `rutas_cluster_c2.csv`, `results/04_clustering_c1/`, `results/05_clustering_c2/` (reportes + gráficos).
+- **Siguiente paso (Fase 6):** re-correr `6-vsp_asignacion_buses.py --modo cluster` con `rutas_cluster_c1.csv` y `rutas_cluster_c2.csv`, y calcular el "precio del clustering" (buses y costo de cada uno frente a `libre`).
 
 ## 5. Cómo reproducir (se completa a medida que existan los scripts)
 

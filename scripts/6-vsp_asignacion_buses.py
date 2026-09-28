@@ -58,6 +58,7 @@ import scipy.sparse as sps
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import geo, parametros                                          # noqa: E402
+from common.clustering import depot_mas_cercano_por_ruta                    # noqa: E402
 from common.rutas import DATA_FILTRADO, DATA_PROCESSED, CSV_SEP, carpeta_resultados  # noqa: E402
 
 RESULTS = carpeta_resultados("06_vsp")
@@ -88,22 +89,6 @@ def cargar_depots():
 # Electroterminal asignado a cada expedicion (para pullout/pullin) y grupo de
 # interlining (que determina con que otras expediciones se puede encadenar)
 # --------------------------------------------------------------------------- #
-
-def depot_mas_cercano_por_ruta(ex, depots, factor_desvio):
-    """Para cada ruta, el electroterminal mas cercano al centroide de sus
-    paraderos terminales (usado en el modo 'ruta': el bus de una ruta
-    siempre sale/vuelve al mismo electroterminal base)."""
-    pts = pd.concat([
-        ex[["route_id", "o_lat", "o_lon"]].rename(columns={"o_lat": "lat", "o_lon": "lon"}),
-        ex[["route_id", "d_lat", "d_lon"]].rename(columns={"d_lat": "lat", "d_lon": "lon"}),
-    ])
-    centroides = pts.groupby("route_id")[["lat", "lon"]].mean()
-    P = geo.xy(centroides["lat"].values, centroides["lon"].values)
-    DP = geo.xy(depots["lat"].values, depots["lon"].values)
-    d = geo.matriz_distancias_planas(P, DP) * factor_desvio
-    idx = d.argmin(axis=1)
-    return pd.Series(idx, index=centroides.index)  # route_id -> indice de depot (0..4)
-
 
 def calcular_asignacion_depots(ex, depots, modo, asignacion_df, factor_desvio):
     """Devuelve, para cada expedicion, el/los indices de electroterminal

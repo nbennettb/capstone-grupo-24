@@ -105,7 +105,10 @@ def expandir_a_expediciones(viajes, frequencies, stops):
     exp = exp.merge(coords_o[["o_stop", "o_lat", "o_lon"]], on="o_stop", how="left")
     exp = exp.merge(coords_d[["d_stop", "d_lat", "d_lon"]], on="d_stop", how="left")
 
-    cols = ["trip_id", "route_id", "direccion", "dep_min", "arr_min", "dur_min",
+    # expedicion_id es la clave UNICA de cada fila (trip_id no lo es: un mismo
+    # patron se repite muchas veces por frecuencia). Usar expedicion_id en
+    # cualquier join/merge posterior (Etapas 1-4), no trip_id.
+    cols = ["expedicion_id", "trip_id", "route_id", "direccion", "dep_min", "arr_min", "dur_min",
             "distance_km", "kwh", "o_stop", "d_stop", "o_lat", "o_lon", "d_lat", "d_lon"]
     return exp[cols].reset_index(drop=True)
 
@@ -253,6 +256,8 @@ def main():
         "Hay expediciones con duracion <= 0: revisar stop_times (posible trip con 1 sola parada)."
     assert (expediciones["arr_min"] >= expediciones["dep_min"]).all(), \
         "Hay expediciones que llegan antes de salir."
+    assert expediciones["expedicion_id"].nunique() == len(expediciones), \
+        "expedicion_id no es unico: revisar expandir_frecuencias() en scripts/common/tiempo.py."
     print("\n  [OK] Chequeos de sanidad basicos pasaron (sin NaN, duraciones y horarios consistentes).")
 
     # --- Chequeos de sanidad SOLO para la corrida de red completa ---

@@ -1,0 +1,25 @@
+# --- Datos pesados regenerables (ver scripts/1-filtro_datos_buses.py y 2-filtro_tipo_dia.py) ---
+data-alumnos/chile.gpkg
+data-alumnos/gtfs/stop_times.txt
+data-alumnos/gtfs/shapes.txt
+data-filtrado/stop_times_bus.csv
+data-filtrado/stop_times_dia_L.csv
+data-filtrado/shapes_bus.csv
+
+# --- Configuración local de Claude Code (por máquina/sesión, no de equipo) ---
+.claude/settings.local.json
+
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+
+# --- Archivos temporales de Office ---
+~$*.xlsx
+~$*.docx
+~$*.pptx
+
+# --- Sistema operativo ---
+.DS_Store
+Thumbs.db

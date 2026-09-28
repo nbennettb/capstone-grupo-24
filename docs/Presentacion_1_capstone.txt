@@ -1,0 +1,353 @@
+PLANIFICACIÓN DE LA OPERACIÓN DE LOS BUSES ELÉCTRICOS
+EN LA RED METROPOLITANA DE MOVILIDAD DE SANTIAGO
+
+Grupo 24
+
+Profesor: Agustín Chiu
+
+Integrantes:
+- Nicolás Bennett
+- Antonio De Frutos
+- Claudio Hasbún
+- Agustín Irarrázaval
+- Joaquín Jimenez
+- Alonso Muelas
+
+
+============================================================
+01. DESCRIPCIÓN DEL PROBLEMA
+============================================================
+
+1.1 CONTEXTO DEL PROBLEMA
+
+LA FLOTA ELÉCTRICA
+
+4.400
+buses eléctricos en 2026
+
+68%
+de la flota hoy es eléctrica
+
+Santiago: La ciudad con más buses eléctricos fuera de China
+
+
+EL PROBLEMA: E-VSP
+
+VSP: Asignar buses a viajes.
+
+E-VSP: Agrega restricción de energía.
+
+Autonomía límitada + necesidad de recarga = complejidad extra.
+
+*Datos obtenidos del MTT
+
+
+1.2 LIMITACIONES Y COMPLEJIDADES
+
+01. Batería finita
+    La recarga debe planificarse.
+
+02. Capacidad electroterminales
+    Número finito de ellos (5), con capacidad limitada de buses
+    al mismo tiempo (700 entre todos).
+
+03. Deadheads
+    Desplazamientos sin pasajeros hacia siguiente ruta o
+    electroterminales.
+
+04. Secuencia factible de viajes
+    Continua y respetando horarios programados.
+
+
+1.3 ALTA COMPLEJIDAD COMPUTACIONAL
+
+No se puede resolver directamente, requiere técnicas avanzadas
+de optimización.
+
+
+1.4 OBJETIVO DEL PROBLEMA
+
+Minimizar el costo total del sistema, considerando el número de
+buses utilizados y los costos de operación, sujeto a que todos
+los viajes programados de la red sean cubiertos exactamente una vez.
+
+
+============================================================
+02. DATOS DISPONIBLES
+============================================================
+
+- Rutas
+- Horarios
+- Frecuencias
+- Paraderos
+- Trazado de recorrido
+- Electroterminales
+- Tarifas eléctricas
+- Red de Buses
+
+
+2.1 FLOTA DE BUSES ELÉCTRICOS
+
+Tamaño de flota: irrestricta
+Un solo modelo: BYD K9
+Batería: 350 kWh
+Autonomía: 250 km
+Estado de carga utilizable: 10% – 100%
+Carga completa: ~105 min
+
+
+2.2 TIPOS DE DÍAS
+
+L (Lun-Vie)
+S (Sábado)
+D (Domingo)
+
+Decisión: En primera instancia trabajar solo con datos del tipo
+L (días laborales).
+
+
+2.3 GRÁFICO
+
+Costo de la electricidad por bloque tarifario (dia laboral)
+
+
+2.4 GRÁFICO
+
+Buses necesarios circulando por hora (día laboral)
+
+
+============================================================
+03. KPIs
+============================================================
+
+03.1 N.º TOTAL DE BUSES USADOS
+
+N° total de buses despachados
+
+El objetivo es reducirlo sin sacrificar cobertura de la demanda.
+
+
+03.2 COSTO ENERGÉTICO PROMEDIO
+
+Costo total energía / kWh totales cargados
+
+Útil para ver si la flota está cargando en horarios de tarifa
+barata o cara.
+
+
+03.3 PROPORCIÓN DE DEADHEADING
+
+Σ km vacíos / Σ km totales (flota)
+
+Permite detectar inefieciencias geográficas en la asignación de
+viajes.
+
+
+03.4 UTILIZACIÓN POR BUS
+
+Horas con pasajeros / Horas de turno
+
+Evalúa cuánto del tiempo productivo de cada bus se destina a
+servicio real.
+
+
+============================================================
+04. REVISIÓN BIBLIOGRÁFICA
+============================================================
+
+04.1 HALLAZGOS BIBLIOGRÁFICOS
+
+- La alta complejidad del E-VSP favorece enfoques de
+  descomposición.
+
+- El número de jornadas factibles crece demasiado para enumerarlas
+  todas explicitamente.
+
+- La capacidad de carga puede volver inviables jornadas
+  individualmente factibles.
+
+
+04.2 METODOLOGÍAS
+
+
+METODOLOGÍA 1:
+METAHEURÍSTICA — ADAPTIVE LARGE NEIGHBORHOOD SEARCH (ALNS)
+
+1. Destruir
+
+   Remueve un subconjunto de viajes de las jornadas actuales
+   (ej. mayor desplazamiento vacío).
+
+2. Reparar
+
+   Reinserta cada viaje removido en la posicion de menor costo
+   que preserve horario, batería y capacidad de carga.
+
+3. Aceptar / Iterar
+
+   Acepta la solucion si mejora (y a veces si no, para evitar
+   optimos locales). Se repite miles de veces.
+
+
+CÓMO FUNCIONA
+
+Construye una solución inicial factible y la mejora iterativamente,
+removiendo y reinsertando viajes entre buses, buscando minimizar
+la cantidad de buses utilizados, los costos operacionales y los
+desplazamientos sin pasajeros.
+
+
+VALIDADO EN PROBLEMAS SIMILARES
+
+Wang et al. (2024): Multi-electroterminal con restricciones de
+infrastructura de carga.
+
+Zhang et al. (2024): Modela en conjunto cantidad de cargadores y
+potencia electrica total del terminal.
+
+
+METODOLOGÍA 2:
+SET PARTITIONING + GENERACIÓN DE COLUMNAS + BENDERS
+
+1. Problema maestro
+
+   Selecciona jornadas.
+   Cubre cada viaje una vez y prioriza el menor numero de buses.
+
+2. Generación de columnas
+
+   Genera nuevas jornadas factibles.
+   Genera jornadas factibles con su evolución de bateria y
+   necesidades de carga.
+
+3. Subproblema de cargas
+
+   Programa y valida la carga conjunta.
+   Asigna electroterminal, horario y duración de carga para cada bus.
+
+   ¿Factible?
+
+   no → Corte de factibilidad
+   sí  → Solución
+
+
+DIAGRAMA DEL FLUJO
+
+[Problema maestro]
+        |
+        v
+[Generación de columnas]
+        |
+        v
+[Subproblema de cargas]
+        |
+        v
+    ¿Factible?
+      /     \
+    NO       SÍ
+    |         |
+    v         v
+[Corte de   [Solución]
+ factibilidad]
+
+
+04.3 METODOLOGÍA PROPUESTA:
+DESCOMPOSICIÓN ESPACIOTEMPORAL
+
+1. Asignación Espacial
+
+   Agrupa viajes por electroterminal.
+   Considera ubicación y deadheads.
+
+2. Descomposición Temporal
+
+   Divide el día en ventanas superpuestas.
+   Ventanas de 3 hrs, solo se fija 1h.
+   Commit vs Borrador.
+   Se transmiten información.
+
+3. Resolver Subproblema E-VSP
+
+   Se itera en las ventanas mediante horizonte rodante.
+   ~120 subproblemas pequeños, en general resolubles con MILP.
+
+   Posible integración con metodología 2:
+   Ventanas con alta cantidad de trips (horas peak) se resuelven
+   mediante Set Partitioning + GC.
+
+REFERENCIAS:
+
+1. Gao, Y., Tang, Y., & Liu, R. (2024). Aggregation formulation
+   for on-site multidepot vehicle scheduling scenario.
+
+2. Kim, Y., Edirimanna, D., Wilbur, M., Pugliese, P., Laszka, A.,
+   Dubey, A., & Samaranayake, S. (2023). Rolling horizon based
+   temporal decomposition for the offline pickup and delivery
+   problem with time windows.
+
+
+============================================================
+05. COMPARACIÓN DE METODOLOGÍAS
+============================================================
+
+FUENTES PRINCIPALES
+
+- Wang et al. (2024)
+- Alvo et al. (2021)
+- Perumal et al. (2022)
+- Gao, Y., Tang, Y., & Liu, R. (2024)
+- Enfoque de Horizonte Rodante (AAAI, 2023)
+
+
+ALNS
+
+Ventaja clave:
+Mejor escalabilidad en problemas grandes y multielectroterminal.
+
+Desventaja principal:
+No garantiza optimalidad y requiere diseñar bien los operadores
+de búsqueda.
+
+
+SET PARTITIONING + GC + BENDERS
+
+Ventaja clave:
+Evita resolver un MILP monolítico gigante generando solo jornadas
+relevantes y verificando factibilidad de carga.
+
+Desventaja principal:
+Implementación compleja, al coordinar maestro, generacion de
+columnas y cortes de Benders.
+
+
+DESCOMPOSICIÓN ESPACIOTEMPORAL
+
+Ventaja clave:
+Divide las 64.502 expediciones en subproblemas mucho más
+manejables por electroterminal y ventana horaria.
+
+Desventaja principal:
+Pierde optimalidad global, depende de una buena asignación inicial
+y del tamaño de las ventanas.
+
+
+============================================================
+06. PASOS FUTUROS
+============================================================
+
+1. Formular modelo por fases
+
+2. Implementar modelación computacional
+
+3. Probar con datos de RED
+
+4. Validar y ajustar parámetros
+
+5. Analizar resultados y presentar
+
+
+============================================================
+07. CIERRE
+============================================================
+
+GRACIAS

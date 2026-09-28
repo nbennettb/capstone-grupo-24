@@ -1,0 +1,68 @@
+% Espacio reservado para las fotos/escaneos de las firmas de cada integrante.
+% Instrucciones completas en la Guia de Entrega. Para activar una firma,
+% guarda la foto como PNG o JPG con el nombre exacto indicado en cada
+% \firmaBox (segundo argumento) dentro de la carpeta ./firmas/.
+% Mientras el archivo no exista, se mostrara un recuadro con "(firma pendiente)".
+\newcommand{\firmaBox}[2]{%
+  \begin{minipage}[t]{4.6cm}
+    \centering
+    \IfFileExists{./firmas/#2.png}%
+      {\includegraphics[width=4cm,height=2.2cm,keepaspectratio]{./firmas/#2.png}}%
+      {\IfFileExists{./firmas/#2.jpg}%
+        {\includegraphics[width=4cm,height=2.2cm,keepaspectratio]{./firmas/#2.jpg}}%
+        {\IfFileExists{./firmas/#2.jpeg}%
+          {\includegraphics[width=4cm,height=2.2cm,keepaspectratio]{./firmas/#2.jpeg}}%
+          {\fbox{\begin{minipage}[c][2.2cm][c]{3.9cm}\centering\footnotesize\textit{(firma pendiente)}\end{minipage}}}%
+        }%
+      }\\[2pt]
+    \rule{4cm}{0.4pt}\\[2pt]
+    \small #1
+  \end{minipage}%
+}
+
+\noindent \textbf{Grupo:} 24
+
+\vspace{0.5cm}
+
+\noindent \textbf{\textquestiondown Hicieron uso de herramientas de IA en su trabajo para este informe y/o presentaci\'on?} \\
+SI $\boxtimes$ \hspace{1.5cm} NO $\square$
+
+\vspace{0.5cm}
+
+\noindent \textbf{\textquestiondown Cu\'ales de las siguientes alternativas describen mejor el uso que hicieron de IA?} (puede marcarse m\'as de una)
+
+\vspace{0.2cm}
+
+\begin{itemize}
+\setlength{\itemsep}{2pt}
+\item[$\boxtimes$] Apoyo a la redacci\'on, ortograf\'ia, estructura gramatical, etc., de los documentos.
+\item[$\boxtimes$] Apoyo al an\'alisis de datos e informaci\'on asociada al problema.
+\item[$\boxtimes$] B\'usqueda y/o filtro de referencias, contenidos web, literatura, etc., relevante al proyecto.
+\item[$\square$] Apoyo para el desarrollo de modelos asociados al proyecto.
+\item[$\boxtimes$] Apoyo en el desarrollo de c\'odigo computacional necesario para el proyecto.
+\item[$\square$] Apoyo en el an\'alisis de resultados (por ejemplo, de distintas corridas computacionales, tendencias de predicciones, etc.).
+\item[$\square$] Apoyo para construir figuras, diagramas, etc.
+\item[$\boxtimes$] Apoyo para obtener conclusiones a partir de los an\'alisis de resultados.
+\item[$\square$] Otro, especificar: \rule{6cm}{0.4pt}
+\end{itemize}
+
+\vspace{0.3cm}
+
+\noindent \textbf{Indiquen qu\'e chats de IA usaron y una breve reflexi\'on respecto al uso de IA:}
+
+\vspace{0.2cm}
+
+\noindent Se utiliz\'o Claude (Sonnet 4.6), ChatGPT (GPT-5.6 ``Luna'') y Qwen3.7 Plus. Fue un apoyo bastante \'util en t\'erminos de eficiencia, al trabajar con una extensa cantidad de datos. Fue importante para la creaci\'on de scripts para obtener gr\'aficos, la interpretaci\'on de resultados en el an\'alisis de datos y la redacci\'on del informe. No consideramos que haya sido indispensable su uso para la realizaci\'on de esta Entrega 1, pero s\'i definitivamente ayud\'o a acortar el tiempo que llev\'o el trabajo y a mitigar la cantidad de errores humanos, como inconsistencias o faltas de ortograf\'ia. Tambi\'en se utiliz\'o Claude (Sonnet 5) para traspasar el contenido ya redactado por el grupo al formato LaTeX de la plantilla del curso, generando los archivos .tex del informe. Adicionalmente, Claude (Sonnet 5) fue clave para ajustar el informe al l\'imite de p\'aginas de la entrega, ya que ayud\'o a reducirlo de 28 a 20 p\'aginas, lo que implic\'o reescribir buena parte de la redacci\'on original del grupo con redacci\'on generada por esta IA.
+
+\vspace{1cm}
+
+\noindent \textbf{Esta declaraci\'on debe ser firmada por todos los integrantes del grupo:}
+
+\vspace{0.8cm}
+
+\begin{center}
+\begin{tabular}{ccc}
+\firmaBox{Nicol\'as Bennett}{nicolas_bennett} & \firmaBox{Antonio De Frutos}{antonio_defrutos} & \firmaBox{Claudio Hasb\'un}{claudio_hasbun} \\[1.1cm]
+\firmaBox{Agust\'in Irarr\'azaval}{agustin_irarrazaval} & \firmaBox{Joaqu\'in Jim\'enez}{joaquin_jimenez} & \firmaBox{Alonso Muelas}{alonso_muelas} \\
+\end{tabular}
+\end{center}

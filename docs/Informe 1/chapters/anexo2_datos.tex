@@ -1,0 +1,21 @@
+Como material complementario a la Secci\'on \ref{sec:datosdisponibles} (Datos Disponibles), la Tabla \ref{tab:datosdisponibles} detalla cada archivo de datos utilizado en el proyecto, su contenido y el uso espec\'ifico que se le dar\'a durante la modelaci\'on.
+
+\begin{table}[H]
+\begin{center}
+\small
+\caption[Datos disponibles]{Datos disponibles}
+\label{tab:datosdisponibles}
+\begin{tabular}{@{}p{0.30\textwidth} p{0.35\textwidth} p{0.25\textwidth}@{}}\toprule
+\textbf{Archivo} & \textbf{Contenido} & \textbf{Uso en el proyecto} \\ \midrule
+GTFS (routes, trips, stop\_times, frequencies, stops, shapes) & Rutas, viajes, horarios, paraderos y trazados & Demanda programada \\
+shape\_distances.csv & Distancia por trazado & C\'alculo de energ\'ia \\
+chile.gpkg & Red vial de Chile & C\'alculo de distancias sin pasajeros \\
+depots.csv & Ubicaci\'on y capacidad de electroterminales & Infraestructura de carga \\
+charger\_capacity.csv & Capacidad de carga simult\'anea & Restricci\'on de carga \\
+electricity\_prices.csv & Tarifas por bloque horario & Costo energ\'etico \\
+vehicles.csv & Par\'ametros de bus BYD K9 & Informaci\'on flota \\
+parameters.csv & Costos y par\'ametros globales & Funci\'on objetivo \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}

@@ -1,0 +1,43 @@
+\section{Conclusiones Relevantes \label{sec:conclusionesrelevantes}}
+
+Este informe presenta una primera aproximaci\'on al problema de planificaci\'on operacional de la flota de buses el\'ectricos de RED, formulado como un Electric Vehicle Scheduling Problem (E-VSP). Se caracteriz\'o el problema en sus tres decisiones centrales, asignaci\'on de viajes a buses, desplazamientos sin pasajeros y programaci\'on de recargas, y se estableci\'o como objetivo minimizar el costo total de operaci\'on sujeto a la cobertura completa de los viajes y a las restricciones de autonom\'ia, horario y capacidad de carga.
+
+El an\'alisis de datos confirm\'o la magnitud del desaf\'io: un d\'ia laboral concentra 417 rutas y 64.502 expediciones, con dos peaks de demanda (8:00 y 18:00) que superan ampliamente la capacidad de carga simult\'anea de los cinco electroterminales (700 espacios) y que coinciden parcialmente con los bloques tarifarios m\'as caros. Esto valida que el problema exige coordinar conjuntamente las decisiones de transporte y de energ\'ia, y no puede resolverse como una simple asignaci\'on de viajes.
+
+La revisi\'on bibliogr\'afica permiti\'o identificar tres enfoques metodol\'ogicos viables (ALNS, Set Partitioning con Generaci\'on de Columnas y Benders, y descomposici\'on espaciotemporal), cada uno con ventajas y limitaciones distintas en escalabilidad, calidad de soluci\'on y complejidad de implementaci\'on. Se seleccion\'o la descomposici\'on espaciotemporal como metodolog\'ia principal por su capacidad de reducir la escala real del problema a subproblemas manejables (asignaci\'on espacial por electroterminal seguida de ventanas horarias superpuestas), manteniendo la posibilidad de integrarse con la segunda metodolog\'ia en los tramos m\'as complejos.
+
+Esta etapa preliminar permiti\'o sentar las bases conceptuales, de datos y metodol\'ogicas del proyecto. El desaf\'io de las siguientes etapas ser\'a traducir esta propuesta en una implementaci\'on computacional concreta, validarla con los datos reales de RED y evaluar si el enfoque logra un equilibrio adecuado entre tratabilidad computacional y calidad de la soluci\'on obtenida.
+
+\section{Pasos Futuros \label{sec:pasosfuturos}}
+
+Habiendo descrito el problema, analizado los datos disponibles y seleccionado la metodolog\'ia de descomposici\'on espaciotemporal como enfoque principal, el trabajo futuro se estructurar\'a en cinco etapas secuenciales:
+
+\begin{enumerate}
+\item \textbf{Formular el modelo por fases.} Se desarrollar\'a la formulaci\'on matem\'atica completa de la metodolog\'ia propuesta, separando expl\'icitamente la Fase 1 (asignaci\'on espacial de viajes a electroterminales) y la Fase 2 (descomposici\'on temporal mediante ventanas superpuestas y horizonte rodante). Esto incluye definir con precisi\'on las variables de decisi\'on, la funci\'on objetivo y el conjunto completo de restricciones (cobertura de viajes, factibilidad horaria, evoluci\'on de bater\'ia, capacidad de carga simult\'anea) para cada subproblema.
+\item \textbf{Implementar la modelaci\'on computacional.} Se traducir\'a la formulaci\'on a un modelo ejecutable, utilizando un solver de optimizaci\'on (MILP) para los subproblemas de la Fase 2, junto con las rutinas necesarias para la asignaci\'on espacial de la Fase 1 y la transmisi\'on del estado de cada bus (ubicaci\'on, nivel de bater\'ia) entre ventanas consecutivas.
+\item \textbf{Probar con datos de RED.} El modelo se ejecutar\'a sobre el caso base ya construido (d\'ia laboral, 417 rutas, 64.502 expediciones), comenzando con instancias reducidas o electroterminales individuales para verificar el correcto funcionamiento del modelo antes de escalarlo a la red completa.
+\item \textbf{Validar y ajustar par\'ametros.} Se evaluar\'a la sensibilidad de la soluci\'on al tama\~no de las ventanas temporales, al criterio de agrupamiento espacial en la Fase 1 y a los costos definidos, ajustando estos par\'ametros en caso de detectar infactibilidades recurrentes o soluciones de baja calidad. En esta etapa tambi\'en se evaluar\'a la alternativa de fusionar los electroterminales Los Espinos y Santa Rosa, y se decidir\'a si es necesario incorporar Set Partitioning con Generaci\'on de Columnas y cortes de Benders en las ventanas horarias de mayor complejidad (horas peak).
+\item \textbf{Analizar resultados y presentarlos.} Finalmente, se construir\'an los entregables definidos en la Secci\'on \ref{sec:entregable} (jornadas por bus, itinerario de carga, desglose de costos), se calcular\'an los KPIs definidos en la Secci\'on \ref{sec:kpis} y se compararan los resultados obtenidos contra los del caso base, documentando las conclusiones y limitaciones del enfoque para la presentaci\'on final.
+\end{enumerate}
+
+La Tabla \ref{tab:gantt} presenta la Carta Gantt planificada para estas cinco etapas a lo largo de las diez semanas siguientes.
+
+\begin{table}[htb]
+\begin{center}
+\caption[Carta Gantt de trabajo futuro]{Carta Gantt de trabajo futuro}
+\label{tab:gantt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}l *{10}{c}@{}}\toprule
+\textbf{Actividad} & \textbf{S1} & \textbf{S2} & \textbf{S3} & \textbf{S4} & \textbf{S5} & \textbf{S6} & \textbf{S7} & \textbf{S8} & \textbf{S9} & \textbf{S10} \\ \midrule
+Formular el modelo de optimizaci\'on & \cellcolor{ganttgreen} & \cellcolor{ganttgreen} & & & & & & & & \\
+Implementar y validar modelo simplificado & & \cellcolor{ganttgreen} & \cellcolor{ganttgreen} & & & & & & & \\
+Incorporar restricciones progresivamente & & & \cellcolor{ganttgreen} & \cellcolor{ganttgreen} & \cellcolor{ganttgreen} & \cellcolor{ganttgreen} & & & & \\
+Implementar descomposici\'on temporal & & & & & & \cellcolor{ganttgreen} & \cellcolor{ganttgreen} & & & \\
+Integrar metodolog\'ia completa & & & & & & & \cellcolor{ganttgreen} & \cellcolor{ganttgreen} & & \\
+Escalar metodolog\'ia para caso RED & & & & & & & & \cellcolor{ganttgreen} & \cellcolor{ganttgreen} & \\
+Analizar resultados y ajustar par\'ametros & & & & & & & & & \cellcolor{ganttgreen} & \cellcolor{ganttgreen} \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\end{table}

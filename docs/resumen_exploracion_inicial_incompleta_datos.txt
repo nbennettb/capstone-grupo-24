@@ -1,0 +1,214 @@
+RESUMEN DE EXPLORACION DE DATOS - Proyecto Buses Electricos RM (ICS2122 Capstone)
+Responsable de esta sesion: a cargo de Datos (13 pts) y KPIs (5 pts) del Informe 1
+=====================================================================
+
+1. CONTEXTO Y ROL
+---------------------------------------------------------------------
+- Proyecto: Planificacion de la operacion de buses electricos en la Region
+  Metropolitana de Santiago (Red Metropolitana de Movilidad).
+- Equipo de 6 personas: 3 en datos/limpieza + KPIs (mi parte), 3 en
+  metodologia (revision bibliografica, matriz de papers, entendimiento
+  del problema).
+- Responsabilidad especifica en el Informe 1: Datos (13 pts) y KPIs (5 pts).
+- Orden de trabajo acordado: primero cerrar el analisis de datos, luego
+  coordinar con el equipo de metodologia para definir KPIs en conjunto.
+- Quedan pocos dias para la entrega del Informe 1 y la presentacion.
+
+2. INVENTARIO DE ARCHIVOS Y HALLAZGOS
+---------------------------------------------------------------------
+
+parametros_descripcion.csv
+  Diccionario de datos de TODO el proyecto (no de un solo archivo).
+  Es la referencia maestra: define campos de trips, depots, vehicles,
+  carga, tarifas y costos.
+
+parameters.csv (valores globales del modelo)
+  fleet_size=1200, battery_kwh=350, range_km=250, charge_power_kw=180,
+  min_soc=0.10, max_soc=1.0, cost_per_km=0.5, waiting_cost_per_min=0.03,
+  vehicle_fixed_cost=250, fixed_charge_cost=5.
+  Derivados calculados:
+    - Tasa de consumo ~1.4 kWh/km (350 kWh / 250 km)
+    - Bateria util real ~315 kWh (90% del rango SOC) -> ~225 km autonomia segura
+    - Tiempo de carga completa (10%->100%) ~105 min, asumiendo potencia constante
+
+vehicles.csv
+  Un solo tipo de vehiculo (BYD_K9), valores identicos a parameters.csv.
+  CONCLUSION: flota 100% homogenea.
+
+depots.csv
+  5 electroterminales: Vespucio Norte (150), El Conquistador (180),
+  Los Espinos (120), La Reina (100), Santa Rosa (150).
+  Capacidad fisica total = 700 buses.
+  ANOMALIA SIN RESOLVER: descuadre con fleet_size=1200 (500 buses de
+  diferencia). Podria ser normal por turnos/circulacion, o restriccion
+  real a modelar - PREGUNTA ABIERTA.
+
+charger_capacity.csv
+  max_simultaneous_charging es IDENTICO a capacity en las 5 filas.
+  CONCLUSION: no hay restriccion de carga mas estricta que el espacio
+  fisico del depot.
+
+charging_activities.csv
+  Grilla depot x 24h (120 filas = 5 depots x 24 horas).
+  Confirmado con groupby: cada depot tiene un unico valor de capacity
+  constante en las 24 horas, igual a su capacity fisica.
+  CONCLUSION FIRME: no hay restriccion de potencia electrica ni variacion
+  horaria en la capacidad de carga. El campo transformer_mw mencionado en
+  el diccionario NO tiene contraparte real en los datos entregados.
+
+electricity_prices.csv
+  6 bloques tarifarios (P1-P6):
+    P1 00-08h: 0.10 USD/kWh (valle, mas barato)
+    P2 08-14h: 0.15 USD/kWh
+    P3 14-17h: 0.22 USD/kWh (peak)
+    P4 17-19h: 0.15 USD/kWh
+    P5 19-22h: 0.22 USD/kWh (peak)
+    P6 22-24h: 0.11 USD/kWh
+  Patron tipico time-of-use. Util para KPI de eficiencia de carga
+  (cargar en valle vs. punta).
+
+GTFS (carpeta gtfs/)
+  trips.txt: 26,137 filas. IMPORTANTE: es un feed COMBINADO Metro+Buses.
+    route_id L1,L2,L3,L4,L4A,L5,L6 = lineas de Metro (11,528 trips),
+    deben FILTRARSE fuera del analisis. route_type=3 no sirve para
+    filtrar (GTFS estandar marca todo como "Bus", dato no confiable).
+  routes.txt: 427 rutas totales (incluye Metro, antes de filtrar).
+  calendar.txt: 6 tipos de servicio:
+    L  (lunes-viernes laboral): 7,917 trips
+    S  (sabado): 7,020 trips
+    D  (domingo): 3,668 trips
+    F  (festivo, patron=domingo): 2,184 trips
+    LJ (lunes-jueves sin viernes): 2,704 trips
+    V  (viernes): 2,644 trips
+    SUGERENCIA: usar servicio L (laboral) como "dia tipo" para acotar
+    el problema a un tamano manejable.
+  stop_times.txt: 1,097,121 filas. Las horas son RELATIVAS al inicio de
+    cada trip (no horario absoluto del dia), y NO usan formato >24h
+    (0 registros con hora >= 24 en este archivo). 55.6% de los trips
+    tienen start_min=0.
+  frequencies.txt: 14,520 filas. Aqui esta la hora REAL de partida
+    (start_time/end_time + headway_secs). SI usa formato >24h (ej.
+    24:00:00) - hay que parsear con funcion manual (hora*60+min+seg/60),
+    NO con pd.to_datetime (falla con "hour must be in 0..23").
+    Confirma que 55.6% de los trips son trips basados en frecuencia,
+    no en horario fijo (misma poblacion que el start_min=0 de arriba,
+    validado de forma cruzada).
+  HALLAZGO CLAVE: expandiendo por headway, el numero REAL de salidas de
+    bus en el dia es ~142,514 (vs. 26,137 "trips" nominales, que son
+    solo patrones que se repiten). El dimensionamiento de la demanda
+    real del problema debe basarse en las salidas expandidas, no en el
+    conteo de trips.
+  shape_distances.csv: 980 filas, distancia (km) por shape_id. Sirve para
+    calcular distance_km por viaje cruzando con el shape_id de trips.
+  levels.txt, pathways.txt: extensiones GTFS estandar para navegacion
+    indoor en estaciones grandes, practicamente irrelevantes para este
+    proyecto - no vale la pena explorarlas mas.
+  PENDIENTE SIN CERRAR: se dejo corriendo un query para contar cuantos
+    trips "de bus" (formato normal, no Metro) no tienen frecuencia
+    definida en frequencies.txt, pero no se alcanzo a revisar el
+    resultado en esta sesion.
+
+chile.gpkg (1.3 GB, datos OpenStreetMap/Geofabrik de todo Chile)
+  Capas relevantes identificadas:
+    - gis_osm_roads_free: 1,005,794 lineas en todo Chile. Filtrado a RM
+      (mask=poligono RM) y a vias principales+busway = 34,849 lineas.
+    - gis_osm_transport_free: bus_stop = 13,092 en RM (transporte urbano,
+      util); bus_station = 13 en RM pero son TERMINALES INTERURBANOS/
+      RURALES (ej. Terminal de Buses de Melipilla, Terminal ETM Las
+      Condes) - NO son comparables con los electroterminales del
+      proyecto, no usar para validacion.
+    - gis_osm_adminareas_a_free: poligono de la RM identificado
+      (name='Region Metropolitana de Santiago', admin_level4).
+  CRS original: WGS84 (grados). Para cualquier calculo de distancia real,
+    reproyectar a EPSG:32719 (UTM 19S, metros).
+  mapa_red.png (ya en la carpeta data-alumnos) es una visualizacion ya
+    hecha del Gran Santiago, con mas precision que cualquier mapa que
+    generemos manualmente del gpkg.
+  CONCLUSION IMPORTANTE: el valor del gpkg para este proyecto NO es
+    visual (ya existe mapa_red.png) - es como FUENTE DE DATOS para
+    calcular distancias reales entre depots y paraderos (ver seccion 3).
+
+3. QUE FALTA CALCULAR (NO EXISTE COMO ARCHIVO, HAY QUE GENERARLO)
+---------------------------------------------------------------------
+El diccionario (parametros_descripcion.csv) menciona campos que NO
+vienen en ningun archivo de datos entregado:
+
+  - energy_kwh por viaje: calcular como distance_km x ~1.4 kWh/km
+  - deadhead_distance_km / deadhead_time_min (entre el fin de una
+    actividad y el inicio de la siguiente): no existe archivo, debe
+    calcularse
+  - pullout_km / pullout_time (depot -> inicio del viaje) y
+    pullin_km / pullin_time (fin del viaje -> depot): no existe archivo,
+    debe calcularse
+
+Dos metodos posibles para estas distancias (DECISION PENDIENTE):
+  A) Linea recta (Haversine) - rapido de implementar, subestima la
+     distancia real (las calles no son lineas rectas).
+  B) Distancia real por red vial, usando gis_osm_roads_free ya filtrado,
+     via libreria osmnx/networkx (grafo ruteable + shortest path). Mas
+     preciso, mas costoso computacionalmente, pero factible: solo hay
+     5 depots, por lo que son 5xN combinaciones, no NxN.
+
+4. ANOMALIAS / SUPUESTOS A DOCUMENTAR EN EL INFORME
+---------------------------------------------------------------------
+- Feed GTFS combinado Metro+Buses -> se debe filtrar Metro (route_id
+  L1,L2,L3,L4,L4A,L5,L6) para aislar el universo de buses.
+- Datos basados en frecuencias, no horarios fijos -> hay que expandir
+  por headway para dimensionar la demanda real (~142,500 salidas/dia
+  vs. 26,137 trips nominales).
+- Capacidad de carga = capacidad fisica del depot, sin restriccion
+  adicional de potencia electrica (transformer_mw sin contraparte real
+  en los datos).
+- Flota 100% homogenea (BYD_K9), sin variedad de tipos de vehiculo.
+- Descuadre depot capacity (700) vs. fleet_size (1200) - sin resolver.
+- 4 trips con duracion sospechosamente corta (<= 3 min), con
+  nomenclatura de trip_id distinta al patron normal (ej.
+  DF_L6_602_073016_V2 en vez de 101-I-D-B23) - no se investigo a fondo
+  el origen de estos.
+
+5. PREGUNTAS ABIERTAS (para el profesor y/o el equipo)
+---------------------------------------------------------------------
+1. Que subconjunto de las 427 rutas de bus corresponde a operacion con
+   flota electrica (1200 buses no pueden cubrir toda la red operando
+   igual que hoy)?
+2. El descuadre depot capacity (700) vs. fleet_size (1200), es esperable
+   (turnos, circulacion) o debe modelarse como restriccion real?
+3. Basta con modelar un dia tipo (sugerido: L, laboral) o se espera
+   cobertura de los 6 tipos de servicio para esta entrega?
+NOTA: no quedo registrada la respuesta del profesor a estas preguntas en
+esta sesion - verificar con el usuario si ya se resolvieron antes de
+seguir asumiendo.
+
+6. CANDIDATOS A KPI (preliminares, aun sin validar con datos calculados)
+---------------------------------------------------------------------
+- % de energia cargada en horario valle vs. punta / costo promedio
+  pagado por kWh
+- Utilizacion de cargadores/electroterminales (buses cargando /
+  capacidad disponible)
+- % de tiempo en carga vs. en operacion, por bus
+- Km recorridos sin pasajeros (deadhead + pullout + pullin) vs. km
+  comerciales
+- Costo energetico total y por bus
+- Autonomia remanente promedio al llegar a un punto de carga
+- Numero de buses necesarios para cubrir la demanda dada la capacidad
+  de carga disponible
+
+7. PROXIMOS PASOS SUGERIDOS (en orden)
+---------------------------------------------------------------------
+1. Aplicar el filtro Metro->Bus de forma definitiva sobre trips, routes,
+   stop_times y frequencies.
+2. Decidir y fijar el "dia tipo" para el analisis (sugerido: L, laboral).
+3. Calcular energy_kwh por viaje (distance_km desde shape_distances x
+   tasa de consumo).
+4. Decidir el metodo de calculo de deadhead/pullout/pullin (linea recta
+   vs. red vial real) y construir la matriz depot<->paradero.
+5. Con todo lo anterior, calcular y validar los KPIs candidatos con
+   datos reales (no solo teoricos).
+6. Coordinar con el equipo de metodologia para definir los KPIs finales
+   en conjunto (orden acordado: datos primero, luego KPIs conjuntos).
+7. Redactar la seccion de "Comentario de los datos disponibles" del
+   informe (estructura, anomalias, filtros, propuestas de uso de los
+   datos) y la seccion de KPIs.
+
+Archivo de referencia adjunto por separado: estructura_data_alumnos.md
+(arbol completo de la carpeta data-alumnos con notas de exploracion).

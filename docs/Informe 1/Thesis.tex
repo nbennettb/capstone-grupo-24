@@ -1,0 +1,178 @@
+% Select one class
+%\documentclass{pucthesis}		% For DVI
+\documentclass[pdftex,spanish]{pucthesis}	% For pdfLaTeX, en espa\~nol
+
+%%%%%%%%%
+%   Packages	 %
+%%%%%%%%%
+
+% Floats
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subfigure}
+\usepackage[table]{xcolor}
+
+% Math packages
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+
+% To make pretty tables
+\usepackage{booktabs}
+\usepackage{multirow}
+
+% To avoid underfull errors in the bibliography
+\usepackage{etoolbox}
+\apptocmd{\sloppy}{\hbadness 10000\relax}{}{}
+
+% To make cites and references
+\usepackage[hidelinks,pdfusetitle,pdfdisplaydoctitle]{hyperref}
+\usepackage[notocbib]{apacite}
+\usepackage{doi}
+\renewcommand{\doitext}{}
+
+%--------- Cuerpo del texto en Times 11pt (la clase carga amsbook en 12pt) ---------
+% Los Lineamientos de la Entrega exigen Times New Roman 11pt. La clase pucthesis
+% ya usa mathptmx (Times) mediante \LoadClass[...,12pt]{amsbook}; aqu\'i solo se
+% redefine \normalsize a 11pt sin tocar pucthesis.cls, como recomienda su README.
+\makeatletter
+\renewcommand{\normalsize}{%
+  \@setfontsize\normalsize\@xipt{13.6}%
+  \abovedisplayskip 11\p@ \@plus3\p@ \@minus6\p@
+  \abovedisplayshortskip \z@ \@plus3\p@
+  \belowdisplayshortskip 6.5\p@ \@plus3.5\p@ \@minus3\p@
+  \belowdisplayskip \abovedisplayskip
+  \let\@listi\@listI}
+\normalsize
+\makeatother
+
+% Colores usados en la Carta Gantt (Cap\'itulo de Conclusiones)
+\definecolor{ganttgreen}{HTML}{4EA72E}
+
+% Filas de tablas levemente m\'as compactas (sin quitar columnas ni datos)
+\renewcommand{\arraystretch}{0.9}
+
+\begin{document}
+
+% Interlineado levemente m\'as compacto que el 1.5 por defecto de la clase
+% (pucthesis.cls ya carga el paquete setspace, se usa \setstretch en vez de
+% tocar el .cls directamente).
+\setstretch{1.4}
+
+\mdate{Septiembre 2026}         % date manuscript changed
+\version{1}                                     % manuscript version #
+
+\title[PLANIFICACI\'ON DE LA OPERACI\'ON DE LOS BUSES EL\'ECTRICOS\\ EN LA RED METROPOLITANA DE MOVILIDAD DE SANTIAGO\\ GRUPO 24]
+   {\bf PLANIFICACI\'ON DE LA OPERACI\'ON DE LOS BUSES EL\'ECTRICOS\\ EN LA RED METROPOLITANA DE MOVILIDAD DE SANTIAGO\\ GRUPO 24}
+\author[Integrantes:]{Integrantes:\\
+\textnormal{\small{
+Nicol\'as Bennett\\
+Antonio De Frutos\\
+Claudio Hasb\'un\\
+Agust\'in Irarr\'azaval\\
+Joaqu\'in Jim\'enez\\
+Alonso Muelas}
+}
+}
+
+\address{Escuela de Ingenier\'ia\\
+                   Pontificia Universidad Cat\'olica de Chile\\
+                   Vicu\~na Mackenna 4860\\
+                  Santiago, Chile\\
+                  {\it Tel.\/} : 56 (2) 354-2000}
+
+
+\advisor                    {\textbf{Profesor Gu\'ia:} Agust\'in Chiu}
+\ogrsmember                 {\textbf{Ayudante Tutor:} Max Burr}
+\date                                 {Septiembre 2026}
+\copyrightname             {Grupo 24}
+\copyrightyear               {2026}
+
+%%%%%%%%%%%%%%%%%%%%
+%       PRELIMINARIES                              %
+%----------------------------------------------------%
+%      page i & ii: cover page                   %
+%%%%%%%%%%%%%%%%%%%%
+
+\NoChapterPageNumber
+\pagenumbering{roman}
+\maketitle
+
+%----------------------------------------------------------------------%
+
+%%%%%%%%%%%%%%%%%%
+%          page v & up ---                      %
+%            Table of contents              %
+%            List of figures                     %
+%            List of tables                      %
+%%%%%%%%%%%%%%%%%%
+
+\pdfbookmark{\contentsname}{toc}
+\tableofcontents
+\phantomsection \label{listoffigures}
+\listoffigures
+\phantomsection \label{listoftables}
+\listoftables
+\cleardoublepage
+
+%----------------------------------------------------------------------%
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+%      RESUMEN        %
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+\phantomsection \label{resumen}
+\chapter*{RESUMEN}
+\input{./chapters/resumen.tex}
+\cleardoublepage
+
+%%%%%%%%%%%%%
+%   TEXT  OF THESIS     %
+%%%%%%%%%%%%%
+
+\pagenumbering{arabic}
+
+\chapter[INTRODUCCI\'ON]{Introducci\'on}
+\input{./chapters/introduction.tex}
+
+\chapter[DESCRIPCI\'ON DEL PROBLEMA]{Descripci\'on del Problema} \label{ch:problema}
+\input{./chapters/chapter1.tex}
+
+\chapter[DISCUSI\'ON METODOL\'OGICA]{Discusi\'on Metodol\'ogica} \label{ch:metodologia}
+\input{./chapters/chapter2.tex}
+
+\chapter[CONCLUSIONES]{Conclusiones}
+\input{./chapters/conclusions.tex}
+
+%%%%%%%%%%%%%
+%       REFERENCES        %
+%%%%%%%%%%%%%
+
+\cleardoublepage
+\phantomsection \label{references}
+\bibliographystyle{apacite}
+\renewcommand{\bibname}{BIBLIOGRAF\'IA}
+
+%%%% ACTIVAR SIGUIENTES 3 LINEAS SI POSTGRADO RECHAZA LA BIBLIOGRAFIA
+%\setlength{\bibleftmargin}{0em}
+%\setlength{\bibindent}{0em}
+%\setlength{\bibitemsep}{1em}
+
+\setlength{\bibitemsep}{0.3em}
+{\small\singlespacing\bibliography{Thesis}}
+
+%%%%%%%%%%%%
+%      ANEXOS      %
+%%%%%%%%%%%%
+
+\appendix % Cada anexo (A, B, C...) se declara como \section
+
+\newpage
+\section[Anexo 1: Declaraci\'on de Uso de IA]{Anexo 1: Declaraci\'on de Uso de Inteligencia Artificial en este Informe y Presentaci\'on Asociada}
+\input{./chapters/anexo1_ia.tex}
+
+\newpage
+\section[Anexo 2: Datos Disponibles]{Anexo 2: Detalle de los Datos Disponibles}
+\input{./chapters/anexo2_datos.tex}
+
+\end{document}

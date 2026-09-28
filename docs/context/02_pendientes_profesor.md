@@ -1,0 +1,22 @@
+# Preguntas y supuestos pendientes — para revisar con profesor/ayudante
+
+> **Documento vivo.** No bloquea el avance: cada fila tiene un supuesto que usamos mientras tanto. Cuando llegue una respuesta, se actualiza la fila (mover a "Resueltas" al final) y, si cambia algo, se anota el impacto en el código/resultados en [`01_metodologia_y_avance.md`](01_metodologia_y_avance.md). Agregar preguntas nuevas aquí a medida que surjan durante la implementación — no improvisar la respuesta en el código sin dejarla registrada.
+>
+> Última edición: **28/09/2026**.
+
+## Pendientes
+
+| # | Pregunta | Supuesto usado mientras tanto | Impacto si la respuesta cambia | Prioridad |
+|---|---|---|---|---|
+| 1 | ¿Los buses parten el día con la batería llena (carga nocturna fuera del alcance del modelo), o el plan debe garantizar que terminen el día con carga suficiente para el día siguiente ("ciclo diario"), lo que competiría por los mismos 700 puestos? | SOC inicial = 100%. Con este supuesto, la energía a recargar durante el día es pequeña respecto a la capacidad (~2-3% de la capacidad diaria). Con un ciclo diario estricto, habría que recargar ~1.900 MWh/día con 700 puestos × 180 kW, lo que sí sería una restricción activa. | **Alto.** Cambia si la capacidad de electroterminales es una restricción relevante del problema o no; podría cambiar la conclusión central del proyecto. | **Crítica — enviar hoy** |
+| 2 | ¿Cómo debe contabilizarse el costo de la energía de la carga inicial (si los buses parten cargados, ese kWh, ¿se paga como parte del "costo total del sistema" del día modelado, o se considera fuera de alcance)? | No se contabiliza (se asume "batería llena" como condición inicial dada, fuera del horizonte de costos del día). | Medio — afecta la comparabilidad del costo total entre escenarios. | Media |
+| 3 | ¿Cada bus debe terminar su jornada en el mismo electroterminal donde la inició, o puede terminar en cualquier electroterminal? | Puede terminar en cualquiera (solo se exige llegar a *algún* electroterminal al final de la jornada). | Medio — afecta el diseño de los arcos de *pullin* en la Etapa 2 y la interpretación de "electroterminal base" para la Etapa 1. | Media |
+| 4 | Sobre el comentario "revisar en profundidad estrategias para clusterizar" (Informe 1, 3.3.1): ¿el enfoque esperado es agrupar por ruta/electroterminal (como se está haciendo ahora) o el profesor tenía en mente otro criterio (p. ej. clustering de expediciones por compatibilidad horaria, o técnicas de clustering no supervisado tipo k-means/DBSCAN sobre coordenadas)? | Se interpreta como "unidad de agrupamiento = ruta completa" (no expedición individual), agrupada a electroterminales, con dos estrategias comparadas (C1 heurística, C2 MILP con capacidad). | Medio — si la expectativa era otra, puede requerir agregar una tercera estrategia de clustering. | Media |
+| 5 | ¿Es aceptable aproximar las distancias/tiempos de deadhead con distancia euclidiana × un factor de desvío calibrado con una muestra de rutas reales (OpenStreetMap), en vez de calcular la ruta real completa para cada par origen-destino? | Sí, se usa euclidiana × 1,3 (factor a calibrar/sensibilizar más adelante con `osmnx`). | Bajo-medio — afecta la precisión de los costos de deadhead, no la estructura del modelo. | Baja (no bloquea) |
+| 6 | ¿Qué unidad/definición exacta debe usarse para la "capacidad" de un electroterminal en la Etapa 1 (asignación de rutas)? El Informe 1 mezcló capacidad de carga simultánea (puestos) con volumen de expediciones/día, lo que generaba una restricción con unidades inconsistentes. | En la Etapa 1 (script `5-clustering_milp.py`), la capacidad se mide en **horas-cargador estimadas por ruta** vs. **capacidad_puestos × horas disponibles** del electroterminal (mismas unidades a ambos lados). Documentar la fórmula exacta usada en el script cuando se implemente. | Bajo — es una decisión de implementación, pero conviene que el profesor la valide como razonable. | Baja (no bloquea) |
+
+## Resueltas
+
+| # | Pregunta | Respuesta | Fecha | Impacto aplicado |
+|---|---|---|---|---|
+| 0 | ¿La flota de buses es irrestricta o está limitada (p. ej. a 1200 buses, como sugiere `data-alumnos/parameters.csv`)? | El profesor confirmó verbalmente (antes del 28/09) que la flota es **irrestricta**. | Antes del 28/09/2026 | `fleet_size` de `parameters.csv` se trata como obsoleto/no usado; se documenta la inconsistencia en `00_contexto_entrega1.md` y `scripts/common/parametros.py` advierte explícitamente si se intenta usar ese campo. |

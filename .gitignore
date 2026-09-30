@@ -13,7 +13,7 @@ data-alumnos/gtfs/stop_times.txt
 data-alumnos/gtfs/shapes.txt
 
 # --- Configuración local de Claude Code (por máquina/sesión, no de equipo) ---
-.claude/settings.local.json
+.claude/
 
 # --- Python ---
 __pycache__/
@@ -29,3 +29,8 @@ __pycache__/
 # --- Sistema operativo ---
 .DS_Store
 Thumbs.db
+
+# --- Resultados de la ronda de trabajo anterior (28/09), fuera de alcance ---
+# de la ronda actual (Etapa 0-1 rehechas paso a paso). Se conservan en disco
+# para consulta pero no viajan al repo desde ahora.
+_ronda_anterior/

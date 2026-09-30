@@ -40,3 +40,32 @@ def depot_mas_cercano_por_ruta(ex: pd.DataFrame, depots: pd.DataFrame, factor_de
     el modo 'ruta' de la Etapa 2 (scripts/6-vsp_asignacion_buses.py)."""
     dist = distancia_rutas_a_depots(ex, depots, factor_desvio)
     return pd.Series(dist.values.argmin(axis=1), index=dist.index)
+
+
+def distancia_ponderada_a_terminales_reales(terminales_por_ruta: pd.DataFrame, terminales: pd.DataFrame,
+                                             depots: pd.DataFrame, factor_desvio: float) -> pd.DataFrame:
+    """Matriz (rutas x electroterminales) de distancia ESPERADA en km entre
+    los paraderos terminales REALES de cada ruta (no su centroide) y cada
+    electroterminal, ponderando cada paradero por cuantas expediciones lo
+    usan como origen o destino (columnas n_como_origen/n_como_destino de
+    data-processed/terminales_por_ruta.csv).
+
+    Es la estrategia C1b de la Etapa 1 (y la metrica de distancia que usa
+    tambien C2): mide contra donde el bus efectivamente empieza/termina un
+    viaje, en vez de contra un punto promedio que puede no coincidir con
+    ningun paradero real de la ruta.
+    """
+    t = terminales_por_ruta.merge(terminales, on="stop_id", how="left")
+    t["peso"] = t["n_como_origen"] + t["n_como_destino"]
+
+    P = geo.xy(t["lat"].values, t["lon"].values)
+    DP = geo.xy(depots["lat"].values, depots["lon"].values)
+    d = geo.matriz_distancias_planas(P, DP) * factor_desvio    # (paraderos x depots)
+
+    depot_ids = depots["depot_id"].astype(str).values
+    ponderada = pd.DataFrame(d * t["peso"].values[:, None], columns=depot_ids)
+    ponderada["route_id"] = t["route_id"].values
+    ponderada["peso"] = t["peso"].values
+
+    agg = ponderada.groupby("route_id").sum()
+    return agg[depot_ids].div(agg["peso"], axis=0)

@@ -1,0 +1,10 @@
+metrica;valor
+rutas;417.0
+viajes_patrones_gtfs;6620.0
+expediciones;64502.0
+paraderos_terminales_unicos;641.0
+concurrencia_maxima;6539.0
+hora_peak;8.0
+energia_total_mwh_dia;1883.6
+rutas_con_ida_y_vuelta;300.0
+rutas_ida_vuelta_bajo_500m;284.0

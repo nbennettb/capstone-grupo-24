@@ -1,0 +1,5 @@
+etapa;motivo;cantidad
+viajes;direccion (texto trip_id) distinta de direction_id;0
+viajes;sin distance_km (shape_id sin match en shape_distances_bus.csv);0
+expediciones;trip_id de frequencies sin viaje calculado (dropeado antes);0
+expediciones;sin coordenadas de origen/destino;0

@@ -1,6 +1,6 @@
 # Contexto — Informe 1 (congelado)
 
-> **Este documento no se vuelve a editar.** Es una fotografía de lo que el grupo entregó en el Informe 1 y de todo el feedback recibido hasta el 28/09/2026. Sirve para que cualquier persona (o sesión de IA) que se sume al proyecto entienda el punto de partida sin tener que leer el `.tex` completo ni el hilo de conversación original.
+> **Este documento no se vuelve a editar.** Es una fotografía de lo que el grupo entregó en el Informe 1 y de todo el feedback recibido hasta el 28/09/2026. Sirve para que cualquier persona que se sume al proyecto entienda el punto de partida sin tener que leer el `.tex` completo.
 >
 > Para el estado **actual** del proyecto (qué se ha hecho desde entonces), ver [`01_metodologia_y_avance.md`](01_metodologia_y_avance.md), que es un documento vivo.
 

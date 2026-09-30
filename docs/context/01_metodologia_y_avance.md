@@ -1,8 +1,9 @@
 # Metodología y avance — documento vivo
 
-> **Este documento se edita continuamente.** Cada vez que se corre una etapa nueva se agrega una entrada fechada en la bitácora (§4) — no se borran las entradas anteriores. La "foto actual" (estado por etapa, tabla de resultados) sí se actualiza en su lugar. Si vienes de otra sesión de IA o te acabas de sumar al equipo: lee primero [`00_contexto_entrega1.md`](00_contexto_entrega1.md) (qué se entregó en el Informe 1 y qué feedback se recibió) y luego este documento.
+> **Este documento se edita continuamente.** Cada vez que se corre una etapa nueva se agrega una entrada fechada en la bitácora (§4) — no se borran las entradas anteriores. La "foto actual" (estado por etapa, tabla de resultados) sí se actualiza en su lugar. Si te acabas de sumar al equipo: lee primero [`00_contexto_entrega1.md`](00_contexto_entrega1.md) (qué se entregó en el Informe 1 y qué feedback se recibió) y luego este documento.
 >
-> Última edición: **28/09/2026** (ronda de trabajo 28/09 cerrada: Etapas 0, 1 y 2 sin batería, con el "precio del clustering" calculado).
+> Última edición: **30/09/2026** (Etapa 0 y Etapa 1 rehechas y cerradas esta ronda, con revisión y OK
+> explícito de Nicolás entre ambas. La Etapa 2 de la ronda anterior queda pausada — ver bitácora).
 
 ---
 
@@ -43,16 +44,21 @@ Según la Carta Gantt interna de la propuesta, para el 29-30/09 corresponde: Eta
 
 ## 2. Estado actual por etapa
 
-| Etapa | Estado | Última actualización | Quién | Script(s) | Resultados |
-|---|---|---|---|---|---|
-| 0 — Preprocesamiento | `[x]` hecho | 28/09/2026 | Nicolás (sesión IA) | `scripts/3-preprocesamiento_expediciones.py` | `data-processed/expediciones.csv`, `results/03_preprocesamiento/` |
-| 1 — Clustering C1 (heurística, más cercano) | `[x]` hecho | 28/09/2026 | Nicolás (sesión IA) | `scripts/4-clustering_nearest.py` | `data-processed/rutas_cluster_c1.csv`, `results/04_clustering_c1/` |
-| 1 — Clustering C2 (MILP con capacidad) | `[x]` hecho | 28/09/2026 | Nicolás (sesión IA) | `scripts/5-clustering_milp.py` | `data-processed/rutas_cluster_c2.csv`, `results/05_clustering_c2/` |
-| 2 — VSP asignación de buses (4 escenarios, sin batería) | `[x]` hecho | 28/09/2026 | Nicolás (sesión IA) | `scripts/6-vsp_asignacion_buses.py`, `scripts/7-comparar_escenarios.py` | `data-processed/jornadas_*.csv`, `results/06_vsp/` |
-| 3 — Inserción de recargas | Fuera de alcance de esta ronda (próx. semana) | — | — | — | — |
-| 4 — Programación de carga | Fuera de alcance de esta ronda (próx. semana) | — | — | — | — |
+**Nota sobre esta tabla (29/09):** la ronda del 28/09 corrió las 4 etapas de una sola vez y generó
+resultados que Nicolás no podía defender. Esta ronda las **rehace paso a paso**, con pausa y OK
+explícito entre etapas. Los archivos de la Etapa 2 de la ronda anterior (`jornadas_*.csv`,
+`rutas_cluster_c1/c2.csv` viejos, `results/03_preprocesamiento/`...`06_vsp/`) se movieron a
+`_ronda_anterior/` (fuera del repo, ver `.gitignore`) — no se borraron, quedan de referencia.
 
-*(Esta tabla se actualiza a medida que cada script se corre: cambiar `[ ]`→`[~]`→`[x]`, completar fecha/responsable, y agregar una fila a la tabla de resultados de la sección 3.)*
+| Etapa | Estado | Última actualización | Script(s) | Resultados |
+|---|---|---|---|---|
+| 0 — Preprocesamiento | `[x]` rehecho y ampliado | 29/09/2026 | `scripts/3-preprocesamiento_expediciones.py` | `data-processed/{expediciones,terminales,rutas_resumen,rutas_ida_vuelta,terminales_por_ruta}.csv`, `results/etapa0_preprocesamiento/` |
+| 1 — Clustering C1/C2 | `[x]` rehecho (C1a, C1b, C2 caso base, C2 cíclico) | 30/09/2026 | `scripts/4-clustering_c1.py`, `5-clustering_c2.py`, `8-clustering_comparacion.py` | `data-processed/rutas_cluster_{c1a,c1b,c2,c2_ciclo}.csv`, `rutas_clustering_completo.csv`, `results/etapa1_clustering/` |
+| 2 — VSP asignación de buses | **Pausado a propósito esta ronda.** Numérico de la ronda anterior en `_ronda_anterior/`, no vigente. Antes de retomarlo hay que cerrar con el profesor los supuestos de layover, deadhead, SOC inicial y retorno al electroterminal (ver `02_pendientes_profesor.md`) | 28/09/2026 (no vigente) | `scripts/6-vsp_asignacion_buses.py`, `7-comparar_escenarios.py` (se leen como referencia, no se corren) | `_ronda_anterior/data-processed/jornadas_*.csv`, `_ronda_anterior/results/06_vsp/` |
+| 3 — Inserción de recargas | Fuera de alcance de esta ronda | — | — | — |
+| 4 — Programación de carga | Fuera de alcance de esta ronda | — | — | — |
+
+*(Esta tabla se actualiza a medida que cada script se corre: cambiar `[ ]`→`[~]`→`[x]`, completar fecha, y agregar una fila a la tabla de resultados de la sección 3.)*
 
 ## 3. Tabla de resultados (se llena a medida que se corren los scripts)
 
@@ -73,6 +79,86 @@ Gráficos: `results/06_vsp/graficos_{ruta,libre,cluster_c1,cluster_c2}.png` (dis
 - **Advertencia:** ~30-40% de las jornadas superan la batería útil (315 kWh) en los 4 escenarios — la Etapa 3 (inserción de recargas) es indispensable, no un detalle menor. Con el supuesto de SOC inicial 100% la mayoría debería resolverse con una sola recarga (ver prototipo exploratorio del 28/09 en `Propuesta_metodologia_reunion.md`), pero esto se valida recién cuando se implemente esa etapa.
 
 ## 4. Bitácora
+
+### 30/09/2026 — Etapa 1 (clustering de rutas a electroterminales)
+
+- **Diseño de tres estrategias que aíslan un cambio a la vez** (no comparar cosas que difieren en más
+  de un aspecto): **C1a** (heurística, distancia al centroide de la ruta — lo que hacía la ronda
+  anterior), **C1b** (heurística, distancia esperada a los paraderos terminales reales de la ruta,
+  ponderada por cuántas expediciones usan cada uno) y **C2** (MILP con restricción de capacidad,
+  misma métrica de distancia que C1b). Así C1a→C1b aísla el efecto de la métrica de distancia, y
+  C1b→C2 aísla el efecto de agregar capacidad.
+- **C2 ya no depende de la Etapa 2** (decisión tomada antes de correr esta etapa): `n_buses_r` y
+  `kwh_dia_r` se leen de `rutas_resumen.csv` (Etapa 0), no de `jornadas_ruta.csv`.
+- **C2 se corrió bajo dos supuestos de cuánta energía hay que recargar por día** (ver
+  `02_pendientes_profesor.md` #1, la pregunta más crítica del proyecto):
+  - `soc100` (**caso base aprobado**): solo se recarga el excedente sobre la batería útil (315 kWh)
+    por ruta. Carga total del día: **108 horas-cargador contra 16.800 disponibles (0,6%)**.
+  - `ciclo` (sensibilidad): se recarga todo lo consumido. Carga total: **10.464 horas-cargador (62%
+    de 16.800)**, con Los Espinos al **89,9%**.
+- **Hallazgo central, verificado con un chequeo automático en el propio script:** bajo el caso base,
+  **C2 coincide exactamente con C1b** (0 rutas distintas) — la restricción de capacidad no está
+  activa con SOC inicial 100%. Esto corrige una lectura de la ronda anterior: el "Los Espinos al
+  99,5%" que se reportó el 28/09 correspondía en realidad a una carga de tipo cíclico, no al caso
+  base declarado del proyecto.
+- **Barrido de θ** (escenario cíclico, H=24h): la capacidad empieza a mover rutas recién en
+  θ≈0,8 (11 rutas), se vuelve más exigente en θ=0,7 (21 rutas, El Conquistador al 100%) y es
+  **infactible en θ=0,6**. Grilla adicional de horas de carga disponibles (24/18/10h): el escenario
+  cíclico con solo 10h de carga nocturna es **infactible** (demanda 149% de la capacidad).
+- **C1a vs. C1b, bajo el mismo criterio de evaluación** (para que la comparación sea justa: ambas se
+  miden contra la distancia a paraderos reales, no contra la métrica que cada una usó para decidir):
+  cambian **41 de 417 rutas (10%)**, pero el costo total de pullout/pullin solo mejora **0,7%**
+  (83.843 → 83.271 USD/día). El centroide es una simplificación casi inocua.
+- Outputs: `data-processed/rutas_cluster_{c1a,c1b,c2,c2_ciclo}.csv`,
+  `data-processed/rutas_clustering_completo.csv` (tabla ancha, 417 filas),
+  `results/etapa1_clustering/{reporte.md, tablas/*.csv, graficos/*.png, mapas/*.png}` (11 mapas:
+  4 por estrategia, 5 por electroterminal, 1 de paraderos, 1 de diferencias C1a↔C2).
+- **Pausa:** se espera revisión y OK explícito de Nicolás antes del documento de preguntas y el
+  cierre de ronda.
+
+### 29/09/2026 — Nueva ronda: rehacer Etapa 0 y Etapa 1 paso a paso
+
+- **Motivo:** la ronda del 28/09 corrió Etapas 0-2 de una sola vez. El código y los números cierran,
+  pero Nicolás no los entiende y no puede defenderlos frente al profesor ni al ayudante. Se rehace el
+  trabajo etapa por etapa, con plan → OK explícito → código → explicación didáctica → revisión, y con
+  pausa total entre etapas.
+- **Alcance de esta ronda: solo Etapa 0 y Etapa 1.** La Etapa 2 queda explícitamente fuera — tiene
+  supuestos fuertes (layover, deadhead euclidiano × factor, SOC inicial, retorno al electroterminal)
+  que se quieren discutir primero con el grupo y el profesor (ver `02_pendientes_profesor.md`).
+- **Reordenamiento del repo:** los archivos de la Etapa 2 de la ronda anterior
+  (`data-processed/jornadas_*.csv`, `rutas_cluster_c1.csv`/`c2.csv`, `results/03_preprocesamiento/`
+  a `06_vsp/`) se movieron a `_ronda_anterior/` (agregado a `.gitignore`: no viaja al repo, pero
+  queda en disco por si se retoma la Etapa 2). `scripts/6-vsp_asignacion_buses.py` y
+  `7-comparar_escenarios.py` no se tocan ni se borran: se leen como referencia de qué supuestos usa
+  la Etapa 2, no se ejecutan.
+- **Etapa 0 rehecha (no reescrita desde cero):** se revisó `scripts/3-preprocesamiento_expediciones.py`
+  completo. La lógica original (expandir `frequencies.txt` por headway a expediciones reales,
+  `expedicion_id` único, cast de `stop_sequence` a entero) es necesaria y se mantiene intacta. Se
+  agregó lo que le faltaba para que la Etapa 1 no dependa de la Etapa 2:
+  - `data-processed/rutas_resumen.csv` (417 filas): buses estimados por ruta (cota inferior, vía
+    máximo de expediciones simultáneas de esa ruta — sin layover ni retorno físico), km/día,
+    kWh/día, duración media, centroide. Reemplaza la dependencia de `jornadas_ruta.csv`.
+  - `data-processed/rutas_ida_vuelta.csv` (300 filas, rutas con ambas direcciones): distancia entre
+    el paradero final de la ida y el inicial de la vuelta, con flag `<500 m`. Es la evidencia propia
+    (no solo citada de la propuesta) de por qué la unidad de clustering de la Etapa 1 es la ruta:
+    mediana 84,8 m, **94,7% de las 300 rutas bajo 500 m**.
+  - `data-processed/terminales_por_ruta.csv` (1.356 pares ruta-paradero): insumo de los mapas y de
+    la variante de C1 que mide contra el paradero terminal real, no el centroide.
+  - Reporte de descartes explícito (`results/etapa0_preprocesamiento/descartes.csv`): 0 descartes en
+    todas las categorías en la red completa (ningún viaje sin distancia, ninguna expedición sin
+    coordenadas, 0 discrepancias entre la dirección leída del texto del `trip_id` y el campo
+    `direction_id` real de GTFS).
+  - Se detectó y documentó (no se corrigió esta ronda): 15 de las 300 rutas con ida y vuelta tienen
+    más de un paradero distinto usado como fin-de-ida o inicio-de-vuelta — el "paradero
+    representativo" que se usa es el más frecuente, no el único.
+- **Resultado (red completa), todos los chequeos automáticos en verde:** 64.502 expediciones, 417
+  rutas, 641 paraderos terminales, concurrencia máxima 6.539 a las 8:00 — las cuatro cifras calzan
+  exactamente con la referencia de la ronda anterior, confirmando que los agregados no cambiaron la
+  lógica existente. 1.883,6 MWh/día de energía comercial total.
+- Outputs: `data-processed/{expediciones,terminales,rutas_resumen,rutas_ida_vuelta,terminales_por_ruta}.csv`,
+  `results/etapa0_preprocesamiento/{reporte.md,conteos.csv,descartes.csv,distribucion_expediciones.csv,
+  concurrencia_por_minuto.csv,graficos/}`.
+- **Pausa:** se espera revisión y OK explícito de Nicolás antes de correr la Etapa 1.
 
 ### 28/09/2026 — Reunión y definición de metodología
 - Diagnóstico crítico de la metodología del Informe 1 + prototipo exploratorio sobre datos reales (VSP completo en red espacio-tiempo, sin pullout/pullin): caso base 8.654 buses, interlining libre 7.055 buses, cota inferior teórica 6.539.
@@ -123,31 +209,26 @@ Gráficos: `results/06_vsp/graficos_{ruta,libre,cluster_c1,cluster_c2}.png` (dis
 - **Alcance de la ronda 28-30/09 completado hoy mismo** (Etapa 0, Etapa 1 C1+C2, Etapa 2 en los 4 escenarios) — antes de lo planificado para el 30/09. Las Etapas 3 (recargas) y 4 (programación de carga) quedan para los próximos días, ahora con las jornadas de `cluster_c1`/`cluster_c2` ya listas como insumo.
 - **Pendiente para retomar:** decidir con el equipo si la implementación final usa las jornadas de `cluster_c1` o `cluster_c2` (o ambas, para comparar) como base de las Etapas 3-4.
 
-## 5. Cómo reproducir (se completa a medida que existan los scripts)
+## 5. Cómo reproducir
+
+**Los comandos vigentes (Etapa 0 + Etapa 1) están en [`03_guia_pruebas.md`](03_guia_pruebas.md) —
+esa es la referencia que se mantiene al día.** Lo que sigue es el comando de la Etapa 2, que quedó
+pausado con el código intacto (`scripts/6-` y `7-`, ver sección 1) por si se retoma más adelante:
 
 ```bash
-# Etapa 0 — preprocesamiento
-python scripts/3-preprocesamiento_expediciones.py
-
-# Etapa 1 — clustering de rutas a electroterminales
-python scripts/4-clustering_nearest.py      # C1
-python scripts/5-clustering_milp.py         # C2
-
-# Etapa 2 — asignación de buses (correr una vez por escenario)
+# Etapa 2 — asignación de buses (código vigente, pausado hasta validar supuestos con el profesor,
+# ver docs/context/04_preguntas_reunion.md). Usa las asignaciones de clustering que decida el grupo,
+# p. ej. data-processed/rutas_cluster_c1b.csv en vez de las rutas_cluster_c1.csv/c2.csv originales.
 python scripts/6-vsp_asignacion_buses.py --modo ruta
 python scripts/6-vsp_asignacion_buses.py --modo libre
-python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1.csv --etiqueta cluster_c1
-python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c2.csv --etiqueta cluster_c2
-
-# Comparación final (requiere que los 4 escenarios de arriba ya existan)
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --etiqueta cluster_c1b
 python scripts/7-comparar_escenarios.py
 ```
-
-Cada corrida de la Etapa 2 agrega una fila a `results/06_vsp/resumen_escenarios.csv` — no lo sobrescribe. Si se vuelve a correr un mismo escenario (misma `--etiqueta`), queda una fila duplicada: al recalcular, filtrar `resumen_escenarios.csv` a la última corrida de cada etiqueta antes de usarlo, o borrar la fila vieja a mano.
 
 ## 6. Referencias
 
 - Documento de metodología completo (diagnóstico, formulaciones, KPIs, plan de trabajo): [`Propuesta_metodologia_reunion.md`](../Propuesta_metodologia_reunion.md).
 - Contexto congelado del Informe 1: [`00_contexto_entrega1.md`](00_contexto_entrega1.md).
-- Preguntas y supuestos pendientes de validar con el profesor/ayudante: [`02_pendientes_profesor.md`](02_pendientes_profesor.md).
-- Guía paso a paso para correr y verificar todo el pipeline (checkpoints, orden de ejecución, troubleshooting): [`03_guia_pruebas.md`](03_guia_pruebas.md).
+- Preguntas y supuestos pendientes de validar con el profesor/ayudante: [`02_pendientes_profesor.md`](02_pendientes_profesor.md) (registro vivo) y [`04_preguntas_reunion.md`](04_preguntas_reunion.md) (versión redactada para la reunión).
+- Guía paso a paso para correr y verificar el pipeline vigente (checkpoints, orden de ejecución, troubleshooting): [`03_guia_pruebas.md`](03_guia_pruebas.md).
+- Cierre de esta ronda, traspaso al grupo y plan a futuro: [`05_cierre_ronda.md`](05_cierre_ronda.md).

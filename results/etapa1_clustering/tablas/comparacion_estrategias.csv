@@ -1,0 +1,5 @@
+estrategia;distancia_media_km;distancia_p90_km;distancia_max_km;costo_pullout_pullin_usd_dia;rutas_distintas_de_c1b
+C1a (centroide);10.195;15.488;21.255;83843.0;41
+C1b (terminales reales);10.149;15.424;20.991;83271.0;0
+C2 caso base (soc100);10.149;15.424;20.991;83271.0;0
+C2 escenario ciclico;10.149;15.424;20.991;83271.0;0

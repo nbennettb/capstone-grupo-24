@@ -1,5 +1,0 @@
-etiqueta;modo;subset;radio_km;n_expediciones;buses;deadhead_interlining_km;pullout_km;pullin_km;deadhead_total_km;espera_h;pct_jornadas_mayor_315kwh;cost_bus_usd;cost_deadhead_usd;cost_comercial_usd;cost_espera_usd;cost_total_usd;tiempo_computo_s
-ruta;ruta;;3.0;64502;8654;10087.7;98688.7;98470.9;207247.4;25099.3;30.1;2163500.0;103624.0;672706.0;45179.0;2985009.0;5.0
-libre;libre;;3.0;64502;7055;15256.0;66580.0;64704.2;146540.2;20365.0;39.6;1763750.0;73270.0;672706.0;36657.0;2546383.0;38.9
-cluster_c1;cluster;;3.0;64502;7456;14662.9;85516.9;84582.5;184762.4;21298.7;38.9;1864000.0;92381.0;672706.0;38338.0;2667425.0;52.5
-cluster_c2;cluster;;3.0;64502;7454;14693.2;85561.4;84646.2;184900.7;21232.6;38.2;1863500.0;92450.0;672706.0;38219.0;2666875.0;44.8

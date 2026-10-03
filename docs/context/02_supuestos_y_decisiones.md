@@ -21,7 +21,7 @@ Respuestas de la reunión, ordenadas según las preguntas que se llevaron.
 |---|---|---|---|
 | A1 | **Alcance de la Entrega 2** | Mínimo: (1) caso base completo, con KPIs de una solución factible; (2) metodología bien propuesta, con énfasis en justificar qué se hace y por qué (clusterización y MILP). Se espera haber **probado** parte de la metodología: por ejemplo, aplicar el caso base una vez clusterizado y mirar los costos, para saber qué tan buena es la clusterización. Si se modela un MILP, esperan que se haya **testeado en instancias pequeñas**, no en el modelo completo. | Define el alcance: escalera de escenarios (caso base → con clustering) y MILP de carga en instancia chica |
 | A2 | **Caso base** | La operación por línea (sin interlining) con carga reactiva **es válida**. Hay que ser muy conscientes de qué esperamos que pase y verificar si el caso base lo refleja. Al prohibir el interlining, toda la ganancia aparece al habilitarlo: sirve para medir el efecto marginal de cada supuesto. Si no es difícil, conviene un **segundo caso base con interlining** para ver el efecto aislado de esa decisión (puede ser igual de complejo computacionalmente). | Escalera E0 → E1: sin interlining y con interlining, ambos con carga reactiva |
-| A3 | **SOC 100%** | **No es una opción.** Hay que dejar batería para el día siguiente (ciclo diario). Se pueden incluir restricciones del tipo "al terminar el día los buses deben terminar con 80%-90% de carga (y comenzar con eso)". Con SOC 100% "nos estaríamos comiendo un montón de costos y la solución sería miope". | `SOC_INICIAL = 1.0` queda obsoleto. Se adopta SOC cíclico (ver B6) |
+| A3 | **Batería al cerrar el día** | **[Profesor]** Debe quedar batería para el día siguiente: la solución no puede terminar el día sin recuperar la energía consumida. Como **ejemplo**, mencionó 80%-90% al inicio y al final; **no fue una instrucción de nivel**. Con SOC 100% sin recuperación, "nos estaríamos comiendo un montón de costos y la solución sería miope". | `SOC_INICIAL = 1.0` queda obsoleto. Se adopta la condición cíclica (inicio = fin). El **nivel** se decide con datos (B6) |
 | A4 | **Deadhead euclidiano** | Depende de la modelación (decisión nuestra), pero "si es euclidiana probablemente nos la critiquen". El grupo decidió, por tiempo, mantenerla para la presentación y esperar feedback; el informe puede cambiarla. | Se mantiene el factor 1,3, pero con una justificación concisa y verificable, no una caja negra (ver B2) |
 | A5 | **Retorno al electroterminal** | Sí: cada bus debe volver a su terminal. Debe comenzar y terminar su jornada en su terminal, y eso **no usa un puesto de carga** a menos que se decida cargarlo. | Pullout y pullin en el mismo electroterminal. El modo `libre` pasa a ser solo cota inferior |
 | A6 | **Puestos del electroterminal** | Los puestos limitados son **de carga**; se pueden guardar buses ahí sin restricción en cualquier horario. | La capacidad es solo de carga simultánea. No hay problema de estacionamiento |
@@ -71,57 +71,63 @@ eso puede hacer que los juntemos después".
 - **Límite:** no ve la concentración horaria de la carga. Un electroterminal puede saturarse en horas
   punta aunque su promedio diario sea 70%. Esa saturación aparece como colas en el simulador reactivo.
 
-### B6. SOC cíclico: 90% base, 80% sensibilidad, con tope
-**Decisión [Propio, dentro del rango del Profesor]:** todo bus empieza y termina el día con
-`SOC_CICLICO` = 90%; la sensibilidad usa 80%. `SOC_CICLICO` es además el tope de carga.
+### B6. Condición cíclica y nivel de carga
+**[Profesor]** Debe quedar batería para el día siguiente (condición cíclica: inicio = fin). El rango
+80%-90% fue un **ejemplo** mencionado en la reunión; no es una instrucción sobre el nivel.
 
-**Por qué exigir la condición cíclica (inicio = fin):**
-1. **[Medido]** Bajo SOC 100% el modelo solo paga la recarga de lo que excede la batería durante la
-   jornada: ~150-160 MWh de ~2.150 MWh consumidos. **No paga ~93% de la energía que los buses gastan**:
-   cada bus parte con 315 kWh regalados. Es lo que el profesor llamó "comernos un montón de costos".
-2. **[Medido]** Con SOC 100% los 700 puestos usan ~5% de su capacidad (~830-890 de 16.800
-   horas-cargador/día). La infraestructura de carga, que el Informe 1 presentó como el cuello de
-   botella, sería irrelevante: un modelo donde la restricción central nunca se activa no modela el
-   problema que dijimos resolver.
-3. **[Propio]** Un día de operación es un ciclo que se repite. Terminar con 20% sin pagar la
-   recuperación equivale a pedir prestada energía al día siguiente. `SOC_fin ≥ SOC_inicio` es la
-   condición terminal/periódica habitual en despacho de baterías. *(No hay cita bibliográfica
-   verificada; si se quiere en el informe, hay que buscarla.)*
+**[Decisión] El nivel se busca con datos, no se fija por criterio propio.**
+- **Punto de partida: 100%**, el máximo de batería que dan los datos del curso (`max_soc = 1.0` en
+  `parameters.csv`). Es el único límite superior que viene en los datos.
+- **Búsqueda:** barrido de niveles 100%, 90%, 80%, 70%. Para cada uno se mide costo total, buses,
+  eventos de carga, jornadas partidas y % de jornadas con recarga intermedia.
+- **Criterio de elección, declarado antes de correr:** el nivel que **minimiza el costo total** del
+  caso base con ciclo. Si el óptimo es 100%, ese es el resultado y no requiere supuesto adicional.
+- **Bajar de 100% solo con una razón externa citada** (por ejemplo, la fase CC-CV de la carga o la vida
+  útil de la batería). Hoy no tenemos fuente verificada para ninguna de las dos. Si aparece y el nivel
+  óptimo cambia, se reporta como caso alternativo, nunca reemplazando el resultado del barrido.
+- **Hipótesis a verificar en el barrido (no afirmada):** con inicio = fin, la energía total cargada no
+  depende del nivel. Un nivel más alto debería reducir recargas intermedias, eventos (5 USD cada uno)
+  y jornadas partidas. Si el barrido no lo confirma, se reporta tal cual.
 
-**Por qué un nivel fijo de 80-90% y no 100%:** el profesor dio el rango sin explicar el motivo. Las
-razones que el grupo puede defender, todas **[Propio]**:
-1. **Validez del modelo de carga (la más fuerte).** El modelo asume carga lineal a 180 kW; en la
-   realidad la fase final (~90-100%) es lenta (curva CC-CV). Un tope en 90% deja al modelo en la
-   zona donde la aproximación lineal es más fiel.
-2. **Vida útil de la batería.** Es práctica habitual evitar el 100% sostenido. **No está en los datos
-   ni lo dijo el profesor**: presentarlo como práctica común, no como hecho del proyecto.
-3. **Fijo y no variable de decisión.** Una variable más no aporta a lo que se quiere mostrar, y fijarlo
-   deja la sensibilidad limpia (un solo parámetro).
+**Por qué exigir la condición cíclica (inicio = fin)** — medido, no depende del nivel:
+1. **[Medido]** Bajo SOC 100% sin recuperación, el modelo solo paga la recarga de lo que excede la
+   batería durante la jornada: ~150-160 MWh de ~2.150 MWh consumidos. **No paga ~93% de la energía que
+   los buses gastan**: cada bus parte con 315 kWh sin costo.
+2. **[Medido]** Sin recuperación, los 700 puestos usan ~5% de su capacidad (~830-890 de 16.800
+   horas-cargador/día). Con ciclo, ~72%. Un modelo donde la restricción central nunca se activa no
+   modela el problema que dijimos resolver.
+3. **[Propio]** Un día de operación se repite. Terminar sin recuperar la energía equivale a usarla
+   prestada del día siguiente. Es la condición periódica habitual en despacho de baterías. *(Sin cita
+   bibliográfica verificada.)*
 
-**Qué mide la sensibilidad 90% → 80% [Medido]:**
+**Razones que podrían justificar un nivel menor que 100%** — ninguna verificada, todas **[Propio]**:
+1. **Modelo de carga.** Se asume carga lineal a 180 kW; la fase final de carga real suele ser más lenta
+   (curva CC-CV). Un tope menor dejaría al modelo en la zona donde la aproximación es más fiel. *Falta
+   una fuente para el CC-CV.*
+2. **Vida útil de la batería.** Práctica habitual evitar el 100% sostenido. *No está en los datos ni
+   lo dijo el profesor; sin fuente, no se presenta como hecho.*
 
-| | SOC 100% (rechazado) | Ciclo 90% | Ciclo 80% |
+**Medido por nivel** (sobre las jornadas de la ronda anterior, caso base; se regenera con el barrido):
+
+| | Nivel 100% (base, datos) | Nivel 90% | Nivel 80% |
 |---|---|---|---|
 | Energía utilizable entre cargas | 315 kWh | 280 kWh | 245 kWh |
 | Jornadas con recarga a mitad del día, caso base (8.654 buses) | 30,1% | 45,2% | 59,1% |
 | Ídem, con interlining (7.456 buses) | 38,9% | 57,5% | 76,0% |
 | Energía pagada dentro de la jornada (caso base) | 6,9% del consumo | 12,1% | 19,4% |
-| Energía a recargar en el día | ~830-890 h-cargador | ~12.000 h-cargador | ~12.000 h-cargador |
-| Uso global de los 700 puestos | ~5% | ~72% | ~72% |
+| Energía a recargar en el día (ciclo) | ~12.000 h-cargador | ~12.000 | ~12.000 |
 
-Con inicio = fin se recarga **todo lo consumido** en ambos niveles, así que 80% **no implica más
-energía total**. Cambia la **holgura intradía**: cuántas jornadas necesitan recargar a mitad del día.
-Esa es la lectura correcta de la sensibilidad.
+El nivel **no cambia la energía total a recargar** bajo la condición cíclica; cambia cuántas jornadas
+necesitan recargar a mitad de día. Esa es la lectura correcta de cualquier barrido.
 
-**Sobre una idea que se discutió** (partir con la batería que cubra justo la ruta más cara): no sirve
-como regla, porque la jornada más cara consume **676 kWh** y la batería completa son 350 kWh. Ningún
-SOC inicial evita la recarga intermedia. El análisis que sí justifica el 90% con datos propios es
-**cuántas jornadas necesitan 0, 1 o 2+ recargas intermedias según el SOC** (a producir, Bloque C).
+**Sobre una idea que se discutió** (partir con la batería que cubra justo la ruta más cara): no sirve como
+regla, porque la jornada más cara consume **676 kWh** y la batería completa son 350 kWh. Ningún SOC
+inicial evita la recarga intermedia. Lo que sí aporta es el análisis de **cuántas jornadas necesitan 0,
+1 o 2+ recargas intermedias según el nivel** (Bloque C).
 
-**Factibilidad [Medido, cota optimista]:** considerando solo las ventanas en que cada bus está fuera
-de su jornada, caben ~16.500 horas-cargador contra ~11.900 necesarias (139%). No está descartado que
-el ciclo diario sea factible, pero con ~28% de holgura y suponiendo reparto perfecto. Con holgura tan
-justa, la forma de programar la carga importa.
+**Factibilidad [Medido, cota optimista]:** considerando solo las ventanas en que cada bus está fuera de
+su jornada, caben ~16.500 horas-cargador contra ~11.900 necesarias (139%). No está descartado que el
+ciclo sea factible, pero con ~28% de holgura y reparto perfecto.
 
 ### B7. Retorno, puestos y horario de carga
 - **[Profesor]** (A5-A7). Se modela: pullout y pullin en el mismo electroterminal; puestos solo para
@@ -160,7 +166,7 @@ justa, la forma de programar la carga importa.
 |---|---|---|---|
 | C1 | Factor de desvío 1,3 | Calibración empírica (Bloque B) y feedback de la presentación | La crítica anunciada por el profesor |
 | C2 | Cita bibliográfica de la condición cíclica | Buscar y verificar una referencia | Menor: el argumento se sostiene solo, pero conviene citar |
-| C3 | Tope de carga en `SOC_CICLICO` | Decisión nuestra, sin respaldo del profesor ni de los datos más que la razón de la curva CC-CV | Si se cuestiona, la alternativa es topar en 100% y partir/terminar en 90% (cambia la energía utilizable) |
+| C3 | Nivel de carga cíclico | Base 100% por ser el máximo de los datos del curso. Cualquier nivel menor exige una fuente externa que hoy no tenemos (CC-CV, vida útil) | Se decide con el barrido 70-100% (B6). Si el grupo prefiere un nivel menor, debe citarse la razón |
 | C4 | E2 idéntico a E1 | Confirmar al correr | Que "no cambia nada" requiera explicación en la presentación |
 | C5 | Jornadas partidas bajo política reactiva | Cuantificar cuántos buses extra exige el ciclo diario | Puede encarecer fuertemente E0 y E1; es resultado, pero hay que anticiparlo |
 | C6 | Unir o no Los Espinos y Santa Rosa | Resultados juntos y separados | Ninguno: es decisión nuestra, falta la evidencia |
@@ -171,7 +177,7 @@ justa, la forma de programar la carga importa.
 
 | Parámetro | Base | Rango | Para qué |
 |---|---|---|---|
-| `SOC_CICLICO` | 90% | 80% | Holgura intradía (ver B6) |
+| `SOC_CICLICO` | 100% (datos del curso, `max_soc`) | 90%, 80%, 70% | Holgura intradía y costo. Barrido completo en B6 |
 | Factor de desvío del deadhead | 1,3 | 1,2 / 1,5, y el empírico | Responder la crítica anunciada |
 | Velocidad de deadhead | 20 km/h | 15 / 25 | Idem |
 | Layover | 3 min | 0 / 10 | Afecta fuertemente la flota |

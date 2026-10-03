@@ -30,8 +30,9 @@ tablas por ruta) (heurística + MILP)    LP entera, exacto)         reactivo)   
 
 **Supuestos centrales** (con su origen en
 [`docs/context/02_supuestos_y_decisiones.md`](docs/context/02_supuestos_y_decisiones.md)):
-- **Ciclo diario:** todo bus empieza y termina el día con 90% de batería (sensibilidad 80%). El
-  supuesto de partir al 100% sin recuperar la batería fue descartado.
+- **Ciclo diario:** todo bus empieza y termina el día con el mismo nivel de batería. Nivel base 100%
+  (máximo de los datos del curso), con barrido 70-100%. El supuesto de partir al 100% sin recuperar la
+  batería fue descartado.
 - Cada bus **vuelve a su propio electroterminal**. Los puestos limitan solo la carga simultánea;
   estacionar no consume puesto y se puede cargar las 24 horas.
 - Flota irrestricta.
@@ -94,5 +95,5 @@ tarifas, características del bus). Decisiones de filtrado en
 [`docs/decisiones_datos.md`](docs/decisiones_datos.md).
 
 Cifras clave del día laboral modelado: 417 rutas, 64.502 expediciones, 641 paraderos terminales,
-5 electroterminales (700 puestos de carga en total), flota BYD K9 (350 kWh, 280 kWh utilizables al
-90%, 1,4 kWh/km).
+5 electroterminales (700 puestos de carga en total), flota BYD K9 (350 kWh, 315 kWh utilizables al
+100%, 1,4 kWh/km).

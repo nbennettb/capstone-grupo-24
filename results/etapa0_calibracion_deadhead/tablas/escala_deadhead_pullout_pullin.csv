@@ -1,0 +1,3 @@
+base;unidad;p10;p25;p50;p75;p90;media
+rutas (sin ponderar);km de recorrido modelado (recta x factor);5.38;7.16;9.74;13.44;15.42;10.15
+ponderado por buses estimados;km de recorrido modelado (recta x factor);6.29;8.35;11.51;14.54;15.87;11.27

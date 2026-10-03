@@ -45,6 +45,21 @@
 - **Alcance de la Entrega 2 acordado:** caso base completo con KPIs, escalera de escenarios, y MILP de
   carga probado en una instancia chica definida por criterio (ver el plan).
 
+### 03/10/2026 (tarde) — Corrección: el nivel de carga cíclico no viene del profesor
+
+- **Error mío, corregido:** en varios documentos atribuí al profesor el nivel 80-90%. Él lo mencionó como
+  **ejemplo**; la condición cíclica sí fue su instrucción. Tampoco es una decisión defendible sin datos: el
+  90% lo elegí por razonamiento propio (CC-CV, no verificado).
+- **Criterio corregido:** se parte de **100%** (máximo de `max_soc = 1.0` en los datos) y se barre hacia
+  abajo (90, 80, 70%). El nivel elegido es el que **minimiza el costo total**, con el criterio declarado
+  antes de correr. Si el óptimo es 100%, ese es el resultado. Bajar de 100% requiere una fuente externa citada.
+- **Qué no cambia:** la asignación de la Etapa 1. El `h_r` del escenario cíclico depende de la energía
+  consumida, no del nivel. Lo que cambia es la Etapa 2 y el simulador de carga.
+- **Hipótesis a verificar en el barrido:** la energía total a recargar no depende del nivel bajo la
+  condición cíclica, y un nivel más alto reduce recargas intermedias y eventos. No se afirma hasta medirlo.
+- **Cifras de la tabla de niveles** (30,1 / 45,2 / 59,1%): son de las jornadas de la ronda anterior
+  y se regeneran con el barrido.
+
 ### 30/09/2026 — Etapa 1 (clustering de rutas a electroterminales)
 
 - **Diseño de tres estrategias que aíslan un cambio a la vez** (no comparar cosas que difieren en más

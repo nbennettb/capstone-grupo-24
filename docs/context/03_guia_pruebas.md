@@ -1,15 +1,21 @@
 # Guía de pruebas — cómo correr y verificar el pipeline vigente
 
 > Para cualquiera que clone el repo (equipo, ayudante, profesor) y quiera confirmar que el código
-> corre y reproduce los resultados documentados en [`01_metodologia_y_avance.md`](01_metodologia_y_avance.md).
+> corre y reproduce los resultados documentados en [`01_metodologia.md`](01_metodologia.md).
 > No asume que hayas leído el resto de `docs/context/`, aunque se recomienda.
 >
 > Cubre el pipeline **vigente**: Etapa 0 (preprocesamiento) y Etapa 1 (clustering de rutas a
 > electroterminales). La Etapa 2 (`scripts/6-vsp_asignacion_buses.py`, `7-comparar_escenarios.py`)
 > existe y funciona, pero está pausada hasta validar supuestos con el profesor — no forma parte de
-> esta guía. Ver `01_metodologia_y_avance.md` sección 1.
+> esta guía. Ver `01_metodologia.md` (Etapa 2) y `05_plan_entrega2.md`.
 >
-> Última edición: **30/09/2026**.
+> Última edición: **03/10/2026**.
+>
+> ⚠️ **Esta guía describe el pipeline TAL COMO ESTÁ HOY** (Etapas 0 y 1). Las cifras de `5-clustering_c2.py`
+> (caso base "SOC 100%", grilla de horas 24/18/10, escenario "ciclo" como sensibilidad) corresponden al
+> **supuesto anterior, rechazado por el profesor**. El Bloque A de [`05_plan_entrega2.md`](05_plan_entrega2.md)
+> las reemplaza: el ciclo diario pasa a ser el escenario principal y esta guía debe actualizarse entonces.
+> Las cifras de `3-` y `4-` siguen vigentes.
 
 ---
 
@@ -190,6 +196,6 @@ Tiempo total estimado: ~1,5 minutos.
 
 ## 7. Referencias
 
-- Metodología completa y resultados ya validados: [`01_metodologia_y_avance.md`](01_metodologia_y_avance.md).
+- Metodología completa: [`01_metodologia.md`](01_metodologia.md). Plan de lo que falta: [`05_plan_entrega2.md`](05_plan_entrega2.md).
 - Decisiones de filtrado de datos (incluye el detalle del separador `;`): [`../decisiones_datos.md`](../decisiones_datos.md).
-- Preguntas y supuestos pendientes de validar con el profesor/ayudante: [`02_pendientes_profesor.md`](02_pendientes_profesor.md).
+- Supuestos y decisiones (incluye las respuestas del profesor): [`02_supuestos_y_decisiones.md`](02_supuestos_y_decisiones.md).

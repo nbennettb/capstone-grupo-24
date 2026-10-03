@@ -1,84 +1,49 @@
-# Metodología y avance — documento vivo
+# Bitácora
 
-> **Este documento se edita continuamente.** Cada vez que se corre una etapa nueva se agrega una entrada fechada en la bitácora (§4) — no se borran las entradas anteriores. La "foto actual" (estado por etapa, tabla de resultados) sí se actualiza en su lugar. Si te acabas de sumar al equipo: lee primero [`00_contexto_entrega1.md`](00_contexto_entrega1.md) (qué se entregó en el Informe 1 y qué feedback se recibió) y luego este documento.
+> Registro fechado de lo que se hizo y se decidió, de la entrada más reciente a la más antigua. **No es
+> la referencia vigente de la metodología** (para eso, `01_metodologia.md`); es el historial. Las entradas
+> del 28/09 describen una ronda anterior cuyo supuesto de batería (SOC inicial 100%) fue rechazado
+> después por el profesor, y parte de sus resultados (clustering bajo SOC 100%, Etapa 2 con cifras de
+> flota) quedaron como referencia, no como resultado vigente. Esos archivos se conservan fuera del
+> repositorio, en `_ronda_anterior/`.
 >
-> Última edición: **30/09/2026** (Etapa 0 y Etapa 1 rehechas y cerradas esta ronda, con revisión y OK
-> explícito de Nicolás entre ambas. La Etapa 2 de la ronda anterior queda pausada — ver bitácora).
+> Última edición: **03/10/2026**.
 
 ---
 
-## 1. Qué se decidió en la reunión del 28/09/2026
+### 03/10/2026 — Reunión con el profesor y reestructuración de la documentación
 
-El grupo se reunió presencialmente para resolver el feedback de "propuesta demasiado compleja" recibido en la presentación 1, y el comentario del profesor sobre revisar estrategias de clustering (Informe 1, punto 3.3.1).
-
-Se preparó un diagnóstico crítico de la metodología del Informe 1 apoyado en un prototipo corrido sobre los datos reales (ver [`Propuesta_metodologia_reunion.md`](../Propuesta_metodologia_reunion.md) para el detalle completo, cifras y formulaciones). Conclusión: la descomposición temporal por horizonte rodante no es necesaria (el VSP completo se resuelve exacto y rápido con la formulación adecuada) y el verdadero cuello de botella es la gestión de energía, no el tamaño de la red.
-
-**Se aprobó, sin cambios, reemplazar la descomposición espaciotemporal del Informe 1 por una descomposición jerárquica por tipo de decisión, en 4 etapas:**
-
-```
-Etapa 0            Etapa 1                 Etapa 2                    Etapa 3                 Etapa 4
-Preproceso   →   Clustering de      →   Asignación de buses   →   Inserción de       →   Programación de carga
-(expediciones,   RUTAS a electro-       por cluster (VSP en        recargas por           por electroterminal
-terminales,      terminales             red espacio-tiempo,        jornada (DP/MILP       (MILP con índice temporal,
-matriz deadhead) (MILP asignación)      LP entera, exacto)         pequeño, reparación)   tarifas horarias, capacidad)
-```
-
-### Parámetros base aprobados (sin cambios respecto a la propuesta)
-| Parámetro | Valor | Fuente |
-|---|---|---|
-| Factor de desvío del deadhead (línea recta → distancia real aproximada) | 1,3 | Supuesto, a calibrar con OSM más adelante |
-| Velocidad de deadhead | 20 km/h | Supuesto |
-| Layover mínimo entre actividades | 3 min | Supuesto |
-| Radio máximo de interlining | 3 km | Supuesto (sparsificación del problema) |
-| SOC inicial de los buses | 100% | Supuesto — **ver `02_pendientes_profesor.md`, es el más crítico** |
-
-Estos valores viven en un único lugar del código (`scripts/common/parametros.py`) para que cambiarlos y volver a correr (análisis de sensibilidad) sea trivial.
-
-### Caso base aprobado
-"Operación por línea + carga reactiva": cada ruta usa solo sus propios buses (sin interlining), electroterminal base = el más cercano, y la recarga se hace de forma miope (al electroterminal más cercano, al 100%, apenas la batería proyectada no alcanza para el siguiente viaje). Ver `Propuesta_metodologia_reunion.md` §7.
-
-### Alcance de esta ronda de trabajo (28-30/09)
-Según la Carta Gantt interna de la propuesta, para el 29-30/09 corresponde: Etapa 0 completa, Etapa 2 (caso base sin clustering + cota inferior con interlining libre), y Etapa 1 (clustering C1 y C2). Las Etapas 3 y 4 (recargas y programación de carga) quedan para los días siguientes (1-2/10).
-
----
-
-## 2. Estado actual por etapa
-
-**Nota sobre esta tabla (29/09):** la ronda del 28/09 corrió las 4 etapas de una sola vez y generó
-resultados que Nicolás no podía defender. Esta ronda las **rehace paso a paso**, con pausa y OK
-explícito entre etapas. Los archivos de la Etapa 2 de la ronda anterior (`jornadas_*.csv`,
-`rutas_cluster_c1/c2.csv` viejos, `results/03_preprocesamiento/`...`06_vsp/`) se movieron a
-`_ronda_anterior/` (fuera del repo, ver `.gitignore`) — no se borraron, quedan de referencia.
-
-| Etapa | Estado | Última actualización | Script(s) | Resultados |
-|---|---|---|---|---|
-| 0 — Preprocesamiento | `[x]` rehecho y ampliado | 29/09/2026 | `scripts/3-preprocesamiento_expediciones.py` | `data-processed/{expediciones,terminales,rutas_resumen,rutas_ida_vuelta,terminales_por_ruta}.csv`, `results/etapa0_preprocesamiento/` |
-| 1 — Clustering C1/C2 | `[x]` rehecho (C1a, C1b, C2 caso base, C2 cíclico) | 30/09/2026 | `scripts/4-clustering_c1.py`, `5-clustering_c2.py`, `8-clustering_comparacion.py` | `data-processed/rutas_cluster_{c1a,c1b,c2,c2_ciclo}.csv`, `rutas_clustering_completo.csv`, `results/etapa1_clustering/` |
-| 2 — VSP asignación de buses | **Pausado a propósito esta ronda.** Numérico de la ronda anterior en `_ronda_anterior/`, no vigente. Antes de retomarlo hay que cerrar con el profesor los supuestos de layover, deadhead, SOC inicial y retorno al electroterminal (ver `02_pendientes_profesor.md`) | 28/09/2026 (no vigente) | `scripts/6-vsp_asignacion_buses.py`, `7-comparar_escenarios.py` (se leen como referencia, no se corren) | `_ronda_anterior/data-processed/jornadas_*.csv`, `_ronda_anterior/results/06_vsp/` |
-| 3 — Inserción de recargas | Fuera de alcance de esta ronda | — | — | — |
-| 4 — Programación de carga | Fuera de alcance de esta ronda | — | — | — |
-
-*(Esta tabla se actualiza a medida que cada script se corre: cambiar `[ ]`→`[~]`→`[x]`, completar fecha, y agregar una fila a la tabla de resultados de la sección 3.)*
-
-## 3. Tabla de resultados (se llena a medida que se corren los scripts)
-
-| Escenario | Buses | Precio vs. `libre` (buses) | Costo total (USD) | Precio vs. `libre` (costo) | % jornadas >315 kWh | Tiempo | Archivo |
-|---|---|---|---|---|---|---|---|
-| **`ruta`** (caso base: cada ruta con sus propios buses) | **8.654** | +1.599 | 2.985.009 | +17,2% | 30,1% | 5 s | `jornadas_ruta.csv` |
-| **`libre`** (cota inferior C0: interlining sin restricción de electroterminal) | **7.055** | +0 (referencia) | 2.546.383 | +0% (referencia) | 39,6% | 39 s | `jornadas_libre.csv` |
-| **`cluster_c1`** (Etapa 1 heurística: electroterminal más cercano) | **7.456** | +401 (+5,7%) | 2.667.425 | +4,8% | 38,9% | 53 s | `jornadas_cluster_c1.csv` |
-| **`cluster_c2`** (Etapa 1 MILP con capacidad) | **7.454** | +399 (+5,7%) | 2.666.875 | +4,7% | 38,2% | 45 s | `jornadas_cluster_c2.csv` |
-| Cota inferior teórica (máx. expediciones simultáneas) | 6.539 | — | — | — | — | — | — |
-
-Gráficos: `results/06_vsp/graficos_{ruta,libre,cluster_c1,cluster_c2}.png` (distribución de energía y duración por jornada) y **`results/06_vsp/comparacion_escenarios.png`** (comparación final, el gráfico para llevar a la reunión). Cifras completas: `results/06_vsp/resumen_escenarios.csv` y `precio_del_clustering.csv`.
-
-**Lectura — este es el resultado central de la ronda de hoy:**
-- Permitir interlining entre rutas cercanas sin restricción (`libre`) reduce la flota en 18,5% y el costo total en 14,7% frente al caso base. Confirma que hay margen real donde jugar.
-- **Ambas estrategias de clustering (C1 y C2) capturan la gran mayoría de ese margen** (7.456 y 7.454 buses, a solo ~5,7% de la cota `libre`) con subproblemas mucho más manejables por electroterminal, en vez de resolver la red completa de una vez. Esto valida la decisión de la reunión del 28/09 de reemplazar el horizonte rodante por esta descomposición.
-- C2 (MILP con capacidad) es marginalmente mejor que C1 (2 buses menos, 550 USD menos) — la diferencia es pequeña porque solo 8 de 417 rutas cambian de electroterminal entre ambas (ver `results/05_clustering_c2/reporte.md`), pero C2 además evita sobrecargar Los Espinos (que en C1 no se controla en absoluto).
-- **Advertencia:** ~30-40% de las jornadas superan la batería útil (315 kWh) en los 4 escenarios — la Etapa 3 (inserción de recargas) es indispensable, no un detalle menor. Con el supuesto de SOC inicial 100% la mayoría debería resolverse con una sola recarga (ver prototipo exploratorio del 28/09 en `Propuesta_metodologia_reunion.md`), pero esto se valida recién cuando se implemente esa etapa.
-
-## 4. Bitácora
+- **Reunión con el profesor:** respondió las 8 preguntas abiertas (ver `02_supuestos_y_decisiones.md`,
+  sección A). Tres respuestas cambian el trabajo existente:
+  1. **El supuesto de SOC inicial 100% queda rechazado.** Debe haber ciclo diario (empezar y terminar
+     con 80-90%). El escenario `ciclo` de la Etapa 1, que era una sensibilidad, pasa a ser el caso
+     principal, y el escenario `soc100` se descarta. Los resultados de la Etapa 1 que decían "la
+     capacidad no restringe" eran **válidos solo bajo SOC 100%** y no son el resultado vigente.
+  2. **Los buses deben volver a su propio electroterminal**, y los puestos limitan solo la carga
+     (estacionar no consume puesto; se puede cargar 24 h). Cierra tres preguntas pendientes.
+  3. **El caso base (sin interlining + carga reactiva) es válido**, y se sugiere un segundo caso base
+     con interlining para aislar su efecto.
+- **Medición del impacto del ciclo diario** sobre las jornadas existentes (ronda del 28/09): las jornadas
+  con recarga a mitad del día pasan de 30,1% (SOC 100%) a 45,2% (ciclo 90%) y 59,1% (ciclo 80%) en el
+  caso base; y de 38,9% a 57,5% y 76,0% con interlining. Las horas-cargador a recargar pasan de
+  ~830-890 a ~12.000 por día (de ~5% a ~72% de los 700 puestos).
+- **Dos correcciones a lo documentado antes:**
+  - El "Los Espinos al 99,5%" del 28/09 correspondía a un cálculo tipo ciclo diario, no al caso base
+    declarado entonces; bajo SOC 100% real usaba ~1%. Esto se corrigió el 30/09 y hoy deja de ser
+    relevante porque SOC 100% fue rechazado.
+  - Una tabla preliminar de esta sesión decía ~3.000 h-cargador y ~18% de uso para SOC 100%; el valor
+    correcto, medido por jornada, es ~830-890 h-cargador y ~5%.
+- **Hallazgo:** con ciclo diario, las ventanas en que los buses están fuera de jornada permiten
+  ~16.500 h-cargador contra ~11.900 necesarias (139%). La factibilidad no está descartada pero la
+  holgura es solo ~28% (cota optimista).
+- **Reestructuración de `docs/context/`:** la metodología (antes mezclada con estado y bitácora en
+  `01_metodologia_y_avance.md`) pasa a `01_metodologia.md`, ordenada por decisiones y etapas. Los
+  supuestos y las preguntas ya respondidas se integran en `02_supuestos_y_decisiones.md`. Esta
+  bitácora recibe el histórico fechado. El plan computacional para la presentación queda en
+  `05_plan_entrega2.md`. Se eliminan los documentos de preguntas pendientes y de cierre de ronda, ya
+  resueltos.
+- **Alcance de la Entrega 2 acordado:** caso base completo con KPIs, escalera de escenarios, y MILP de
+  carga probado en una instancia chica definida por criterio (ver el plan).
 
 ### 30/09/2026 — Etapa 1 (clustering de rutas a electroterminales)
 
@@ -208,27 +173,3 @@ Gráficos: `results/06_vsp/graficos_{ruta,libre,cluster_c1,cluster_c2}.png` (dis
 - **Resultado final de la ronda (tabla completa en la sección 3):** cluster_c1 = 7.456 buses, cluster_c2 = 7.454 buses — ambos a solo ~5,7% de la cota inferior `libre` (7.055) y muy por debajo del caso base (8.654, +17,2% de costo). Esto **valida cuantitativamente** la metodología jerárquica aprobada en la reunión del 28/09: el clustering por electroterminal captura casi todo el beneficio del interlining con subproblemas mucho más chicos.
 - **Alcance de la ronda 28-30/09 completado hoy mismo** (Etapa 0, Etapa 1 C1+C2, Etapa 2 en los 4 escenarios) — antes de lo planificado para el 30/09. Las Etapas 3 (recargas) y 4 (programación de carga) quedan para los próximos días, ahora con las jornadas de `cluster_c1`/`cluster_c2` ya listas como insumo.
 - **Pendiente para retomar:** decidir con el equipo si la implementación final usa las jornadas de `cluster_c1` o `cluster_c2` (o ambas, para comparar) como base de las Etapas 3-4.
-
-## 5. Cómo reproducir
-
-**Los comandos vigentes (Etapa 0 + Etapa 1) están en [`03_guia_pruebas.md`](03_guia_pruebas.md) —
-esa es la referencia que se mantiene al día.** Lo que sigue es el comando de la Etapa 2, que quedó
-pausado con el código intacto (`scripts/6-` y `7-`, ver sección 1) por si se retoma más adelante:
-
-```bash
-# Etapa 2 — asignación de buses (código vigente, pausado hasta validar supuestos con el profesor,
-# ver docs/context/04_preguntas_reunion.md). Usa las asignaciones de clustering que decida el grupo,
-# p. ej. data-processed/rutas_cluster_c1b.csv en vez de las rutas_cluster_c1.csv/c2.csv originales.
-python scripts/6-vsp_asignacion_buses.py --modo ruta
-python scripts/6-vsp_asignacion_buses.py --modo libre
-python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --etiqueta cluster_c1b
-python scripts/7-comparar_escenarios.py
-```
-
-## 6. Referencias
-
-- Documento de metodología completo (diagnóstico, formulaciones, KPIs, plan de trabajo): [`Propuesta_metodologia_reunion.md`](../Propuesta_metodologia_reunion.md).
-- Contexto congelado del Informe 1: [`00_contexto_entrega1.md`](00_contexto_entrega1.md).
-- Preguntas y supuestos pendientes de validar con el profesor/ayudante: [`02_pendientes_profesor.md`](02_pendientes_profesor.md) (registro vivo) y [`04_preguntas_reunion.md`](04_preguntas_reunion.md) (versión redactada para la reunión).
-- Guía paso a paso para correr y verificar el pipeline vigente (checkpoints, orden de ejecución, troubleshooting): [`03_guia_pruebas.md`](03_guia_pruebas.md).
-- Cierre de esta ronda, traspaso al grupo y plan a futuro: [`05_cierre_ronda.md`](05_cierre_ronda.md).

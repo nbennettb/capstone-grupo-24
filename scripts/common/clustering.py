@@ -1,7 +1,7 @@
 """Utilidades compartidas de la Etapa 1 (clustering de rutas a
 electroterminales) y del modo 'ruta' de la Etapa 2 (que necesita el mismo
 electroterminal base por ruta). Ver docs/Propuesta_metodologia_reunion.md
-seccion 5 y docs/context/01_metodologia_y_avance.md.
+seccion 5 y docs/context/01_metodologia.md.
 """
 
 import numpy as np

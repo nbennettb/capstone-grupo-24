@@ -2,7 +2,7 @@
 
 > **Este documento no se vuelve a editar.** Es una fotografía de lo que el grupo entregó en el Informe 1 y de todo el feedback recibido hasta el 28/09/2026. Sirve para que cualquier persona que se sume al proyecto entienda el punto de partida sin tener que leer el `.tex` completo.
 >
-> Para el estado **actual** del proyecto (qué se ha hecho desde entonces), ver [`01_metodologia_y_avance.md`](01_metodologia_y_avance.md), que es un documento vivo.
+> Para el estado **actual** del proyecto (qué se ha hecho desde entonces), ver [`01_metodologia.md`](01_metodologia.md) (metodología vigente) y [`04_bitacora.md`](04_bitacora.md) (historial).
 
 ---
 
@@ -59,7 +59,7 @@ Tres fuentes:
 - **Un solo modelo de bus:** BYD K9. Batería 350 kWh, autonomía máxima 250 km, potencia de carga 180 kW, SOC entre 10% y 100%, carga completa ~105 min.
 - Batería útil (90% del rango): 315 kWh ⇒ autonomía real ≈ 225 km (consumo 1,4 kWh/km).
 - **5 electroterminales**, capacidad total **700 espacios simultáneos**: Vespucio Norte (150), El Conquistador (180), Los Espinos (120), La Reina (100), Santa Rosa (150). Los Espinos y Santa Rosa están geográficamente muy cerca (posible fusión a evaluar).
-- **Tamaño de flota:** en el Informe 1 se trabajó con el supuesto de **flota irrestricta**. *(Nota importante: el archivo `data-alumnos/parameters.csv` trae un valor `fleet_size = 1200`, que en un inicio del curso reflejaba una restricción real; el profesor posteriormente aclaró explícitamente que la flota debe tratarse como irrestricta, por lo que ese valor quedó obsoleto. Ver seguimiento de esta inconsistencia en `01_metodologia_y_avance.md` / `02_pendientes_profesor.md`.)*
+- **Tamaño de flota:** en el Informe 1 se trabajó con el supuesto de **flota irrestricta**. *(Nota importante: el archivo `data-alumnos/parameters.csv` trae un valor `fleet_size = 1200`, que en un inicio del curso reflejaba una restricción real; el profesor posteriormente aclaró explícitamente que la flota debe tratarse como irrestricta, por lo que ese valor quedó obsoleto. Ver seguimiento de esta inconsistencia en `02_supuestos_y_decisiones.md`, A9.)*
 
 ### Costos y tarifas
 | Costo | Valor |
@@ -117,4 +117,4 @@ Ver el detalle completo en [`docs/Estructura_carpeta_proyecto.md`](../Estructura
 
 El 28/09/2026 el grupo se reunió para resolver el feedback de complejidad. El resultado de esa sesión de trabajo es [`docs/Propuesta_metodologia_reunion.md`](../Propuesta_metodologia_reunion.md): un diagnóstico crítico de la metodología del Informe 1 (con datos reales medidos, no solo argumentos) y una metodología nueva —descomposición **jerárquica por tipo de decisión** en 4 etapas— que reemplaza la descomposición espaciotemporal. Esa propuesta fue **aprobada por el grupo sin cambios** en la reunión presencial del mismo día.
 
-Para el estado de implementación de esa metodología nueva (qué etapas están hechas, resultados obtenidos, próximos pasos), ver el documento vivo [`01_metodologia_y_avance.md`](01_metodologia_y_avance.md).
+Para el estado de implementación de esa metodología nueva (qué etapas están hechas, resultados obtenidos, próximos pasos), ver [`01_metodologia.md`](01_metodologia.md) (metodología vigente y estado por etapa).

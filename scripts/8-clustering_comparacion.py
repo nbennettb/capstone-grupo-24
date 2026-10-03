@@ -1,6 +1,6 @@
 """
 Etapa 1 (cierre) del pipeline de modelacion - ICS2122 Capstone Buses Electricos
-(ver docs/context/01_metodologia_y_avance.md seccion 1).
+(ver docs/context/01_metodologia.md seccion 4).
 
 Junta las cuatro asignaciones ya generadas por scripts/4-clustering_c1.py
 (C1a, C1b) y scripts/5-clustering_c2.py (C2 caso base, C2 ciclico):
@@ -350,7 +350,7 @@ def escribir_reporte(comparacion, resumen_terminal, rutas_que_cambian, barrido_t
         "- `mapas/`: mapa_c1a.png, mapa_c1b.png, mapa_c2.png, mapa_c2_ciclo.png, "
         "mapa_terminal_<nombre>.png (x5), mapa_paraderos_terminales.png, mapa_diferencias.png.",
         "",
-        "*(Ver docs/context/01_metodologia_y_avance.md para la interpretacion completa y las "
+        "*(Ver docs/context/01_metodologia.md para la interpretacion completa y las "
         "decisiones que este resultado habilita o deja pendientes.)*",
     ]
     (RESULTS / "reporte.md").write_text("\n".join(lineas), encoding="utf-8")

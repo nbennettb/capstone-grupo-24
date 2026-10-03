@@ -79,12 +79,12 @@
         ├── terminales_por_ruta.csv            (Etapa 0, 1.356 pares)
     └── 📁docs
         └── 📁context
-            ├── 00_contexto_entrega1.md
-            ├── 01_metodologia_y_avance.md
-            ├── 02_pendientes_profesor.md
-            ├── 03_guia_pruebas.md
-            ├── 04_preguntas_reunion.md
-            ├── 05_cierre_ronda.md
+            ├── 00_contexto_entrega1.md       (foto congelada del Informe 1)
+            ├── 01_metodologia.md             (documento maestro, vigente)
+            ├── 02_supuestos_y_decisiones.md  (supuestos, respuestas del profesor)
+            ├── 03_guia_pruebas.md            (cómo correr lo que existe)
+            ├── 04_bitacora.md                (historial fechado)
+            ├── 05_plan_entrega2.md           (plan computacional para la presentación)
         └── 📁Informe 1
             └── 📁chapters
                 ├── anexo1_ia.tex

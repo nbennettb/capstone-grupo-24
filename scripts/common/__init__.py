@@ -1,4 +1,4 @@
-"""Utilidades compartidas por los scripts de las Etapas 0-4 (ver docs/context/01_metodologia_y_avance.md).
+"""Utilidades compartidas por los scripts de las Etapas 0-4 (ver docs/context/01_metodologia.md).
 
 No contiene lógica de negocio propia de ninguna etapa: solo lo que varios
 scripts numerados (3-..., 4-..., 5-..., 6-...) necesitan repetir. Sigue el

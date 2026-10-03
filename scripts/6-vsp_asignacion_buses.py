@@ -1,6 +1,6 @@
 """
 Etapa 2 del pipeline de modelacion - ICS2122 Capstone Buses Electricos
-(ver docs/context/01_metodologia_y_avance.md seccion 1).
+(ver docs/context/01_metodologia.md seccion 4).
 
 Asignacion de expediciones a buses (Electric Vehicle Scheduling Problem SIN
 la restriccion de bateria) como un flujo de costo minimo en una red
@@ -29,7 +29,7 @@ Tres modos (--modo):
            segun un archivo de asignacion de la Etapa 1 (--asignacion).
 
 Uso:
-    # Checkpoint chico (ver docs/context/01_metodologia_y_avance.md):
+    # Checkpoint chico (ver docs/context/01_metodologia.md):
     python scripts/6-vsp_asignacion_buses.py --modo ruta --subset 101 102 301
     python scripts/6-vsp_asignacion_buses.py --modo libre --subset 101 102 301
 

@@ -1,3 +1,20 @@
+> **ESTADO DE ESTE DOCUMENTO (03/10/2026).** Esta propuesta sigue siendo válida como **diagnóstico
+> metodológico** (§3, D1-D8), **revisión de alternativas** (§4) y **referencias** (§9). Su
+> diagnóstico numérico y la justificación de la descomposición jerárquica siguen en pie.
+>
+> **Superado por la reunión con el profesor (03/10):**
+> - El supuesto **SOC inicial 100%** (§2, §5 Etapa 3, §6, §7 caso base) fue **rechazado**. Vigente:
+>   ciclo diario, 90% al inicio y al final del día (sensibilidad 80%).
+> - Las cifras de energía por jornada, de recargas y de capacidad holgada (§2, tabla de "Energía de las
+>   jornadas") corresponden a ese supuesto anterior.
+> - La pregunta 3 del §11 ("¿vuelven al mismo electroterminal?") está respondida: **sí**.
+> - Las preguntas del §11 están todas respondidas en `docs/context/02_supuestos_y_decisiones.md`, sección A.
+>
+> **Versión vigente de la metodología:** [`../docs/context/01_metodologia.md`](context/01_metodologia.md).
+> **Plan de lo que falta:** [`context/05_plan_entrega2.md`](context/05_plan_entrega2.md).
+
+---
+
 # Propuesta de metodología — Reunión Grupo 24 (28/09)
 
 > **Objetivo de la reunión:** dejar cerrada hoy la metodología para la Entrega 2 (presentación **06/10**, informe **11/10**), respondiendo al feedback de "propuesta demasiado compleja" y al comentario del profesor en 3.3.1: *"Revisar en profundidad estrategias para clusterizar"*.

@@ -1,6 +1,6 @@
 """
 Etapa 1 (C2) del pipeline de modelacion - ICS2122 Capstone Buses Electricos
-(ver docs/context/01_metodologia_y_avance.md seccion 1 y
+(ver docs/context/01_metodologia.md seccion 4 y
 docs/Propuesta_metodologia_reunion.md seccion 5).
 
 Asignacion de rutas a electroterminales con restriccion de CAPACIDAD:
@@ -11,7 +11,7 @@ no supere su capacidad. Asi, C1b -> C2 aisla el efecto de agregar la
 capacidad (el unico cambio respecto de C1b).
 
 DOS SUPUESTOS DE CUANTA ENERGIA HAY QUE RECARGAR POR DIA (ver
-docs/context/02_pendientes_profesor.md pregunta #1, la mas critica del
+docs/context/02_supuestos_y_decisiones.md seccion B6, la mas critica del
 proyecto):
   - 'soc100' (CASO BASE aprobado el 28/09): los buses parten el dia con
     bateria llena. Solo se recarga el EXCEDENTE sobre la bateria util
@@ -27,7 +27,7 @@ proyecto):
 
 DEFINICION DE UNIDADES (evita el error del Informe 1: mezclar capacidad de
 carga simultanea con volumen de expediciones/dia, ver
-docs/context/02_pendientes_profesor.md pregunta #6): h_r y la capacidad del
+docs/context/02_supuestos_y_decisiones.md seccion B5): h_r y la capacidad del
 electroterminal estan ambas en horas-cargador/dia.
   capacidad_electroterminal = capacidad_puestos * horas_disponibles * theta
 

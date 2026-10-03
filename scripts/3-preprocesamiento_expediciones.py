@@ -1,6 +1,6 @@
 """
 Etapa 0 del pipeline de modelacion - ICS2122 Capstone Buses Electricos
-(ver docs/context/01_metodologia_y_avance.md seccion 1 para el lugar de
+(ver docs/context/01_metodologia.md seccion 4 para el lugar de
 esta etapa dentro de la metodologia de 4 etapas aprobada el 28/09/2026).
 
 Expande frequencies_dia_L.csv a expediciones reales (una fila por salida
@@ -177,7 +177,7 @@ def concurrencia_por_minuto(expediciones, minutos_dia=30 * 60):
 
 # --------------------------------------------------------------------------- #
 # Tablas nuevas por ruta (insumo directo de la Etapa 1, sin pasar por la
-# Etapa 2: ver docs/context/01_metodologia_y_avance.md, decision de esta
+# Etapa 2: ver docs/context/01_metodologia.md, decision de esta
 # ronda de recalcular buses/energia por ruta desde la Etapa 0)
 # --------------------------------------------------------------------------- #
 
@@ -190,7 +190,7 @@ def construir_rutas_resumen(expediciones):
     una COTA INFERIOR del numero real de buses (ignora layover y que el bus
     tiene que volver fisicamente a completar el ciclo): sumada sobre las 417
     rutas da 7.454, contra los 8.654 del VSP sin interlining de la ronda
-    anterior (docs/context/01_metodologia_y_avance.md seccion 3). Se usa
+    anterior (docs/context/04_bitacora.md). Se usa
     solo para PONDERAR el peso relativo de cada ruta en el costo de C2, no
     como cifra de flota final.
     """

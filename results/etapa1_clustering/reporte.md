@@ -44,4 +44,4 @@ Compara C1a (heuristica, centroide), C1b (heuristica, paraderos terminales reale
 - `graficos/`: rutas_por_terminal.png, distancias.png, capacidad.png, barrido_theta.png.
 - `mapas/`: mapa_c1a.png, mapa_c1b.png, mapa_c2.png, mapa_c2_ciclo.png, mapa_terminal_<nombre>.png (x5), mapa_paraderos_terminales.png, mapa_diferencias.png.
 
-*(Ver docs/context/01_metodologia_y_avance.md para la interpretacion completa y las decisiones que este resultado habilita o deja pendientes.)*
+*(Ver docs/context/01_metodologia.md para la interpretacion completa y las decisiones que este resultado habilita o deja pendientes.)*

@@ -2,7 +2,7 @@
 (suficiente para distancias cortas dentro de la RM) y distancia haversine,
 usadas para estimar el deadhead entre paraderos y electroterminales.
 
-Nota de alcance (ver docs/context/02_pendientes_profesor.md, pregunta 5):
+Nota de alcance (ver docs/context/02_supuestos_y_decisiones.md, seccion B2):
 esto es una aproximacion euclidiana x FACTOR_DESVIO, no una ruta real por la
 red vial. Calibrar/sensibilizar con OpenStreetMap (osmnx) queda para una
 etapa posterior.

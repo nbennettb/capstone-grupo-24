@@ -1,5 +1,5 @@
 """
-Cierre de la Fase 6 (ver docs/context/01_metodologia_y_avance.md): compara
+Cierre de la Fase 6 (ver docs/context/01_metodologia.md): compara
 los 4 escenarios de la Etapa 2 (ruta, libre, cluster_c1, cluster_c2) y
 calcula el "precio del clustering" prometido en
 docs/Propuesta_metodologia_reunion.md seccion 5: cuantos buses/cuanto costo

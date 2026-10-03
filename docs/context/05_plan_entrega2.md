@@ -50,7 +50,7 @@ calibración del deadhead, análisis de recargas según el SOC, justificaciones.
 | C2 (ciclo, θ = 1) | Igual a C1b; uso: Vespucio Norte 30,9% · El Conquistador 69,8% · Los Espinos 89,9% · La Reina 68,1% · Santa Rosa 58,6% | Medido, vigente |
 | Barrido de θ (ciclo) | 0 rutas movidas con θ = 1 y 0,9; 11 con 0,8; 21 con 0,7; infactible con 0,6 | Medido, vigente |
 | Etapa 2 (ronda anterior) | sin interlining 8.654 buses · con clustering 7.456 (C1) / 7.454 (C2) · libre 7.055 · cota 6.539 | **Referencia**: debería reproducirse (el VSP no usa batería), salvo diferencias menores por usar C1b |
-| Jornadas con recarga a mitad del día | 45,2% (ciclo 90%) y 59,1% (80%) sin interlining; 57,5% y 76,0% con interlining | Medido sobre las jornadas anteriores; debe reproducirse |
+| Jornadas con recarga a mitad del día (sin interlining) | 30,1% (nivel 100%), 45,2% (90%), 59,1% (80%) | Medido sobre las jornadas anteriores; debe reproducirse con el barrido |
 | Holgura de carga | ~16.500 h-cargador posibles contra ~11.900 necesarias (cota, 139%) | Medido, cota optimista |
 
 ---
@@ -59,16 +59,20 @@ calibración del deadhead, análisis de recargas según el SOC, justificaciones.
 
 | Día | Bloques | Nota |
 |---|---|---|
-| **Sáb 03/10** | **A** (parámetros + Etapa 1) → **C** (Etapa 2) → **B** (deadhead) → análisis de SOC | Todo es barato salvo que el VSP tarda ~1-2 min por escenario |
-| **Dom 04/10** | **D** (simulador reactivo) → primera versión de **F** (KPIs de E0-E2b) | **D es la pieza de mayor riesgo**: código nuevo y complejo |
-| **Lun 05/10** | **E** (MILP) → **F** final → justificaciones → índice de figuras → verificación | |
+| **Sáb 03/10** | **A** (verificar) → **B** (deadhead, independiente) → **C** (Etapa 2 en E0-LB) | Las jornadas de C no dependen del nivel de batería, así que pueden correrse antes de decidirlo |
+| **Dom 04/10** | **D** (simulador reactivo) → **barrido de niveles** por costo total → fijar el caso base | **D es la pieza de mayor riesgo** y bloquea la elección del nivel |
+| **Lun 05/10** | **E** (MILP) → **F** (KPIs con el caso base fijado) → justificaciones → índice de figuras → verificación | |
 | **Mar 06/10** | Presentación | |
 
+**Orden de dependencias (acordado el 03/10):** el nivel de carga se elige por **costo total**, y ese costo
+solo existe con el simulador (D). Por eso el barrido de niveles va después de D, no dentro de C. El caso
+base no se fija hasta tener ese barrido.
+
 **Orden de corte si el tiempo no alcanza** (de lo último que se sacrifica a lo primero):
-**A → C → D → F** cubre el mínimo exigido (caso base completo con KPIs y clusterización probada).
-**B** es barato y responde a una crítica anunciada: hacerlo temprano. **E** eleva la entrega de
-"mínimo" a "lo que el profesor dijo esperar". Se sacrifican primero: E2b, la sensibilidad al 80%, la
-variante del MILP con terminales unidos.
+**A → B → C → D → barrido → F** cubre el mínimo exigido (caso base completo con KPIs, nivel elegido por
+costo y clusterización probada). **E** eleva la entrega de "mínimo" a "lo que el profesor dijo esperar".
+Se sacrifican primero: E2b, la sensibilidad de niveles por debajo de 90%, la variante del MILP con
+terminales unidos.
 
 **Versión mínima de D si aprieta el tiempo:** simular sin colas (cada bus carga en cuanto puede),
 calcular la ocupación resultante y **reportar cuántos minutos supera los puestos** en vez de hacer
@@ -87,15 +91,16 @@ espera y la regla de partición por atraso.
 que alimenta la Etapa 2 sean coherentes con lo que se va a presentar.
 
 **Cambios de código.**
-1. `scripts/common/parametros.py`: eliminar `SOC_INICIAL`; agregar `SOC_CICLICO = 0.9` y
-   `SOC_CICLICO_SENSIBILIDAD = 0.8`; agregar a `Costos` una propiedad/función
-   `bateria_util_ciclica_kwh(soc)` = `battery_kwh × (soc − min_soc)` (280 kWh al 90%, 245 al 80%).
+1. `scripts/common/parametros.py`: eliminar `SOC_INICIAL`. El nivel cíclico **base sale de los datos**
+   (`max_soc` de `parameters.csv` = 1.0). Se define la lista de barrido `[1.0, 0.9, 0.8, 0.7]`. El nivel
+   base NO se fija en el código: lo elige el barrido (criterio: mínimo costo total, ver `02` B6). Agregar a `Costos` una función `bateria_util_ciclica_kwh(soc)` = `battery_kwh × (soc − min_soc)`
+   (315 kWh al 100%, 280 al 90%, 245 al 80%).
    `bateria_util_kwh` (315, física) deja de usarse en código operacional. Documentar en el docstring
    que `SOC_CICLICO` es nivel de partida, de llegada y **tope de carga** (ver `02`, B6 y C3).
 2. `scripts/5-clustering_c2.py`:
    - `ciclo` pasa a ser **el** escenario; `soc100` deja de generar asignaciones. Se conserva **solo**
      el cálculo de uso de capacidad bajo `soc100` como **tabla de evidencia** de por qué se rechazó
-     (`capacidad_soc100_vs_ciclo.csv`: ~5% contra ~72%).
+     (`capacidad_sin_vs_con_recuperacion.csv`: ~5% contra ~72%).
    - `rutas_cluster_c2.csv` pasa a contener la asignación bajo ciclo (θ = 1). Se elimina
      `rutas_cluster_c2_ciclo.csv`.
    - Se elimina la grilla de horas disponibles (24/18/10): el profesor dijo que no hay restricción de
@@ -158,10 +163,11 @@ evidencia para decidir si conviene unirlos. LB queda por debajo de todos.
 1,5 (además del 1,3), y layover 0 y 10 min. Responde a la crítica anunciada sobre el deadhead: si la
 flota casi no cambia, el 1,3 importa poco.
 
-**Análisis de recargas según el SOC** (nuevo, `scripts/13-analisis_soc.py`). Sobre las jornadas de E0
-y E1: para SOC de 100% (como referencia rechazada), 90% y 80%, cuántas jornadas necesitan 0, 1 o 2+
+**Análisis de recargas según el nivel** (nuevo, `scripts/13-analisis_soc.py`; se ejecuta **después de D**, junto con el barrido de niveles). Sobre las jornadas de E0
+y E1: para los niveles 100% (base, datos), 90%, 80% y 70%, cuántas jornadas necesitan 0, 1 o 2+
 recargas intermedias, y la distribución de energía por jornada con las líneas de 245, 280 y 315 kWh.
-**Por qué:** es el análisis que justifica el 90% con datos propios en vez de por decreto.
+**Por qué:** es el análisis que decide el nivel con datos: la curva completa del barrido (costo, buses,
+eventos, jornadas partidas, % con recarga intermedia), con el criterio declarado en `02`, B6.
 
 **Salidas.** `data-processed/jornadas_{E0,E1,E2,E2b,LB}.csv`; `results/etapa2_vsp/` con
 `resumen_escenarios.csv`, tabla de sensibilidades, gráficos, `precio_del_clustering.csv`.
@@ -199,8 +205,8 @@ no un 1,3 que aparece de la nada ni una caja negra de OSM.
 - Con más tiempo (informe), se puede validar contra la red vial de `chile.gpkg`, pero **no** es
   necesario para la presentación y vuelve opaca la explicación.
 
-**Salidas.** `results/etapa0_preprocesamiento/` o `results/deadhead/`: tabla de factores por escala,
-gráfico, y el insumo de `docs/justificaciones/02_factor_desvio_deadhead.md`.
+**Salidas.** `results/etapa0_calibracion_deadhead/`: tabla de factores por escala, gráficos, y el
+insumo de `docs/justificaciones/02_factor_desvio_deadhead.md`.
 
 **Validación.** Los factores deben ser ≥ 1 (el recorrido nunca es menor que la recta); el cociente de
 cada trazado completo debe coincidir con `distancia del trazado / distancia entre extremos`.
@@ -220,7 +226,7 @@ expediciones, con los tiempos de deadhead calculados **igual que en el VSP** (mi
 distancia, factor y velocidad, para que sean consistentes). Reglas, detalladas en `01_metodologia.md`
 (Etapa 3):
 
-1. El bus parte con `SOC_CICLICO`.
+1. El bus parte con `SOC_CICLICO` (base 100%, de los datos).
 2. Antes de cada expedición, si no podría completarla **y volver a su electroterminal** sin bajar del
    10%, debe cargar antes: va al electroterminal, carga hasta `SOC_CICLICO` sin mirar la tarifa, y
    vuelve. Necesita un hueco ≥ traslado + carga + traslado + layover.
@@ -406,7 +412,7 @@ sección sugerida.
 | Resultado del clustering | `etapa1_clustering/mapas/mapa_c2.png` y `mapa_diferencias.png` | Regenerar |
 | El centroide casi no importa (0,7%) | `etapa1_clustering/tablas/comparacion_estrategias.csv` + gráfico | Regenerar |
 | Los dos terminales cercanos (1,1 km) | `mapa_terminal_los_espinos.png` / `mapa_terminal_santa_rosa.png` | Regenerar |
-| Por qué SOC 100% no sirve (5% vs 72%) | gráfico de `capacidad_soc100_vs_ciclo.csv` | **Nuevo** |
+| Por qué SOC 100% no sirve (5% vs 72%) | gráfico de `capacidad_sin_vs_con_recuperacion.csv` | **Nuevo** |
 | La batería no alcanza para el día (energía por jornada vs 245/280/315 kWh) | `13-analisis_soc` | **Nuevo** |
 | Cuántas recargas intermedias según el SOC | `13-analisis_soc` | **Nuevo** |
 | El factor de desvío tiene respaldo | `9-calibracion_deadhead` | **Nuevo** |
@@ -426,11 +432,11 @@ sostiene con "no pagaríamos ~93% de la energía".
 
 ## 7. Qué se considera terminado
 
-- [ ] Etapa 1 regenerada bajo ciclo diario; C2 = C1b verificado; mapas y tablas actualizados.
+- [x] Etapa 1 regenerada bajo ciclo diario; C2 = C1b verificado; mapas y tablas actualizados.
 - [ ] Escenarios E0, E1, E2, E2b y LB corridos, con retorno verificado y cobertura exacta.
 - [ ] Simulador reactivo corrido sobre los escenarios, con energía, colas y jornadas partidas.
 - [ ] MILP resuelto en la escalera de instancias, no trivial, con costo ≤ reactivo.
-- [ ] Calibración del deadhead y sensibilidad de la flota al factor.
+- [ ] Calibración del deadhead (hecha, Bloque B) y sensibilidad de la flota al factor (pendiente, Bloque C).
 - [ ] Análisis de recargas según el SOC.
 - [ ] Tabla de KPIs de todos los escenarios, con CSV y gráficos.
 - [ ] Siete justificaciones en `docs/justificaciones/`, concisas y con las tres etiquetas de respaldo.

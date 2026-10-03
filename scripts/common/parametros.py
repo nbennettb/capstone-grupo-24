@@ -1,7 +1,6 @@
 """Unica fuente de verdad de los supuestos y costos usados en las Etapas
-0-4, tal como quedaron aprobados en la reunion del 28/09/2026 (ver
-docs/context/01_metodologia.md seccion 4 y
-docs/Propuesta_metodologia_reunion.md seccion 6).
+0-4, segun la metodologia vigente (docs/context/01_metodologia.md) y las
+decisiones de docs/context/02_supuestos_y_decisiones.md.
 
 Para correr un analisis de sensibilidad, cambiar los valores de aqui (o
 pasarlos como override a las funciones de los scripts de cada etapa) en vez
@@ -20,20 +19,21 @@ VELOCIDAD_KMH = 20.0         # velocidad promedio de desplazamientos sin pasajer
 LAYOVER_MIN = 3.0            # tiempo minimo de maniobra entre actividades consecutivas
 RADIO_INTERLINING_KM = 3.0   # radio maximo para permitir encadenar viajes de distinta ruta
 
-# --- Supuesto de bateria (el mas critico, ver docs/context/02_supuestos_y_decisiones.md B6) ---
-# OBSOLETO: SOC_INICIAL = 1.0 (bateria llena al comenzar el dia, sin recuperarla al terminar).
-# El profesor lo rechazo: con ese supuesto el modelo no paga ~93% de la energia que los buses
-# consumen y los 700 puestos de carga casi no se usan (~5%). Nada vigente debe depender de el.
-#
-# VIGENTE (pendiente de implementar, Bloque A de docs/context/05_plan_entrega2.md):
-#   SOC_CICLICO = 0.9              # nivel de partida, de llegada Y tope de carga (ciclo diario)
-#   SOC_CICLICO_SENSIBILIDAD = 0.8
-# Todo bus empieza y termina el dia con SOC_CICLICO. Energia utilizable entre cargas =
-# battery_kwh * (SOC_CICLICO - min_soc) = 280 kWh al 90% (245 kWh al 80%), no los 315 kWh de
-# `Costos.bateria_util_kwh`, que corresponden a una carga fisica del 100%. Con inicio = fin se recarga
-# TODO lo consumido, asi que el nivel (80% vs 90%) no cambia la energia total a cargar: cambia cuantas
-# jornadas necesitan recargar a mitad del dia.
-SOC_INICIAL = 1.0            # OBSOLETO, ver arriba. Se elimina al implementar el Bloque A.
+# --- Condicion ciclica de bateria (docs/context/02_supuestos_y_decisiones.md, B6 y C3) ---
+# El profesor pidio la condicion ciclica (inicio = fin); los 80-90% fueron un ejemplo suyo, no una
+# exigencia. El NIVEL no se fija aqui: se busca con un barrido que parte del maximo de los datos
+# (max_soc = 1.0 en parameters.csv) y baja mientras convenga; el nivel base lo elige el costo total
+# (criterio y regla de termino en B6). En cada nivel, ese valor es el SOC de partida, de llegada y
+# el TOPE de carga de todo bus.
+# Energia utilizable entre cargas = battery_kwh * (nivel - min_soc): 315 kWh al 100%, 280 al 90%,
+# 245 al 80%, 210 al 70%. Con inicio = fin se recarga TODO lo consumido, asi que el nivel no cambia
+# la energia total a cargar: cambia cuantas jornadas necesitan recargar a mitad del dia.
+SOC_CICLICO_BARRIDO = [1.0, 0.9, 0.8, 0.7]
+
+# --- Union de electroterminales (decision B9): Los Espinos (3) y Santa Rosa (5), a 1,11 km ---
+# Se tratan como UN solo electroterminal (puestos sumados, un grupo de interlining). Los patios
+# fisicos se mantienen para las distancias. depot_id como texto, igual que en depots.csv.
+ELECTROTERMINALES_UNIDOS = ("3", "5")
 
 # Consumo derivado de vehicles.csv / parameters.csv (350 kWh / 250 km).
 CONSUMO_KWH_KM = 1.4
@@ -64,8 +64,15 @@ class Costos:
 
     @property
     def bateria_util_kwh(self) -> float:
-        """Bateria realmente utilizable entre min_soc y max_soc."""
+        """Bateria utilizable entre min_soc y max_soc (315 kWh); equivale a
+        bateria_util_ciclica_kwh(max_soc). El codigo nuevo debe usar bateria_util_ciclica_kwh con
+        el nivel que corresponda."""
         return self.battery_kwh * (self.max_soc - self.min_soc)
+
+    def bateria_util_ciclica_kwh(self, soc: float) -> float:
+        """Energia utilizable entre cargas cuando el bus parte, termina y se topa en `soc`
+        (315 kWh al 100%, 280 al 90%, 245 al 80%, 210 al 70%)."""
+        return self.battery_kwh * (soc - self.min_soc)
 
 
 def cargar_costos(path=None) -> Costos:

@@ -62,17 +62,17 @@ Detalle completo en [`00_contexto_entrega1.md`](00_contexto_entrega1.md) y
 
 | Supuesto | Valor | Origen |
 |---|---|---|
-| **SOC cíclico** | Todo bus **empieza y termina** el día con `SOC_CICLICO` = **90%** (sensibilidad: 80%) | **[Profesor]** pidió 80-90% al inicio y al final. El valor base 90% es **[Decisión]**, justificada en `02_supuestos_y_decisiones.md` §B.6 |
-| `SOC_CICLICO` como tope | La batería nunca se carga por sobre `SOC_CICLICO` | **[Decisión]**: mantiene el modelo de carga lineal en su zona más fiel (ver limitaciones) |
-| Energía utilizable entre cargas | (`SOC_CICLICO` − 10%) × 350 kWh = **280 kWh** al 90%; **245 kWh** al 80% | Derivado |
+| **Condición cíclica** | Todo bus **empieza y termina** el día con el mismo nivel `SOC_CICLICO` | **[Profesor]** pidió la condición (dejar batería para el día siguiente). Los 80-90% fueron un **ejemplo**. El **nivel** se busca con datos: se parte de 100% (máximo de `parameters.csv`) y se elige el que minimiza el costo total en un barrido 100-70%. Ver `02_supuestos_y_decisiones.md` B6 |
+| `SOC_CICLICO` como tope | La batería nunca se carga por sobre `SOC_CICLICO` | **[Dato]** con el base de 100% (es el `max_soc` del curso) |
+| Energía utilizable entre cargas | (`SOC_CICLICO` − 10%) × 350 kWh = **315 kWh** al 100%; 280 kWh al 90%; 245 kWh al 80% | Derivado |
 | Condición de fin de día | `SOC_fin ≥ SOC_inicio`; con el tope, el bus termina el día exactamente en `SOC_CICLICO` | **[Decisión]** |
 | Consumo | 1,4 kWh/km, constante (sin topografía, congestión ni clima) | **[Dato]** (350 kWh / 250 km) |
 | Carga | Lineal a 180 kW (sin curva CC-CV) | **[Dato]** + simplificación |
 | Energía a pagar | **Toda** la energía recargada, incluida la recarga final que restituye el nivel del día siguiente | Consecuencia del ciclo diario |
 
-Consecuencia clave **[Medido]**: con inicio = fin, la energía total a recargar es igual a la total
-consumida (~2.150 MWh), **sea cual sea el nivel 80% o 90%**. El nivel solo cambia la **holgura
-intradía**: cuántas jornadas necesitan recargar a mitad del día.
+Consecuencia **[Medido]**: con inicio = fin, la energía que hay que recargar es la consumida (~2.150
+MWh). **[Hipótesis a verificar en el barrido]**: ese total no depende del nivel; el nivel cambia la
+**holgura intradía**, es decir, cuántas jornadas necesitan recargar a mitad del día.
 
 ### 3.2 Infraestructura
 
@@ -87,7 +87,7 @@ intradía**: cuántas jornadas necesitan recargar a mitad del día.
 
 | Supuesto | Valor | Origen |
 |---|---|---|
-| Distancia | Euclidiana × **1,3** | **[Decisión]** tomada por tiempo. El profesor advirtió que "probablemente nos la critiquen"; hay que justificarla con evidencia (Bloque B del plan) |
+| Distancia | Euclidiana × **1,3** | **[Decisión]** tomada por tiempo. El profesor advirtió que "probablemente nos la critiquen". **[Medido]** contra los 839 trazados GTFS: el rodeo real mide 1,04-1,22 a escala de interlining (1-3 km, el 1,3 es conservador) y 1,29-1,38 a escala de pullout/pullin (5-15 km, cota superior del rodeo de un deadhead). Ver `docs/justificaciones/02_factor_desvio_deadhead.md` |
 | Velocidad | 20 km/h | **[Decisión]** sin calibrar |
 | Layover mínimo entre actividades | 3 min | **[Decisión]** sin calibrar |
 | Radio de interlining | 3 km | **[Decisión]** para reducir el tamaño del problema |
@@ -129,7 +129,7 @@ inferior (escenario LB, §5).
 - **Cifras de validación [Medido]:** 64.502 expediciones · 417 rutas · 641 terminales · concurrencia
   6.539 a las 8:00 · 1.883,6 MWh/día · 0 descartes.
 
-### Etapa 1 — Clustering de rutas a electroterminales · estado: HECHA, se regenera bajo SOC cíclico
+### Etapa 1 — Clustering de rutas a electroterminales · estado: HECHA bajo ciclo diario
 
 **Decisión: la unidad de agrupamiento es la ruta, no la expedición.** **[Medido]** El 94,7% de las
 300 rutas con ida y vuelta identificables termina la ida a menos de 500 m de donde empieza la vuelta
@@ -194,7 +194,7 @@ $$\min \sum_{r\in R}\sum_{d\in D} c_{rd}\,x_{rd}\quad\text{s.a.}\quad \sum_{d} x
   unirlos. El profesor dijo que es válido y es decisión nuestra, siempre justificando.
 - **Scripts:** `scripts/4-clustering_c1.py`, `5-clustering_c2.py`, `8-clustering_comparacion.py` ·
   **Salida:** `data-processed/rutas_cluster_*.csv`, `results/etapa1_clustering/` (tablas, gráficos y
-  11 mapas).
+  10 mapas).
 
 ### Etapa 2 — Asignación de buses por cluster (VSP) · estado: CÓDIGO LISTO, a re-correr
 
@@ -224,8 +224,8 @@ entera**, exacta y rápida (~40 s sobre toda la red).
 
 - **Qué decide.** Para cada jornada ya fija (secuencia de expediciones de un bus), en qué huecos
   recarga, en qué electroterminal y cuánto, respetando el ciclo diario y la capacidad de puestos.
-- **Por qué hace falta.** **[Medido]** Con el ciclo diario, entre 45% (SOC 90%) y 59% (SOC 80%) de las
-  jornadas del caso base necesitan recargar **a mitad del día**, y entre 57% y 76% con interlining.
+- **Por qué hace falta.** **[Medido]** Con el ciclo diario, de 30% (nivel 100%) a 45% (90%) y 59% (80%) de las
+  jornadas del caso base necesitan recargar **a mitad del día**, y de 39% a 76% con interlining.
   La jornada más cara consume 676 kWh contra 350 kWh de batería: **ningún nivel de SOC inicial evita
   la recarga intermedia**.
 - **Para el caso base (E0, E1, E2): política reactiva**, implementada como simulador sobre las
@@ -335,8 +335,10 @@ explicar, y separa el valor de cada decisión.
 
 ## 7. Limitaciones conocidas (a declarar, no a esconder)
 
-- **Deadhead euclidiano × 1,3** sin calibrar. Se espera crítica; el Bloque B del plan lo respalda con
-  datos propios. Se mantiene para esta entrega y se espera feedback de la presentación.
+- **Deadhead euclidiano × 1,3.** Se espera crítica. Contrastado con trazados GTFS (script `9-`): es
+  conservador para el interlining y, a escala de pullout/pullin, queda cerca del rodeo medido de
+  las rutas, que es una cota superior. Puede subestimar algo el costo de pullout/pullin; se mide
+  con la sensibilidad de la Etapa 2. Se mantiene para esta entrega.
 - **Duración y distancia constantes por patrón**: las salidas de un mismo patrón duran lo mismo a
   cualquier hora (sin efecto de hora punta).
 - **Consumo constante** (1,4 kWh/km): sin topografía ni congestión.
@@ -358,14 +360,15 @@ explicar, y separa el valor de cada decisión.
 | Filtrado | `1-filtro_datos_buses.py`, `2-filtro_tipo_dia.py` | `data-alumnos/` | `data-filtrado/` |
 | 0 | `3-preprocesamiento_expediciones.py` | `data-filtrado/` | `data-processed/{expediciones,terminales,rutas_resumen,rutas_ida_vuelta,terminales_por_ruta}.csv`, `results/etapa0_preprocesamiento/` |
 | 1 | `4-clustering_c1.py` | tablas por ruta | `rutas_cluster_c1a.csv`, `rutas_cluster_c1b.csv` |
-| 1 | `5-clustering_c2.py` | tablas por ruta | `rutas_cluster_c2.csv`, `rutas_cluster_c2_ciclo.csv` *(a regenerar bajo SOC cíclico)* |
-| 1 | `8-clustering_comparacion.py` | las 4 asignaciones | `rutas_clustering_completo.csv`, `results/etapa1_clustering/` |
+| 1 | `5-clustering_c2.py` | tablas por ruta | `rutas_cluster_c2.csv` (ciclo diario), tablas de capacidad, de evidencia del rechazo de SOC 100% y barrido de θ |
+| 1 | `8-clustering_comparacion.py` | las 3 asignaciones (C1a, C1b, C2) | `rutas_clustering_completo.csv`, `results/etapa1_clustering/` |
 | 2 | `6-vsp_asignacion_buses.py`, `7-comparar_escenarios.py` | expediciones + asignación | jornadas por escenario *(a regenerar)* |
 | 3 | `10-carga_reactiva.py` | jornadas | eventos de carga, ocupación, costo *(a crear)* |
 | 4 | `11-milp_carga.py` | ventanas de carga | programación óptima *(a crear)* |
 
 Utilidades compartidas en `scripts/common/` (`parametros.py`, `geo.py`, `tiempo.py`, `rutas.py`,
-`clustering.py`). Los números 9, 12 y 13 están reservados para la calibración del deadhead, la
+`clustering.py`). `9-calibracion_deadhead.py` calibra el factor de desvío con los trazados GTFS
+(salida en `results/etapa0_calibracion_deadhead/`). Los números 12 y 13 están reservados para la
 comparación de KPIs y el análisis de recargas según el SOC (ver el plan). Cómo correr y verificar: [`03_guia_pruebas.md`](03_guia_pruebas.md).
 
 ---

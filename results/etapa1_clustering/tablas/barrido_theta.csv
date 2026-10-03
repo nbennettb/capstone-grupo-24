@@ -1,6 +1,11 @@
-theta;factible;rutas_movidas;costo_asignacion_usd_dia;uso_max_pct;depot_mas_cargado
-1.0;True;0.0;83271.0;89.9;Los Espinos
-0.9;True;0.0;83271.0;99.9;Los Espinos
-0.8;True;11.0;83273.0;98.5;Los Espinos
-0.7;True;21.0;83333.0;100.0;El Conquistador
-0.6;False;;;;
+capacidad;theta;factible;rutas_movidas;costo_asignacion_usd_dia;uso_max_pct;depot_mas_cargado
+separada;1.0;True;0.0;83271.0;89.9;Los Espinos
+separada;0.9;True;0.0;83271.0;99.9;Los Espinos
+separada;0.8;True;11.0;83273.0;98.5;Los Espinos
+separada;0.7;True;21.0;83333.0;100.0;El Conquistador
+separada;0.6;False;;;;
+combinada;1.0;True;0.0;83271.0;72.5;Los Espinos + Santa Rosa
+combinada;0.9;True;0.0;83271.0;80.6;Los Espinos + Santa Rosa
+combinada;0.8;True;0.0;83271.0;90.6;Los Espinos + Santa Rosa
+combinada;0.7;True;9.0;83328.0;99.9;El Conquistador
+combinada;0.6;False;;;;

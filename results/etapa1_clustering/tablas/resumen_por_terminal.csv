@@ -9,13 +9,8 @@ La Reina;C1b (terminales reales);67;1159.0;210274.6;294384.5
 Los Espinos;C1b (terminales reales);88;1780.0;332956.4;466139.0
 Santa Rosa;C1b (terminales reales);98;1523.0;271152.3;379613.3
 Vespucio Norte;C1b (terminales reales);56;803.0;143187.5;200462.5
-El Conquistador;C2 caso base (soc100);108;2123.0;387841.9;542978.6
-La Reina;C2 caso base (soc100);67;1159.0;210274.6;294384.5
-Los Espinos;C2 caso base (soc100);88;1780.0;332956.4;466139.0
-Santa Rosa;C2 caso base (soc100);98;1523.0;271152.3;379613.3
-Vespucio Norte;C2 caso base (soc100);56;803.0;143187.5;200462.5
-El Conquistador;C2 escenario ciclico;108;2123.0;387841.9;542978.6
-La Reina;C2 escenario ciclico;67;1159.0;210274.6;294384.5
-Los Espinos;C2 escenario ciclico;88;1780.0;332956.4;466139.0
-Santa Rosa;C2 escenario ciclico;98;1523.0;271152.3;379613.3
-Vespucio Norte;C2 escenario ciclico;56;803.0;143187.5;200462.5
+El Conquistador;C2 (MILP con capacidad, ciclo diario);108;2123.0;387841.9;542978.6
+La Reina;C2 (MILP con capacidad, ciclo diario);67;1159.0;210274.6;294384.5
+Los Espinos;C2 (MILP con capacidad, ciclo diario);88;1780.0;332956.4;466139.0
+Santa Rosa;C2 (MILP con capacidad, ciclo diario);98;1523.0;271152.3;379613.3
+Vespucio Norte;C2 (MILP con capacidad, ciclo diario);56;803.0;143187.5;200462.5

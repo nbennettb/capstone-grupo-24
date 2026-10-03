@@ -12,7 +12,7 @@ data-alumnos/chile.gpkg
 data-alumnos/gtfs/stop_times.txt
 data-alumnos/gtfs/shapes.txt
 
-# --- Configuración local de Claude Code (por máquina/sesión, no de equipo) ---
+# --- Configuración local del editor (por máquina, no de equipo) ---
 .claude/
 
 # --- Python ---

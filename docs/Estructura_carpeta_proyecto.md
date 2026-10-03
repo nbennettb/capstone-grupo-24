@@ -70,8 +70,7 @@
         ├── expediciones.csv                  (Etapa 0, 64.502 filas)
         ├── rutas_cluster_c1a.csv              (Etapa 1, C1a: centroide)
         ├── rutas_cluster_c1b.csv              (Etapa 1, C1b: terminales reales)
-        ├── rutas_cluster_c2.csv               (Etapa 1, C2: caso base SOC 100%)
-        ├── rutas_cluster_c2_ciclo.csv         (Etapa 1, C2: escenario ciclico)
+        ├── rutas_cluster_c2.csv               (Etapa 1, C2: bajo ciclo diario)
         ├── rutas_clustering_completo.csv      (Etapa 1, tabla ancha por ruta)
         ├── rutas_ida_vuelta.csv               (Etapa 0, 300 rutas)
         ├── rutas_resumen.csv                  (Etapa 0, 417 rutas)
@@ -149,17 +148,26 @@
             ├── descartes.csv
             ├── distribucion_expediciones.csv
             ├── reporte.md
+        └── 📁etapa0_calibracion_deadhead
+            └── 📁graficos
+                ├── ejemplo_trazado.png
+                ├── factor_por_escala.png
+            └── 📁tablas
+                ├── escala_deadhead_pullout_pullin.csv
+                ├── factor_por_escala.csv
+                ├── factor_por_trazado.csv
+            ├── reporte.md
         └── 📁etapa1_clustering
             └── 📁graficos
                 ├── barrido_theta.png
-                ├── capacidad.png
+                ├── capacidad_ciclo.png
+                ├── capacidad_sin_vs_con_recuperacion.png
                 ├── distancias.png
                 ├── rutas_por_terminal.png
             └── 📁mapas
                 ├── mapa_c1a.png
                 ├── mapa_c1b.png
                 ├── mapa_c2.png
-                ├── mapa_c2_ciclo.png
                 ├── mapa_diferencias.png
                 ├── mapa_paraderos_terminales.png
                 ├── mapa_terminal_el_conquistador.png
@@ -169,7 +177,8 @@
                 ├── mapa_terminal_vespucio_norte.png
             └── 📁tablas
                 ├── barrido_theta.csv
-                ├── capacidad_dos_supuestos.csv
+                ├── capacidad_por_terminal.csv
+                ├── capacidad_sin_vs_con_recuperacion.csv
                 ├── comparacion_estrategias.csv
                 ├── distancias_ruta_terminal.csv
                 ├── resumen_por_terminal.csv
@@ -191,6 +200,7 @@
         ├── 6-vsp_asignacion_buses.py                   (Etapa 2 — pausada, no correr)
         ├── 7-comparar_escenarios.py                    (Etapa 2 — pausada, no correr)
         ├── 8-clustering_comparacion.py                 (cierre Etapa 1: comparación y mapas)
+        ├── 9-calibracion_deadhead.py                   (calibración del factor de desvío con trazados GTFS)
     ├── .gitignore
     ├── README.md
 ```

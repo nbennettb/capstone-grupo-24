@@ -5,17 +5,12 @@
 > No asume que hayas leído el resto de `docs/context/`, aunque se recomienda.
 >
 > Cubre el pipeline **vigente**: Etapa 0 (preprocesamiento) y Etapa 1 (clustering de rutas a
-> electroterminales). La Etapa 2 (`scripts/6-vsp_asignacion_buses.py`, `7-comparar_escenarios.py`)
-> existe y funciona, pero está pausada hasta validar supuestos con el profesor — no forma parte de
-> esta guía. Ver `01_metodologia.md` (Etapa 2) y `05_plan_entrega2.md`.
+> electroterminales, bajo ciclo diario). La Etapa 2 (`scripts/6-vsp_asignacion_buses.py`,
+> `7-comparar_escenarios.py`) existe y funciona, pero se ajusta y corre en el Bloque C del plan: no
+> forma parte de esta guía todavía. Ver `01_metodologia.md` (Etapa 2) y `05_plan_entrega2.md`.
 >
-> Última edición: **03/10/2026**.
+> Última edición: **03/10/2026** (corrección: el nivel cíclico base pasa a 100%, dato del curso; ver `04_bitacora.md`).
 >
-> ⚠️ **Esta guía describe el pipeline TAL COMO ESTÁ HOY** (Etapas 0 y 1). Las cifras de `5-clustering_c2.py`
-> (caso base "SOC 100%", grilla de horas 24/18/10, escenario "ciclo" como sensibilidad) corresponden al
-> **supuesto anterior, rechazado por el profesor**. El Bloque A de [`05_plan_entrega2.md`](05_plan_entrega2.md)
-> las reemplaza: el ciclo diario pasa a ser el escenario principal y esta guía debe actualizarse entonces.
-> Las cifras de `3-` y `4-` siguen vigentes.
 
 ---
 
@@ -84,7 +79,7 @@ Mucho más simple que en la ronda anterior: la Etapa 1 ya no depende de la Etapa
 `terminales_por_ruta.csv` y `terminales.csv` (Etapa 0) — **ninguno de los dos necesita que se haya
 corrido la Etapa 2** (a diferencia de la ronda anterior, donde `5-clustering_milp.py` leía
 `jornadas_ruta.csv`). `8-clustering_comparacion.py` sí necesita que 4 y 5 ya hayan corrido sobre la
-red completa (417 rutas): lee las cuatro asignaciones que generan.
+red completa (417 rutas): lee las tres asignaciones que generan (C1a, C1b, C2).
 
 ## 4. Por script: checkpoint chico, corrida completa, y qué esperar
 
@@ -125,23 +120,46 @@ Output: `data-processed/rutas_cluster_c1a.csv`, `rutas_cluster_c1b.csv`,
 
 ```
 # Checkpoint de reactividad: capacidad muy apretada a proposito
-python scripts/5-clustering_c2.py --rutas 203N 203c 204N 211c 301c 542 546e B08 B32 B35 D11 E13 F06 F11 F16 F25 G05 G37 G43 J06 --carga ciclo --theta 0.05
+python scripts/5-clustering_c2.py --rutas 203N 203c 204N 211c 301c 542 546e B08 B32 B35 D11 E13 F06 F11 F16 F25 G05 G37 G43 J06 --theta 0.05
 
-python scripts/5-clustering_c2.py    # red completa (~40-45 s: corre 2 supuestos + grilla + barrido de theta)
+python scripts/5-clustering_c2.py    # red completa (~30-40 s: asignación, evidencia y barrido de theta)
 ```
 
-En el checkpoint, revisa que "Uso de capacidad por electroterminal" no supere el 100% en ningún
-electroterminal y que se reasignen rutas. En la red completa (referencia 30/09):
+Resuelve bajo la **condición cíclica** (se recarga todo lo consumido, sin importar el nivel de batería; H = 24 h). En el checkpoint, revisa que
+ningún electroterminal supere el 100% y que se reasignen rutas (3 de 20). En la red completa
+(referencia, regenerada el 03/10):
 
-- **Caso base (SOC inicial 100%):** el MILP con capacidad coincide **exactamente** con C1b (0 rutas
-  distintas) — la capacidad no está activa. Uso máximo: 1,2% (Los Espinos).
-- **Escenario cíclico** (recargar todo lo consumido): uso máximo 89,9% (Los Espinos). Infactible con
-  menos de ~18h/día de ventana de carga.
-- **Barrido de θ** (cíclico, H=24h): empieza a mover rutas en θ≈0,8, infactible en θ=0,6.
+- **C2 coincide exactamente con C1b** (0 rutas distintas): con θ = 1 la restricción agregada diaria
+  no está activa. Uso: Vespucio Norte 30,9% · El Conquistador 69,8% · **Los Espinos 89,9%** · La Reina
+  68,1% · Santa Rosa 58,6%. `h_r` total = 10.464 horas-cargador/día (1.884 MWh) de 16.800 disponibles.
+- **Barrido de θ** (capacidad separada): 0 rutas movidas con θ = 1 y 0,9; 11 con 0,8; 21 con 0,7;
+  infactible con 0,6. Con Los Espinos + Santa Rosa combinados: 0 rutas movidas hasta θ = 0,8; 9 con 0,7;
+  infactible con 0,6.
+- **Evidencia "sin recuperación" vs "con recuperación"** (proxy por ruta, sin deadhead; mismo nivel de
+  batería en ambos lados). Con recuperación (ciclo): 10.464 horas-cargador (62,3% de la capacidad),
+  igual para todo nivel. Sin recuperación: 108 h (0,6%) al 100%, 380 h (2,3%) al 90%, 1.086 h (6,5%) al
+  80% y 2.201 h (13,1%) al 70%. No genera ninguna asignación.
 
-Output: `data-processed/rutas_cluster_c2.csv`, `rutas_cluster_c2_ciclo.csv`,
-`results/etapa1_clustering/tablas/{capacidad_dos_supuestos,barrido_theta}.csv`,
-`results/etapa1_clustering/graficos/{capacidad,barrido_theta}.png`.
+Output: `data-processed/rutas_cluster_c2.csv`,
+`results/etapa1_clustering/tablas/{capacidad_por_terminal,capacidad_sin_vs_con_recuperacion,barrido_theta}.csv`,
+`results/etapa1_clustering/graficos/{capacidad_ciclo,capacidad_sin_vs_con_recuperacion,barrido_theta}.png`.
+
+### `scripts/9-calibracion_deadhead.py` (calibración del factor de desvío) — independiente de las etapas
+
+```
+python scripts/9-calibracion_deadhead.py --shapes 101I 101R 210I   # checkpoint chico (imprime una ventana para revisar a mano)
+python scripts/9-calibracion_deadhead.py                           # los 839 trazados (~5 s)
+```
+
+Mide, en cada trazado GTFS, el cociente `recorrido / línea recta` entre pares de puntos separados por
+1, 3, 5, 10 y 15 km de recorrido. Requiere `data-filtrado/{shapes_bus,shape_distances_bus}.csv` y
+`data-processed/rutas_cluster_c2.csv` (para la escala del pullout/pullin). Referencia (03/10): medianas
+**1,04 / 1,22 / 1,29 / 1,35 / 1,38** para 1 / 3 / 5 / 10 / 15 km; pullout/pullin de C2 con mediana de
+~12 km ponderada por buses; largo calculado vs `shape_distances_bus.csv` con error máximo 0,29%.
+
+Output: `results/etapa0_calibracion_deadhead/{reporte.md, tablas/{factor_por_escala,factor_por_trazado,
+escala_deadhead_pullout_pullin}.csv, graficos/{factor_por_escala,ejemplo_trazado}.png}`. Justificación
+para el informe: `docs/justificaciones/02_factor_desvio_deadhead.md`.
 
 ### `scripts/8-clustering_comparacion.py` (cierre de la Etapa 1) — requiere 4 y 5 ya corridos en la red completa
 
@@ -149,14 +167,16 @@ Output: `data-processed/rutas_cluster_c2.csv`, `rutas_cluster_c2_ciclo.csv`,
 python scripts/8-clustering_comparacion.py     # ~35-40 s (la mayor parte es leer chile.gpkg y dibujar mapas)
 ```
 
-Falla con un mensaje claro si falta alguna de las 4 asignaciones (`rutas_cluster_{c1a,c1b,c2,c2_ciclo}.csv`).
-Valida que C2 caso base coincida exactamente con C1b (si no, hay un error real que investigar antes de
-confiar en el resultado). Genera la tabla ancha por ruta y **11 mapas** (uno por estrategia ×4, uno por
-electroterminal ×5, paraderos, diferencias).
+Falla con un mensaje claro si falta alguna de las 3 asignaciones (`rutas_cluster_{c1a,c1b,c2}.csv`) o
+alguna tabla del script 5. Valida que C2 coincida exactamente con C1b (si no, la restricción de
+capacidad se activó y hay que explicarlo antes de confiar en el resultado). Genera la tabla ancha por
+ruta y **10 mapas** (uno por estrategia ×3, uno por electroterminal ×5, paraderos, diferencias). Referencia:
+C1a vs C1b cambia 41 de 417 rutas; costo aproximado de pullout/pullin 83.843 → 83.271 USD/día.
 
 Output: `data-processed/rutas_clustering_completo.csv`, `results/etapa1_clustering/{reporte.md,
 tablas/{resumen_por_terminal,comparacion_estrategias,rutas_que_cambian}.csv,
-graficos/rutas_por_terminal.png, mapas/*.png}`.
+graficos/rutas_por_terminal.png, mapas/*.png}`. El `reporte.md` termina con un índice de todos los
+archivos de la carpeta.
 
 ## 5. Reproducir todo de una vez (copiar y pegar)
 
@@ -167,6 +187,7 @@ python scripts/3-preprocesamiento_expediciones.py
 python scripts/4-clustering_c1.py
 python scripts/5-clustering_c2.py
 python scripts/8-clustering_comparacion.py
+python scripts/9-calibracion_deadhead.py
 ```
 
 Tiempo total estimado: ~1,5 minutos.

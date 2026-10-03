@@ -2,8 +2,8 @@
 Etapa 1 (cierre) del pipeline de modelacion - ICS2122 Capstone Buses Electricos
 (ver docs/context/01_metodologia.md seccion 4).
 
-Junta las cuatro asignaciones ya generadas por scripts/4-clustering_c1.py
-(C1a, C1b) y scripts/5-clustering_c2.py (C2 caso base, C2 ciclico):
+Junta las tres asignaciones ya generadas por scripts/4-clustering_c1.py
+(C1a, C1b) y scripts/5-clustering_c2.py (C2, bajo ciclo diario):
   - Las compara bajo un CRITERIO COMUN (distancia esperada a los paraderos
     terminales reales de cada ruta, la misma metrica de C1b/C2), para que
     la comparacion sea justa aunque C1a haya decidido con otra metrica
@@ -16,11 +16,12 @@ Junta las cuatro asignaciones ya generadas por scripts/4-clustering_c1.py
   - Escribe el reporte final de la Etapa 1 (resultado que se lleva a la
     reunion con el grupo y el profesor).
 
-Input:  data-processed/rutas_cluster_{c1a,c1b,c2,c2_ciclo}.csv,
+Input:  data-processed/rutas_cluster_{c1a,c1b,c2}.csv,
         rutas_resumen.csv, terminales_por_ruta.csv, terminales.csv,
         data-filtrado/{depots,trips_dia_L,shapes_bus}.csv,
         data-alumnos/chile.gpkg (fondo geografico, capa de comunas)
-        results/etapa1_clustering/tablas/*.csv (generados por 4 y 5)
+        results/etapa1_clustering/tablas/{capacidad_por_terminal,capacidad_sin_vs_con_recuperacion,
+            barrido_theta}.csv (generados por 5)
 Output: data-processed/rutas_clustering_completo.csv
         results/etapa1_clustering/tablas/{resumen_por_terminal,
             comparacion_estrategias,rutas_que_cambian}.csv
@@ -59,12 +60,12 @@ for _d in (TABLAS, GRAFICOS, MAPAS):
     _d.mkdir(exist_ok=True)
 
 RUTAS_ESPERADAS = 417
-ESTRATEGIAS = ["c1a", "c1b", "c2", "c2_ciclo"]
+NOMBRE_UNIDO = "Los Espinos + Santa Rosa"
+ESTRATEGIAS = ["c1a", "c1b", "c2"]
 NOMBRES_ESTRATEGIA = {
     "c1a": "C1a (centroide)",
     "c1b": "C1b (terminales reales)",
-    "c2": "C2 caso base (soc100)",
-    "c2_ciclo": "C2 escenario ciclico",
+    "c2": "C2 (MILP con capacidad, ciclo diario)",
 }
 COLORES_DEPOT = {  # paleta fija para que el color de un electroterminal sea el mismo en todos los mapas
     "Vespucio Norte": "#1b9e77",
@@ -124,7 +125,7 @@ def cargar_fondo_comunas():
 # --------------------------------------------------------------------------- #
 
 def construir_comparacion(asignaciones, rutas_resumen, dist_comun, depots):
-    """Evalua las 4 estrategias con la MISMA metrica de distancia (a
+    """Evalua las 3 estrategias con la MISMA metrica de distancia (a
     paraderos terminales reales), sin importar con que metrica decidio
     cada una. Compararlas con sus propias metricas seria injusto: C1a
     reportaria una distancia mas chica solo porque mide distinto, no
@@ -161,7 +162,7 @@ def construir_resumen_por_terminal(asignaciones, rutas_resumen):
 
 
 def construir_rutas_que_cambian(asignaciones):
-    pares = [("c1a", "c1b"), ("c1b", "c2"), ("c1b", "c2_ciclo"), ("c2", "c2_ciclo")]
+    pares = [("c1a", "c1b"), ("c1b", "c2")]
     filas = []
     for a, b in pares:
         da, db = asignaciones[a], asignaciones[b]
@@ -173,9 +174,9 @@ def construir_rutas_que_cambian(asignaciones):
     return pd.DataFrame(filas)
 
 
-def construir_tabla_ancha(asignaciones, rutas_resumen, dist_comun, depots, h_r_soc100, h_r_ciclo):
+def construir_tabla_ancha(asignaciones, rutas_resumen, dist_comun, depots, h_r_ciclo):
     ancha = rutas_resumen.set_index("route_id").copy()
-    ancha = ancha.join(pd.DataFrame({"h_r_soc100": h_r_soc100, "h_r_ciclo": h_r_ciclo}, index=rutas_resumen["route_id"]))
+    ancha = ancha.join(pd.DataFrame({"h_r_horas_cargador": h_r_ciclo}, index=rutas_resumen["route_id"]))
 
     for nombre_col, depot_id in zip(depots["nombre"], depots["depot_id"].astype(str)):
         ancha[f"dist_km_a_{nombre_col.replace(' ', '_')}"] = dist_comun[depot_id].reindex(ancha.index)
@@ -185,8 +186,6 @@ def construir_tabla_ancha(asignaciones, rutas_resumen, dist_comun, depots, h_r_s
 
     ancha["cambia_c1a_c1b"] = ancha["depot_c1a"] != ancha["depot_c1b"]
     ancha["cambia_c1b_c2"] = ancha["depot_c1b"] != ancha["depot_c2"]
-    ancha["cambia_c1b_c2_ciclo"] = ancha["depot_c1b"] != ancha["depot_c2_ciclo"]
-    ancha["cambia_c2_c2_ciclo"] = ancha["depot_c2"] != ancha["depot_c2_ciclo"]
     return ancha.reset_index().round(3)
 
 
@@ -208,7 +207,7 @@ def graficar_rutas_por_terminal(asignaciones, path_png):
     ax.set_xticks(x + ancho * (len(tabla.columns) - 1) / 2)
     ax.set_xticklabels(tabla.index, rotation=20, ha="right")
     ax.set_ylabel("Numero de rutas asignadas")
-    ax.set_title("Rutas por electroterminal, las 4 estrategias")
+    ax.set_title("Rutas por electroterminal, las 3 estrategias")
     ax.legend()
     fig.tight_layout()
     fig.savefig(path_png, dpi=150)
@@ -249,7 +248,7 @@ def graficar_mapa_por_terminal(geom_rutas, asignacion, comunas, depots, path_dir
         ax.scatter([dep["lon"]], [dep["lat"]], s=dep["capacity"] * 2, c="black", marker="^", zorder=3)
         ax.set_xlim(BBOX_MAPA[0], BBOX_MAPA[2])
         ax.set_ylim(BBOX_MAPA[1], BBOX_MAPA[3])
-        ax.set_title(f"{nombre}: {len(rutas_dep)} rutas asignadas (C2, caso base)")
+        ax.set_title(f"{nombre}: {len(rutas_dep)} rutas asignadas (C2, ciclo diario)")
         ax.set_xticks([]); ax.set_yticks([])
         fig.tight_layout()
         nombre_archivo = nombre.lower().replace(" ", "_")
@@ -297,7 +296,7 @@ def graficar_mapa_diferencias(geom_rutas, asig_c1a, asig_c2, comunas, depots, pa
     ax.scatter(depots["lon"], depots["lat"], s=depots["capacity"] * 1.5, c="black", marker="^", zorder=3)
     ax.set_xlim(BBOX_MAPA[0], BBOX_MAPA[2])
     ax.set_ylim(BBOX_MAPA[1], BBOX_MAPA[3])
-    ax.set_title("Rutas que cambian de electroterminal: C1a (centroide) -> C2 (modelo final)")
+    ax.set_title("Rutas que cambian de electroterminal: C1a (centroide) -> C2 (= C1b bajo ciclo, theta = 1)")
     ax.set_xticks([]); ax.set_yticks([])
     ax.legend(loc="lower left", fontsize=8, framealpha=0.9)
     fig.tight_layout()
@@ -310,31 +309,66 @@ def graficar_mapa_diferencias(geom_rutas, asig_c1a, asig_c2, comunas, depots, pa
 # Reporte
 # --------------------------------------------------------------------------- #
 
-def escribir_reporte(comparacion, resumen_terminal, rutas_que_cambian, barrido_theta, grilla,
+def escribir_reporte(comparacion, resumen_terminal, capacidad, evidencia, barrido_theta,
                       n_diferencias_mapa):
+    uso_max = capacidad[capacidad["electroterminal"] != NOMBRE_UNIDO].sort_values("uso_pct").iloc[-1]
+    tot = evidencia[evidencia["electroterminal"] == "TOTAL"]
+    resumen_recup = (tot.pivot(index="nivel_soc_pct", columns="supuesto",
+                               values=["h_cargador_dia", "uso_pct"]).sort_index(ascending=False))
+    resumen_recup.columns = [f"{m} - {s}" for m, s in resumen_recup.columns]
+    resumen_recup = resumen_recup.reset_index()
+    nivel0 = int(tot["nivel_soc_pct"].max())
+    t0 = tot[tot["nivel_soc_pct"] == nivel0].set_index("supuesto")
     lineas = [
-        "# Reporte Etapa 1 - Clustering de rutas a electroterminales",
+        "# Reporte Etapa 1 - Clustering de rutas a electroterminales (ciclo diario)",
         "",
-        "Compara C1a (heuristica, centroide), C1b (heuristica, paraderos terminales reales), "
-        "C2 caso base (MILP con capacidad, SOC inicial 100%) y C2 ciclico (MILP con capacidad, "
-        "se recarga todo lo consumido).",
+        "Compara C1a (heuristica, centroide), C1b (heuristica, paraderos terminales reales) y "
+        "C2 (MILP con capacidad, bajo ciclo diario: cada bus empieza y termina el dia con el mismo "
+        "nivel de bateria, asi que se recarga todo lo consumido).",
         "",
         "## Comparacion bajo criterio comun (distancia a paraderos terminales reales)",
         "",
         comparacion.to_markdown(index=False),
         "",
-        "## Resultado central: bajo el caso base, la capacidad no restringe",
-        f"- C2 caso base coincide EXACTAMENTE con C1b: la restriccion de capacidad no esta activa "
-        f"bajo SOC inicial 100% (ver `results/etapa1_clustering/tablas/capacidad_dos_supuestos.csv`).",
-        f"- Bajo el escenario ciclico (H=24h), el uso maximo llega a "
-        f"{grilla[(grilla.supuesto=='ciclo') & (grilla.horas_disponibles==24)]['uso_pct'].max():.1f}% "
-        f"en Los Espinos.",
-        f"- Con horas de carga restringidas a 10h/dia, el escenario ciclico es INFACTIBLE "
-        f"(ver `tablas/capacidad_dos_supuestos.csv`).",
+        "## Capacidad bajo ciclo diario (theta = 1, H = 24 h)",
         "",
-        "## Barrido de theta (escenario ciclico) -- a partir de cuando C2 se separa de C1b",
+        capacidad.round(1).to_markdown(index=False),
+        "",
+        f"- C2 coincide EXACTAMENTE con C1b: con theta = 1 la restriccion de capacidad AGREGADA DIARIA "
+        f"no esta activa (uso maximo {uso_max['uso_pct']:.1f}% en {uso_max['electroterminal']}).",
+        "- Eso NO significa que la capacidad no importe. C2 ve un promedio diario en horas-cargador; la "
+        "carga real se concentra en ciertas horas, y esa saturacion horaria la medira el simulador de "
+        "carga reactiva (colas de espera), no C2.",
+        "",
+        "## Barrido de theta -- a partir de cuando C2 se separa de C1b",
         "",
         barrido_theta.to_markdown(index=False),
+        "",
+        "Capacidad `separada` = una restriccion por electroterminal; `combinada` = Los Espinos y Santa "
+        "Rosa comparten una bolsa de 270 puestos. Las rutas movidas se miden contra la asignacion con "
+        "theta = 1. Es evidencia secundaria: el efecto real de unir esos dos terminales esta en el "
+        "interlining (Etapa 2, escenario E2b).",
+        "",
+        "## Evidencia: sin recuperacion vs con recuperacion, al mismo nivel (proxy por ruta, sin deadhead)",
+        "",
+        "Sin recuperacion: los buses parten con el nivel indicado y no lo recuperan al terminar (solo "
+        "se paga el excedente sobre la bateria util). Con recuperacion: condicion ciclica, se paga todo "
+        "lo consumido. Totales de los 5 electroterminales (detalle por electroterminal en "
+        "`tablas/capacidad_sin_vs_con_recuperacion.csv`):",
+        "",
+        resumen_recup.round(2).to_markdown(index=False),
+        "",
+        f"- Al nivel {nivel0}% (el maximo de los datos), sin recuperacion solo se recargarian "
+        f"{t0.loc['Sin recuperacion', 'mwh_a_recargar']:,.0f} MWh de "
+        f"{t0.loc['Con recuperacion (ciclo)', 'mwh_a_recargar']:,.0f} MWh consumidos, y los puestos "
+        f"usarian {t0.loc['Sin recuperacion', 'uso_pct']:.1f}% de su capacidad (con recuperacion: "
+        f"{t0.loc['Con recuperacion (ciclo)', 'uso_pct']:.1f}%).",
+        "- Con recuperacion, la energia a recargar y la asignacion de C2 no dependen del nivel: el nivel "
+        "solo cambia cuantas jornadas recargan a mitad del dia, y eso se mide en el barrido de niveles "
+        "con el simulador de carga reactiva (el nivel base lo elige el costo total, ver "
+        "docs/context/02_supuestos_y_decisiones.md, B6).",
+        "- Estas cifras son un PROXY POR RUTA (kWh comerciales, sin pullout/pullin). La medicion por "
+        "jornada se produce en la Etapa 2, con las jornadas regeneradas.",
         "",
         "## Rutas por electroterminal, por estrategia",
         "",
@@ -342,13 +376,30 @@ def escribir_reporte(comparacion, resumen_terminal, rutas_que_cambian, barrido_t
         "",
         f"## Rutas que cambian de electroterminal entre C1a y C2 (mapa de diferencias): {n_diferencias_mapa}",
         "",
-        "## Archivos generados",
-        "- `data-processed/rutas_clustering_completo.csv`: tabla ancha, una fila por ruta.",
-        "- `tablas/`: resumen_por_terminal.csv, comparacion_estrategias.csv, rutas_que_cambian.csv, "
-        "distancias_ruta_terminal.csv, capacidad_dos_supuestos.csv, barrido_theta.csv.",
-        "- `graficos/`: rutas_por_terminal.png, distancias.png, capacidad.png, barrido_theta.png.",
-        "- `mapas/`: mapa_c1a.png, mapa_c1b.png, mapa_c2.png, mapa_c2_ciclo.png, "
-        "mapa_terminal_<nombre>.png (x5), mapa_paraderos_terminales.png, mapa_diferencias.png.",
+        "## Indice de esta carpeta",
+        "",
+        "Tablas (`tablas/`):",
+        "- `comparacion_estrategias.csv`: distancia y costo de pullout/pullin de C1a, C1b y C2 bajo el mismo criterio.",
+        "- `resumen_por_terminal.csv`: rutas, buses estimados, km y kWh por electroterminal y estrategia.",
+        "- `rutas_que_cambian.csv`: cada ruta que cambia de electroterminal entre estrategias.",
+        "- `distancias_ruta_terminal.csv`: distancia de cada ruta a cada electroterminal (centroide y paraderos reales).",
+        "- `capacidad_por_terminal.csv`: horas-cargador asignadas vs capacidad, bajo ciclo diario (incluye la fila combinada Los Espinos + Santa Rosa).",
+        "- `capacidad_sin_vs_con_recuperacion.csv`: sin recuperacion vs con recuperacion al mismo nivel de bateria (proxy por ruta).",
+        "- `barrido_theta.csv`: rutas movidas y uso maximo al apretar la capacidad, separada y combinada.",
+        "",
+        "Graficos (`graficos/`):",
+        "- `rutas_por_terminal.png`: rutas por electroterminal en las 3 estrategias.",
+        "- `distancias.png`: distancias ruta-electroterminal (C1a vs C1b).",
+        "- `capacidad_ciclo.png`: carga asignada vs capacidad bajo ciclo diario.",
+        "- `capacidad_sin_vs_con_recuperacion.png`: uso de capacidad sin vs con recuperacion, por electroterminal y segun el nivel.",
+        "- `barrido_theta.png`: rutas movidas y uso maximo segun theta.",
+        "",
+        "Mapas (`mapas/`): `mapa_c1a.png`, `mapa_c1b.png`, `mapa_c2.png` (rutas coloreadas por electroterminal), "
+        "`mapa_terminal_<nombre>.png` (x5, rutas de cada electroterminal bajo C2), "
+        "`mapa_paraderos_terminales.png` (641 paraderos por electroterminal mas cercano) y "
+        "`mapa_diferencias.png` (rutas que cambian entre C1a y C2).",
+        "",
+        "Tabla ancha por ruta: `data-processed/rutas_clustering_completo.csv`.",
         "",
         "*(Ver docs/context/01_metodologia.md para la interpretacion completa y las "
         "decisiones que este resultado habilita o deja pendientes.)*",
@@ -379,27 +430,24 @@ def main():
                                                             parametros.FACTOR_DESVIO)
     dist_comun = dist_comun.loc[rutas_resumen["route_id"].values]
 
-    kwh_dia = rutas_resumen.set_index("route_id")["kwh_dia"]
-    n_buses = rutas_resumen.set_index("route_id")["n_buses_estimados"]
-    h_r_soc100 = (np.maximum(0.0, kwh_dia - n_buses * costos.bateria_util_kwh) / costos.charge_power_kw)
-    h_r_ciclo = kwh_dia / costos.charge_power_kw
+    h_r_ciclo = rutas_resumen.set_index("route_id")["kwh_dia"] / costos.charge_power_kw
 
     print("--- Comparacion bajo criterio comun ---")
     comparacion = construir_comparacion(asignaciones, rutas_resumen, dist_comun, depots)
     print(comparacion.to_string(index=False))
     comparacion.to_csv(TABLAS / "comparacion_estrategias.csv", index=False, sep=CSV_SEP)
 
-    print("\n--- Resumen por terminal, las 4 estrategias ---")
+    print("\n--- Resumen por terminal, las 3 estrategias ---")
     resumen_terminal = construir_resumen_por_terminal(asignaciones, rutas_resumen)
     resumen_terminal.to_csv(TABLAS / "resumen_por_terminal.csv", index=False, sep=CSV_SEP)
 
     print("--- Rutas que cambian entre pares de estrategias ---")
     rutas_que_cambian = construir_rutas_que_cambian(asignaciones)
     rutas_que_cambian.to_csv(TABLAS / "rutas_que_cambian.csv", index=False, sep=CSV_SEP)
-    print(f"  {len(rutas_que_cambian)} cambios registrados en total (sumando los 4 pares comparados)")
+    print(f"  {len(rutas_que_cambian)} cambios registrados en total (sumando los 2 pares comparados)")
 
     print("\n--- Tabla ancha por ruta ---")
-    ancha = construir_tabla_ancha(asignaciones, rutas_resumen, dist_comun, depots, h_r_soc100, h_r_ciclo)
+    ancha = construir_tabla_ancha(asignaciones, rutas_resumen, dist_comun, depots, h_r_ciclo)
     ancha.to_csv(DATA_PROCESSED / "rutas_clustering_completo.csv", index=False, sep=CSV_SEP)
     print(f"  -> {DATA_PROCESSED / 'rutas_clustering_completo.csv'} ({len(ancha)} filas)")
 
@@ -430,9 +478,10 @@ def main():
     print(f"  -> {MAPAS / 'mapa_diferencias.png'} ({n_diferencias_mapa} rutas resaltadas)")
 
     print("\n--- Reporte final ---")
-    grilla = pd.read_csv(TABLAS / "capacidad_dos_supuestos.csv", sep=CSV_SEP)
+    capacidad = pd.read_csv(TABLAS / "capacidad_por_terminal.csv", sep=CSV_SEP)
+    evidencia = pd.read_csv(TABLAS / "capacidad_sin_vs_con_recuperacion.csv", sep=CSV_SEP)
     barrido_theta = pd.read_csv(TABLAS / "barrido_theta.csv", sep=CSV_SEP)
-    escribir_reporte(comparacion, resumen_terminal, rutas_que_cambian, barrido_theta, grilla,
+    escribir_reporte(comparacion, resumen_terminal, capacidad, evidencia, barrido_theta,
                       n_diferencias_mapa)
     print(f"  -> {RESULTS / 'reporte.md'}")
 
@@ -440,10 +489,11 @@ def main():
     for etq, asign in asignaciones.items():
         assert asign.index.is_unique, f"{etq}: alguna ruta aparece mas de una vez."
     assert (comparacion.loc[comparacion.estrategia == NOMBRES_ESTRATEGIA["c2"], "rutas_distintas_de_c1b"]
-            .iloc[0] == 0), "C2 caso base deberia coincidir exactamente con C1b (ver script 5)."
+            .iloc[0] == 0), ("Bajo ciclo y theta = 1 se esperaba C2 = C1b; si difiere, la restriccion de "
+                             "capacidad se activo y hay que explicarlo antes de seguir (ver script 5).")
     assert set(ancha["route_id"]) == set(rutas_resumen["route_id"]), \
         "La tabla ancha no tiene las mismas rutas que rutas_resumen.csv."
-    print("\n  [OK] Chequeos de sanidad pasaron (asignaciones unicas, C2 base == C1b, tabla ancha completa).")
+    print("\n  [OK] Chequeos de sanidad pasaron (asignaciones unicas, C2 == C1b, tabla ancha completa).")
 
     print("\n=== FIN ETAPA 1 ===")
 

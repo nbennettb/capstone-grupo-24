@@ -68,6 +68,11 @@
         ├── vehicles.csv
     └── 📁data-processed
         ├── expediciones.csv                  (Etapa 0, 64.502 filas)
+        ├── jornadas_E0.csv                    (Etapa 2, caso base: sin interlining)
+        ├── jornadas_E1.csv                    (Etapa 2, con interlining)
+        ├── jornadas_E2.csv                    (Etapa 2, con C2; idéntico a E1)
+        ├── jornadas_E2b.csv                   (Etapa 2, Los Espinos + Santa Rosa unidos)
+        ├── jornadas_LB.csv                    (Etapa 2, cota inferior; no operacional)
         ├── rutas_cluster_c1a.csv              (Etapa 1, C1a: centroide)
         ├── rutas_cluster_c1b.csv              (Etapa 1, C1b: terminales reales)
         ├── rutas_cluster_c2.csv               (Etapa 1, C2: bajo ciclo diario)
@@ -184,6 +189,24 @@
                 ├── resumen_por_terminal.csv
                 ├── rutas_que_cambian.csv
             ├── reporte.md
+        └── 📁etapa2_vsp
+            └── 📁graficos
+                ├── energia_por_jornada_E0_E1.png
+                ├── escalera_buses.png
+                ├── escalera_costo.png
+                ├── jornadas_E0.png
+                ├── jornadas_E1.png
+                ├── jornadas_E2.png
+                ├── jornadas_E2b.png
+                ├── jornadas_LB.png
+                ├── sensibilidad_deadhead.png
+            └── 📁tablas
+                ├── escalera_escenarios.csv
+                ├── precio_del_clustering.csv
+                ├── resumen_escenarios.csv
+                ├── resumen_sensibilidad.csv
+                ├── sensibilidad_deadhead.csv
+            ├── reporte.md
     └── 📁scripts
         └── 📁common
             ├── __init__.py
@@ -197,8 +220,8 @@
         ├── 3-preprocesamiento_expediciones.py          (Etapa 0)
         ├── 4-clustering_c1.py                          (Etapa 1, C1a + C1b)
         ├── 5-clustering_c2.py                          (Etapa 1, C2)
-        ├── 6-vsp_asignacion_buses.py                   (Etapa 2 — pausada, no correr)
-        ├── 7-comparar_escenarios.py                    (Etapa 2 — pausada, no correr)
+        ├── 6-vsp_asignacion_buses.py                   (Etapa 2: asignación de buses, un escenario por corrida)
+        ├── 7-comparar_escenarios.py                    (Etapa 2: escalera de escenarios y sensibilidad)
         ├── 8-clustering_comparacion.py                 (cierre Etapa 1: comparación y mapas)
         ├── 9-calibracion_deadhead.py                   (calibración del factor de desvío con trazados GTFS)
     ├── .gitignore

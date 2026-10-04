@@ -1,0 +1,8 @@
+parametro;valor;etiqueta;buses;delta_buses_vs_base;delta_buses_vs_base_pct;cost_operacion_usd;delta_costo_vs_base_pct;km_vacios_total;pct_km_vacios
+factor de desvio;1.2;E1_f1.2;7403;-57;-0.76;1973211.0;-1.11;170865.6;11.27
+factor de desvio;1.3;E1;7460;0;0.0;1995343.0;0.0;185680.9;12.13
+factor de desvio;1.35;E1_f1.35;7477;17;0.23;2003488.0;0.41;192978.5;12.54
+factor de desvio;1.5;E1_f1.5;7515;55;0.74;2024288.0;1.45;215037.4;13.78
+layover (min);0.0;E1_l0;7257;-203;-2.72;1942429.0;-2.65;181534.1;11.89
+layover (min);3.0;E1;7460;0;0.0;1995343.0;0.0;185680.9;12.13
+layover (min);10.0;E1_l10;7908;448;6.01;2113034.0;5.9;194854.6;12.65

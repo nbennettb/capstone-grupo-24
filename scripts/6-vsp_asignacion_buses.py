@@ -11,35 +11,57 @@ es de red (totalmente unimodular), por lo que la relajacion LP entrega
 directamente una solucion entera: no hace falta declarar variables
 binarias/enteras.
 
-A diferencia del prototipo exploratorio del 28/09 (an3.py, fuera del
-repo), este script SI modela los arcos de *pullout* (electroterminal ->
-primera expedicion de la jornada) y *pullin* (ultima expedicion ->
-electroterminal), con costo real de deadhead hacia el electroterminal mas
-cercano permitido segun el modo. Sin esto no se puede saber a que
-electroterminal "pertenece" cada bus, dato que necesitan las Etapas 3-4.
+El modelo incluye los arcos de *pullout* (electroterminal -> primera
+expedicion de la jornada) y *pullin* (ultima expedicion -> electroterminal),
+con costo real de deadhead hacia el electroterminal permitido segun el modo.
+Asi cada jornada "pertenece" a un electroterminal, dato que necesitan las
+Etapas 3-4.
 
 Tres modos (--modo):
-  ruta:    caso base. Cada ruta usa solo sus propios buses (interlining
-           solo dentro de la misma ruta). Electroterminal de cada ruta =
-           el mas cercano al centroide de sus paraderos terminales.
-  libre:   cota inferior C0. Interlining libre entre cualquier ruta (sujeto
-           al radio maximo), y cada bus elige el electroterminal mas
-           barato en cada pullout/pullin. Es el mejor caso posible.
+  ruta:    CASO BASE (escenario E0). Cada ruta usa solo sus propios buses
+           (interlining solo dentro de la misma ruta). El electroterminal de
+           cada ruta sale del archivo --asignacion de la Etapa 1.
   cluster: interlining solo entre rutas asignadas al mismo electroterminal
-           segun un archivo de asignacion de la Etapa 1 (--asignacion).
+           segun --asignacion (escenarios E1, E2). Con --unir-electroterminales
+           los electroterminales indicados forman UN solo grupo de
+           interlining (escenario E2b): una jornada puede salir de un patio y
+           volver al otro; no viola el retorno porque es un solo
+           electroterminal.
+  libre:   COTA INFERIOR (LB). Interlining libre entre cualquier ruta (sujeto
+           al radio maximo) y cada bus elige el electroterminal mas barato en
+           cada pullout/pullin. VIOLA el retorno al propio electroterminal:
+           no es un escenario operacional.
+
+Retorno [Profesor]: en 'ruta' y 'cluster' toda jornada empieza y termina en
+el mismo electroterminal (o en el mismo terminal unido); el script falla si
+no se cumple. En 'libre' solo se cuenta cuantas jornadas lo violan.
+
+Costos: se reporta el costo de OPERACION = flota + km sin pasajeros + espera
+(lo que cambia entre escenarios). El costo de los km con pasajeros es igual
+en todos los escenarios y se reporta aparte, sin sumarlo. La energia se agrega
+en la Etapa 3 (simulador de carga).
+
+Input:  data-processed/expediciones.csv, data-filtrado/depots.csv,
+        data-processed/rutas_cluster_*.csv (modos ruta y cluster)
+Output: data-processed/jornadas_<etiqueta>.csv
+        results/etapa2_vsp/tablas/resumen_escenarios.csv  (una fila por etiqueta)
+        results/etapa2_vsp/tablas/resumen_sensibilidad.csv (corridas con --sin-jornadas)
+        results/etapa2_vsp/graficos/jornadas_<etiqueta>.png
 
 Uso:
-    # Checkpoint chico (ver docs/context/01_metodologia.md):
-    python scripts/6-vsp_asignacion_buses.py --modo ruta --subset 101 102 301
-    python scripts/6-vsp_asignacion_buses.py --modo libre --subset 101 102 301
+    # Checkpoint chico (revisar a mano una jornada):
+    python scripts/6-vsp_asignacion_buses.py --modo ruta --asignacion data-processed/rutas_cluster_c1b.csv --subset 101 102 301 --etiqueta E0
+    python scripts/6-vsp_asignacion_buses.py --modo libre --subset 101 102 301 --etiqueta LB
 
-    # Red completa:
-    python scripts/6-vsp_asignacion_buses.py --modo ruta
-    python scripts/6-vsp_asignacion_buses.py --modo libre
+    # Escalera de escenarios, red completa:
+    python scripts/6-vsp_asignacion_buses.py --modo ruta    --asignacion data-processed/rutas_cluster_c1b.csv --etiqueta E0
+    python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --etiqueta E1
+    python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c2.csv  --etiqueta E2
+    python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c2.csv  --unir-electroterminales --etiqueta E2b
+    python scripts/6-vsp_asignacion_buses.py --modo libre --etiqueta LB
 
-    # Por cluster (requiere haber corrido antes 4-clustering_nearest.py /
-    # 5-clustering_milp.py):
-    python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1.csv --etiqueta cluster_c1
+    # Sensibilidad (no escribe jornadas):
+    python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --factor-desvio 1.5 --sin-jornadas --etiqueta E1_f1.5
 """
 
 import argparse
@@ -58,11 +80,15 @@ import scipy.sparse as sps
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import geo, parametros                                          # noqa: E402
-from common.clustering import depot_mas_cercano_por_ruta                    # noqa: E402
 from common.rutas import DATA_FILTRADO, DATA_PROCESSED, CSV_SEP, carpeta_resultados  # noqa: E402
 
-RESULTS = carpeta_resultados("06_vsp")
-RESUMEN_PATH = RESULTS / "resumen_escenarios.csv"
+RESULTS = carpeta_resultados("etapa2_vsp")
+TABLAS = RESULTS / "tablas"
+GRAFICOS = RESULTS / "graficos"
+TABLAS.mkdir(exist_ok=True)
+GRAFICOS.mkdir(exist_ok=True)
+RESUMEN_PATH = TABLAS / "resumen_escenarios.csv"
+RESUMEN_SENSIBILIDAD_PATH = TABLAS / "resumen_sensibilidad.csv"
 
 
 # --------------------------------------------------------------------------- #
@@ -90,29 +116,22 @@ def cargar_depots():
 # interlining (que determina con que otras expediciones se puede encadenar)
 # --------------------------------------------------------------------------- #
 
-def calcular_asignacion_depots(ex, depots, modo, asignacion_df, factor_desvio):
-    """Devuelve, para cada expedicion, el/los indices de electroterminal
-    permitidos para pullout/pullin:
-      - 'libre': None (senal de que se permite CUALQUIER electroterminal,
-        se usa el mas barato para cada expedicion individualmente).
-      - 'ruta' / 'cluster': un indice fijo por expedicion (columna del
-        DataFrame), determinado por su ruta.
-    """
+def calcular_asignacion_depots(ex, depots, modo, asignacion_df):
+    """Devuelve, para cada expedicion, el indice posicional del electroterminal de su ruta
+    (segun la asignacion de la Etapa 1) en los modos 'ruta' y 'cluster'; None en 'libre'
+    (senal de que se permite CUALQUIER electroterminal, el mas barato para cada expedicion)."""
     if modo == "libre":
         return None
-    if modo == "ruta":
-        idx_por_ruta = depot_mas_cercano_por_ruta(ex, depots, factor_desvio)
-    elif modo == "cluster":
-        depot_id_a_idx = {d: i for i, d in enumerate(depots["depot_id"].astype(str).values)}
-        idx_por_ruta = (asignacion_df.set_index(asignacion_df["route_id"].astype(str))["depot_id"]
-                         .astype(str).map(depot_id_a_idx))
-        faltantes = set(ex["route_id"].astype(str)) - set(idx_por_ruta.index)
-        if faltantes:
-            raise ValueError(f"{len(faltantes)} rutas de expediciones.csv no tienen asignacion de "
-                              f"electroterminal en el archivo --asignacion (ej: {sorted(faltantes)[:5]}). "
-                              f"Revisar que la Etapa 1 se haya corrido sobre las mismas rutas.")
-    else:
+    if modo not in ("ruta", "cluster"):
         raise ValueError(f"modo desconocido: {modo}")
+    depot_id_a_idx = {d: i for i, d in enumerate(depots["depot_id"].astype(str).values)}
+    idx_por_ruta = (asignacion_df.set_index(asignacion_df["route_id"].astype(str))["depot_id"]
+                     .astype(str).map(depot_id_a_idx))
+    faltantes = set(ex["route_id"].astype(str)) - set(idx_por_ruta.index)
+    if faltantes:
+        raise ValueError(f"{len(faltantes)} rutas de expediciones.csv no tienen asignacion de "
+                          f"electroterminal en el archivo --asignacion (ej: {sorted(faltantes)[:5]}). "
+                          f"Revisar que la Etapa 1 se haya corrido sobre las mismas rutas.")
     return ex["route_id"].astype(str).map(idx_por_ruta).values.astype(int)
 
 
@@ -147,24 +166,29 @@ def costos_pullout_pullin(ex, depots, idx_fijo, factor_desvio):
 # Construccion y resolucion del flujo de costo minimo
 # --------------------------------------------------------------------------- #
 
-def construir_grupos(ex, modo, idx_depot_fijo):
+def construir_grupos(ex, modo, idx_depot_fijo, idx_unidos=None):
     """Etiqueta de grupo por expedicion: dos expediciones solo pueden
     encadenarse (interlining) si comparten grupo (ademas de cumplir el
     radio maximo). 'ruta' -> route_id; 'libre' -> un unico grupo; 'cluster'
-    -> electroterminal asignado."""
+    -> electroterminal asignado, con los electroterminales de idx_unidos
+    (indices posicionales) fusionados en un solo grupo."""
     if modo == "ruta":
         return ex["route_id"].astype(str).values
     if modo == "libre":
         return np.full(len(ex), "TODAS", dtype=object)
     if modo == "cluster":
-        return idx_depot_fijo.astype(str)
+        grupo = idx_depot_fijo.astype(str).astype(object)
+        if idx_unidos:
+            grupo[np.isin(idx_depot_fijo, list(idx_unidos))] = "UNIDOS"
+        return grupo
     raise ValueError(modo)
 
 
-def resolver_flujo(ex, grupo, pullout_km, pullin_km, costos, radio_km):
+def resolver_flujo(ex, grupo, pullout_km, pullin_km, costos, radio_km, factor_desvio, layover_min):
     """Arma y resuelve el flujo de costo minimo en la red espacio-tiempo.
-    Devuelve (x_arcos_usados_df, buses, deadhead_km_interlining, espera_h,
-    tiempo_construccion_s, tiempo_total_s)."""
+    El deadhead entre expediciones es distancia euclidiana * factor_desvio, a
+    parametros.VELOCIDAD_KMH, mas layover_min de maniobra; el radio de interlining
+    se compara contra esa distancia ya multiplicada por el factor."""
     t0 = time.time()
     n = len(ex)
     dep, arr = ex["dep_min"].values, ex["arr_min"].values
@@ -175,7 +199,7 @@ def resolver_flujo(ex, grupo, pullout_km, pullin_km, costos, radio_km):
     P = np.zeros((len(stops_all), 2))
     P[ex["ot"].values] = geo.xy(ex["o_lat"].values, ex["o_lon"].values)
     P[ex["dt"].values] = geo.xy(ex["d_lat"].values, ex["d_lon"].values)
-    TD = geo.matriz_distancias_planas(P, P) * parametros.FACTOR_DESVIO
+    TD = geo.matriz_distancias_planas(P, P) * factor_desvio
 
     key_dep = list(zip(ex["ot"].values, grupo))
     eventos = [(k, dep[j], "D", j, 0.0) for j, k in enumerate(key_dep)]
@@ -187,7 +211,7 @@ def resolver_flujo(ex, grupo, pullout_km, pullin_km, costos, radio_km):
         for a in np.unique(ex["dt"].values[idx_g]):
             ii = idx_g[ex["dt"].values[idx_g] == a]
             for b in bs[TD[a, bs] <= radio_km]:
-                t = arr[ii] + parametros.LAYOVER_MIN + TD[a, b] / parametros.VELOCIDAD_KMH * 60
+                t = arr[ii] + layover_min + TD[a, b] / parametros.VELOCIDAD_KMH * 60
                 eventos += [((b, g), t[q], "A", ii[q], TD[a, b]) for q in range(len(ii))]
 
     E = pd.DataFrame(eventos, columns=["key", "t", "kind", "trip", "km"])
@@ -256,7 +280,9 @@ def reconstruir_jornadas(res, ex, pullout_km, pullout_idx, pullin_km, pullin_idx
     """A partir de la solucion del flujo, reconstruye la secuencia de
     expediciones de cada jornada (bus), emparejando llegadas y salidas de
     cada linea de tiempo en orden FIFO (arcos con costo minimo => sin
-    cruces, FIFO es correcto)."""
+    cruces, FIFO es correcto). Ademas de la secuencia, deja los km de cada
+    conexion entre expediciones consecutivas (km_deadhead_seq) para que el
+    simulador de carga reconstruya exactamente los mismos traslados."""
     A, Dd, E, xv, n = res["A"], res["Dd"], res["E"], res["xv"], res["n"]
     xa = xv[:len(A)]
     xd = xv[len(A):len(A) + len(Dd)]
@@ -291,7 +317,7 @@ def reconstruir_jornadas(res, ex, pullout_km, pullout_idx, pullin_km, pullin_idx
         # inicio (pullout) o fin (pullin) de una jornada -- por eso se
         # acumulan aqui, jornada por jornada, y no sumando el array
         # completo en main().
-        secuencia, k = [], st
+        secuencia, conexiones, k = [], [], st
         km_pullout = pullout_km[st]
         km_interlining = 0.0
         kwh_total = kwh[st] + km_pullout * parametros.CONSUMO_KWH_KM
@@ -300,6 +326,7 @@ def reconstruir_jornadas(res, ex, pullout_km, pullout_idx, pullin_km, pullin_idx
             nxt = succ[k]
             if nxt >= 0:
                 km_interlining += deadhead_km_sig[k]
+                conexiones.append(deadhead_km_sig[k])
                 kwh_total += kwh[nxt] + deadhead_km_sig[k] * parametros.CONSUMO_KWH_KM
             ultimo = k
             k = nxt
@@ -309,6 +336,7 @@ def reconstruir_jornadas(res, ex, pullout_km, pullout_idx, pullin_km, pullin_idx
             bus_id=bus_id,
             n_expediciones=len(secuencia),
             expedicion_ids=";".join(secuencia),
+            km_deadhead_seq=";".join(f"{c:.4f}" for c in conexiones),
             depot_salida=depot_ids[pullout_idx[st]],
             depot_llegada=depot_ids[pullin_idx[ultimo]],
             dep_min=ex["dep_min"].values[st],
@@ -327,30 +355,37 @@ def reconstruir_jornadas(res, ex, pullout_km, pullout_idx, pullin_km, pullin_idx
 # Reportes
 # --------------------------------------------------------------------------- #
 
-def graficar_jornadas(jornadas, path_png, etiqueta):
+def graficar_jornadas(jornadas, path_png, etiqueta, costos):
     fig, axs = plt.subplots(1, 2, figsize=(11, 4))
-    axs[0].hist(jornadas["kwh_total"], bins=30, color="#2c6e8f")
-    axs[0].axvline(315, color="crimson", linestyle="--", label="Bateria util (315 kWh)")
-    axs[0].set_xlabel("Energia por jornada (kWh)")
+    axs[0].hist(jornadas["kwh_total"], bins=40, color="#2c6e8f")
+    for soc in parametros.SOC_CICLICO_BARRIDO:
+        axs[0].axvline(costos.bateria_util_ciclica_kwh(soc), color="crimson", linestyle="--", linewidth=1)
+        axs[0].text(costos.bateria_util_ciclica_kwh(soc), axs[0].get_ylim()[1] * 0.97, f" {soc:.0%}",
+                    color="crimson", fontsize=8, va="top")
+    axs[0].set_xlabel("Energia por jornada (kWh); lineas: bateria util por nivel de partida")
     axs[0].set_ylabel("Numero de jornadas")
-    axs[0].legend()
     axs[1].hist(jornadas["duracion_min"] / 60, bins=30, color="#8f4a2c")
     axs[1].set_xlabel("Duracion de la jornada (h)")
     axs[1].set_ylabel("Numero de jornadas")
+    for ax in axs:
+        for lado in ("top", "right"):
+            ax.spines[lado].set_visible(False)
     fig.suptitle(f"Escenario: {etiqueta}")
     fig.tight_layout()
     fig.savefig(path_png, dpi=150)
     plt.close(fig)
 
 
-def actualizar_resumen(fila: dict):
+def actualizar_resumen(fila: dict, path):
+    """Escribe la fila del escenario; si ya existe una con la misma etiqueta, la REEMPLAZA."""
     fila_df = pd.DataFrame([fila])
-    if RESUMEN_PATH.exists():
-        prev = pd.read_csv(RESUMEN_PATH, sep=CSV_SEP)
+    if path.exists():
+        prev = pd.read_csv(path, sep=CSV_SEP)
+        prev = prev[prev["etiqueta"] != fila["etiqueta"]]
         out = pd.concat([prev, fila_df], ignore_index=True)
     else:
         out = fila_df
-    out.to_csv(RESUMEN_PATH, index=False, sep=CSV_SEP)
+    out.to_csv(path, index=False, sep=CSV_SEP)
 
 
 # --------------------------------------------------------------------------- #
@@ -364,42 +399,67 @@ def main():
                          help="Checkpoint chico: lista de route_id a incluir (ej. --subset 101 102 301). "
                               "Si se omite, corre sobre toda la red.")
     parser.add_argument("--asignacion", type=str, default=None,
-                         help="Requerido si --modo cluster: CSV de la Etapa 1 con columnas "
-                              "route_id, depot_id (ej. data-processed/rutas_cluster_c1.csv).")
+                         help="Requerido en los modos ruta y cluster: CSV de la Etapa 1 con columnas "
+                              "route_id, depot_id (ej. data-processed/rutas_cluster_c1b.csv).")
+    parser.add_argument("--unir-electroterminales", nargs="*", default=None, metavar="DEPOT_ID",
+                         help="Solo modo cluster: depot_id de los electroterminales que forman UN solo grupo "
+                              "de interlining. Sin valores, usa parametros.ELECTROTERMINALES_UNIDOS "
+                              f"{parametros.ELECTROTERMINALES_UNIDOS}.")
     parser.add_argument("--radio", type=float, default=parametros.RADIO_INTERLINING_KM,
                          help=f"Radio maximo de interlining en km (default {parametros.RADIO_INTERLINING_KM}).")
+    parser.add_argument("--factor-desvio", type=float, default=parametros.FACTOR_DESVIO,
+                         help=f"Factor de desvio del deadhead (default {parametros.FACTOR_DESVIO}). Ojo: el radio "
+                              f"se compara contra la distancia ya multiplicada por el factor.")
+    parser.add_argument("--layover", type=float, default=parametros.LAYOVER_MIN,
+                         help=f"Layover minimo en minutos (default {parametros.LAYOVER_MIN}).")
     parser.add_argument("--etiqueta", type=str, default=None,
-                         help="Nombre del escenario para los archivos de salida. Default: el --modo, o "
-                              "'cluster_<nombre del archivo --asignacion>' si --modo cluster.")
+                         help="Nombre del escenario para los archivos de salida (E0, E1, E2, E2b, LB...). "
+                              "Default: el --modo.")
+    parser.add_argument("--sin-jornadas", action="store_true",
+                         help="Corrida de sensibilidad: no escribe jornadas ni grafico; la fila va a "
+                              "resumen_sensibilidad.csv en vez de resumen_escenarios.csv.")
     args = parser.parse_args()
 
-    etiqueta = args.etiqueta
-    if etiqueta is None:
-        etiqueta = args.modo if args.modo != "cluster" else f"cluster_{Path(args.asignacion).stem.replace('rutas_cluster_', '')}"
+    if args.modo in ("ruta", "cluster") and not args.asignacion:
+        raise SystemExit(f"--modo {args.modo} requiere --asignacion <csv de la Etapa 1> "
+                          f"(ej. data-processed/rutas_cluster_c1b.csv).")
+    if args.unir_electroterminales is not None and args.modo != "cluster":
+        raise SystemExit("--unir-electroterminales solo tiene sentido en --modo cluster.")
+
+    etiqueta = args.etiqueta or args.modo
     if args.subset:
         etiqueta += "_subset"
 
-    print(f"=== ETAPA 2: VSP (modo={args.modo}, radio={args.radio} km, etiqueta={etiqueta}) ===\n")
+    print(f"=== ETAPA 2: VSP (modo={args.modo}, etiqueta={etiqueta}, radio={args.radio} km, "
+          f"factor={args.factor_desvio}, layover={args.layover} min) ===\n")
 
     ex = cargar_expediciones(args.subset)
     depots = cargar_depots()
     costos = parametros.cargar_costos()
+    depot_ids = depots["depot_id"].astype(str).tolist()
     print(f"  Expediciones a asignar: {len(ex)} | rutas: {ex['route_id'].nunique()}")
 
-    asignacion_df = None
-    if args.modo == "cluster":
-        if not args.asignacion:
-            raise SystemExit("--modo cluster requiere --asignacion <csv de la Etapa 1>. "
-                              "Correr antes scripts/4-clustering_nearest.py o 5-clustering_milp.py.")
-        asignacion_df = pd.read_csv(args.asignacion, sep=CSV_SEP)
+    ids_unidos = set()
+    if args.unir_electroterminales is not None:
+        ids_unidos = {str(d) for d in (args.unir_electroterminales or parametros.ELECTROTERMINALES_UNIDOS)}
+        desconocidos = ids_unidos - set(depot_ids)
+        if desconocidos:
+            raise SystemExit(f"--unir-electroterminales: depot_id inexistentes {sorted(desconocidos)}; "
+                              f"disponibles: {depot_ids}.")
+        print(f"  Terminal unido: depot_id {sorted(ids_unidos)} forman un solo grupo de interlining.")
+    idx_unidos = {depot_ids.index(d) for d in ids_unidos}
 
-    idx_depot_fijo = calcular_asignacion_depots(ex, depots, args.modo, asignacion_df, parametros.FACTOR_DESVIO)
-    grupo = construir_grupos(ex, args.modo, idx_depot_fijo)
+    asignacion_df = pd.read_csv(args.asignacion, sep=CSV_SEP) if args.asignacion else None
+    if asignacion_df is not None:
+        print(f"  Asignacion de electroterminales: {args.asignacion}")
+
+    idx_depot_fijo = calcular_asignacion_depots(ex, depots, args.modo, asignacion_df)
+    grupo = construir_grupos(ex, args.modo, idx_depot_fijo, idx_unidos)
     pullout_km, pullout_idx, pullin_km, pullin_idx = costos_pullout_pullin(
-        ex, depots, idx_depot_fijo, parametros.FACTOR_DESVIO)
+        ex, depots, idx_depot_fijo, args.factor_desvio)
 
     print("\n--- Resolviendo flujo de costo minimo ---")
-    res = resolver_flujo(ex, grupo, pullout_km, pullin_km, costos, args.radio)
+    res = resolver_flujo(ex, grupo, pullout_km, pullin_km, costos, args.radio, args.factor_desvio, args.layover)
     print(f"  buses={res['buses']} | deadhead interlining={res['deadhead_interlining_km']:,.0f} km | "
           f"espera={res['espera_h']:,.0f} h | t_build={res['t_build']:.0f}s | t_total={res['t_total']:.0f}s")
 
@@ -422,14 +482,29 @@ def main():
     print(f"  [OK] Cobertura verificada: las {len(ex)} expediciones quedan cubiertas exactamente una vez "
           f"en {len(jornadas)} jornadas.")
 
-    print("\n--- Guardando resultados ---")
-    jornadas_path = DATA_PROCESSED / f"jornadas_{etiqueta}.csv"
-    jornadas.to_csv(jornadas_path, index=False, sep=CSV_SEP)
-    print(f"  -> {jornadas_path} ({len(jornadas)} jornadas)")
+    # --- Chequeo de retorno [Profesor]: cada bus termina en su electroterminal ---
+    distinto = jornadas["depot_salida"] != jornadas["depot_llegada"]
+    en_unidos = jornadas["depot_salida"].isin(ids_unidos) & jornadas["depot_llegada"].isin(ids_unidos)
+    cruzan_patio = int((distinto & en_unidos).sum())            # sale de un patio y vuelve al otro del terminal unido
+    sin_retorno = int((distinto & ~en_unidos).sum())            # viola el retorno
+    if args.modo in ("ruta", "cluster"):
+        assert sin_retorno == 0, (
+            f"{sin_retorno} jornadas no terminan en el electroterminal donde empezaron (y no pertenecen al "
+            f"mismo terminal unido): se viola el retorno [Profesor]. Revisar la asignacion.")
+        print(f"  [OK] Retorno verificado: toda jornada vuelve a su electroterminal"
+              + (f" ({cruzan_patio} cruzan de un patio al otro del terminal unido)." if ids_unidos else "."))
+    else:
+        print(f"  [LB] {sin_retorno} de {len(jornadas)} jornadas ({sin_retorno / len(jornadas):.1%}) terminan en un "
+              f"electroterminal distinto al de salida: por eso LB es cota inferior y no un escenario operacional.")
 
-    png_path = RESULTS / f"graficos_{etiqueta}.png"
-    graficar_jornadas(jornadas, png_path, etiqueta)
-    print(f"  -> {png_path}")
+    print("\n--- Guardando resultados ---")
+    if not args.sin_jornadas:
+        jornadas_path = DATA_PROCESSED / f"jornadas_{etiqueta}.csv"
+        jornadas.to_csv(jornadas_path, index=False, sep=CSV_SEP)
+        print(f"  -> {jornadas_path} ({len(jornadas)} jornadas)")
+        png_path = GRAFICOS / f"jornadas_{etiqueta}.png"
+        graficar_jornadas(jornadas, png_path, etiqueta, costos)
+        print(f"  -> {png_path}")
 
     # OJO: los totales de pullout/pullin/interlining se leen de `jornadas`
     # (solo las expediciones que efectivamente son inicio/fin/enlace de una
@@ -437,7 +512,6 @@ def main():
     # completas -- esos arrays traen el costo de la opcion mas barata para
     # CADA expedicion, la mayoria de las cuales no inicia ni termina ninguna
     # jornada (van "en medio" de su jornada, sin pullout/pullin propio).
-    pct_mayor_315 = float((jornadas["kwh_total"] > costos.bateria_util_kwh).mean() * 100)
     km_pullout_tot = float(jornadas["km_pullout"].sum())
     km_pullin_tot = float(jornadas["km_pullin"].sum())
     km_interlining_tot = float(jornadas["km_interlining"].sum())
@@ -445,27 +519,40 @@ def main():
         f"Inconsistencia: interlining sumado desde jornadas ({km_interlining_tot:.1f} km) no calza con "
         f"el reportado por el solver ({res['deadhead_interlining_km']:.1f} km).")
     deadhead_total_km = km_pullout_tot + km_interlining_tot + km_pullin_tot
+    km_comercial = float(ex["distance_km"].sum())
     cost_bus = res["buses"] * costos.vehicle_fixed_cost
     cost_deadhead = deadhead_total_km * costos.cost_per_km
-    cost_comercial = float(ex["distance_km"].sum()) * costos.cost_per_km
     cost_espera = res["espera_h"] * 60 * costos.waiting_cost_per_min
     fila = dict(
         etiqueta=etiqueta, modo=args.modo, subset=",".join(args.subset) if args.subset else "",
+        asignacion=Path(args.asignacion).name if args.asignacion else "",
+        unir=",".join(sorted(ids_unidos)), factor_desvio=args.factor_desvio, layover_min=args.layover,
         radio_km=args.radio, n_expediciones=len(ex), buses=res["buses"],
-        deadhead_interlining_km=round(km_interlining_tot, 1),
-        pullout_km=round(km_pullout_tot, 1), pullin_km=round(km_pullin_tot, 1),
-        deadhead_total_km=round(deadhead_total_km, 1), espera_h=round(res["espera_h"], 1),
-        pct_jornadas_mayor_315kwh=round(pct_mayor_315, 1),
-        cost_bus_usd=round(cost_bus, 0), cost_deadhead_usd=round(cost_deadhead, 0),
-        cost_comercial_usd=round(cost_comercial, 0), cost_espera_usd=round(cost_espera, 0),
-        cost_total_usd=round(cost_bus + cost_deadhead + cost_comercial + cost_espera, 0),
+        km_comercial=round(km_comercial, 1), km_pullout=round(km_pullout_tot, 1),
+        km_interlining=round(km_interlining_tot, 1), km_pullin=round(km_pullin_tot, 1),
+        km_vacios_total=round(deadhead_total_km, 1),
+        pct_km_vacios=round(deadhead_total_km / (deadhead_total_km + km_comercial) * 100, 2),
+        espera_h=round(res["espera_h"], 1),
+        jornadas_cruzan_patio=cruzan_patio, jornadas_sin_retorno=sin_retorno,
+        cost_bus_usd=round(cost_bus, 0), cost_km_vacios_usd=round(cost_deadhead, 0),
+        cost_espera_usd=round(cost_espera, 0),
+        cost_operacion_usd=round(cost_bus + cost_deadhead + cost_espera, 0),
+        cost_km_comerciales_usd=round(km_comercial * costos.cost_per_km, 0),
         tiempo_computo_s=round(res["t_total"], 1),
     )
-    actualizar_resumen(fila)
-    print(f"  -> {RESUMEN_PATH} (fila agregada: {etiqueta})")
+    # % de jornadas cuya energia supera la bateria util de cada nivel de partida (descriptivo)
+    for soc in parametros.SOC_CICLICO_BARRIDO:
+        fila[f"pct_jornadas_sobre_bateria_{round(soc * 100)}"] = round(
+            float((jornadas["kwh_total"] > costos.bateria_util_ciclica_kwh(soc)).mean() * 100), 1)
+    destino = RESUMEN_SENSIBILIDAD_PATH if args.sin_jornadas else RESUMEN_PATH
+    actualizar_resumen(fila, destino)
+    print(f"  -> {destino} (fila: {etiqueta})")
 
-    print(f"\n  Resumen: {res['buses']} buses | costo total ~ {fila['cost_total_usd']:,.0f} USD | "
-          f"{pct_mayor_315:.1f}% de jornadas superan la bateria util ({costos.bateria_util_kwh:.0f} kWh)")
+    sobre = ", ".join(f"{round(s * 100)}%: {fila[f'pct_jornadas_sobre_bateria_{round(s * 100)}']:.1f}%"
+                      for s in parametros.SOC_CICLICO_BARRIDO)
+    print(f"\n  Resumen: {res['buses']} buses | costo de operacion ~ {fila['cost_operacion_usd']:,.0f} USD | "
+          f"{fila['pct_km_vacios']:.1f}% de km vacios")
+    print(f"  Jornadas cuya energia supera la bateria util segun el nivel de partida -> {sobre}")
     print("\n=== FIN ETAPA 2 ===")
 
 

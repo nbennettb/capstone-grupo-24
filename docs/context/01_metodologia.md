@@ -196,7 +196,7 @@ $$\min \sum_{r\in R}\sum_{d\in D} c_{rd}\,x_{rd}\quad\text{s.a.}\quad \sum_{d} x
   **Salida:** `data-processed/rutas_cluster_*.csv`, `results/etapa1_clustering/` (tablas, gráficos y
   10 mapas).
 
-### Etapa 2 — Asignación de buses por cluster (VSP) · estado: CÓDIGO LISTO, a re-correr
+### Etapa 2 — Asignación de buses por cluster (VSP) · estado: HECHA (escalera E0-E2b y LB corrida)
 
 - **Qué decide.** Qué bus cubre qué expedición, y cuántos buses hacen falta. **Todavía sin batería**:
   eso lo corrige la Etapa 3.
@@ -212,13 +212,31 @@ entera**, exacta y rápida (~40 s sobre toda la red).
 - **Retorno al electroterminal [Profesor]:** en los modos `ruta` y `cluster` pullout y pullin usan el
   mismo electroterminal por construcción. El modo `libre` lo viola → es **cota inferior teórica
   (LB), no un escenario operacional**.
-- **Modos:** `ruta` (sin interlining entre rutas) · `cluster` (interlining dentro del electroterminal)
-  · `libre` (cota inferior).
-- **Referencia de la ronda anterior [Medido]** (no vigente; sirve para validar la regeneración): sin
-  interlining 8.654 buses · con clustering 7.456 (C1) y 7.454 (C2) · libre 7.055 · cota teórica 6.539.
-  Como la Etapa 2 no depende del SOC, estas cifras deberían reproducirse, salvo diferencias menores
-  por usar C1b en vez de C1a.
-- **Script:** `scripts/6-vsp_asignacion_buses.py` (+ `7-comparar_escenarios.py`).
+- **Modos:** `ruta` (sin interlining entre rutas) · `cluster` (interlining dentro del electroterminal,
+  con opción de unir Los Espinos y Santa Rosa en un solo grupo) · `libre` (cota inferior). En `ruta` y
+  `cluster` el electroterminal de cada ruta viene de la asignación de la Etapa 1 (`--asignacion`), y el
+  script verifica que toda jornada vuelva a su electroterminal.
+- **Resultados [Medido]** (red completa, 64.502 expediciones, factor 1,3, layover 3 min; el costo de
+  operación es flota + km sin pasajeros + espera, sin energía):
+
+  | Escenario | Buses | Costo de operación (USD/día) | vs. escalón anterior |
+  |---|---|---|---|
+  | E0 (sin interlining, C1b) | 8.654 | 2.311.988 | |
+  | E1 (+ interlining) | 7.460 | 1.995.343 | −1.194 buses (−13,7%) |
+  | E2 (C2) | 7.460 | 1.995.343 | idéntico a E1 |
+  | E2b (+ Los Espinos y Santa Rosa unidos) | 7.366 | 1.970.265 | −94 buses (−1,3%) |
+  | LB (cota inferior, no operacional) | 7.055 | 1.873.677 | −311 buses |
+
+  E0 y LB reproducen exactamente la ronda anterior (8.654 y 7.055); E1 da 7.460 contra 7.456 con C1a.
+  **E2 = E1** porque la asignación C2 coincide con C1b (la restricción agregada de capacidad no está
+  activa). El interlining concentra el 75% de lo que separa a E0 de LB. LB viola el retorno: 4.192 de sus
+  7.055 jornadas terminan en otro electroterminal. En E2b, 1.068 jornadas salen de un patio y vuelven al
+  otro (1,1 km), lo que no viola el retorno porque es un solo electroterminal.
+- **Sensibilidad del deadhead (sobre E1) [Medido]:** el factor de desvío (1,2 a 1,5) mueve la flota entre
+  −0,8% y +0,7%; el layover (0 a 10 min) entre −2,7% y +6,0%. El 1,3 importa poco para el tamaño de la
+  flota; el layover (3 min, sin calibrar) es el supuesto más sensible de la Etapa 2.
+- **Script:** `scripts/6-vsp_asignacion_buses.py` (+ `7-comparar_escenarios.py`) · **Salida:**
+  `data-processed/jornadas_{E0,E1,E2,E2b,LB}.csv`, `results/etapa2_vsp/`.
 
 ### Etapa 3 — Inserción de recargas · estado: POR CONSTRUIR
 
@@ -362,7 +380,7 @@ explicar, y separa el valor de cada decisión.
 | 1 | `4-clustering_c1.py` | tablas por ruta | `rutas_cluster_c1a.csv`, `rutas_cluster_c1b.csv` |
 | 1 | `5-clustering_c2.py` | tablas por ruta | `rutas_cluster_c2.csv` (ciclo diario), tablas de capacidad, de evidencia del rechazo de SOC 100% y barrido de θ |
 | 1 | `8-clustering_comparacion.py` | las 3 asignaciones (C1a, C1b, C2) | `rutas_clustering_completo.csv`, `results/etapa1_clustering/` |
-| 2 | `6-vsp_asignacion_buses.py`, `7-comparar_escenarios.py` | expediciones + asignación | jornadas por escenario *(a regenerar)* |
+| 2 | `6-vsp_asignacion_buses.py`, `7-comparar_escenarios.py` | expediciones + asignación | `jornadas_{E0,E1,E2,E2b,LB}.csv`, `results/etapa2_vsp/` |
 | 3 | `10-carga_reactiva.py` | jornadas | eventos de carga, ocupación, costo *(a crear)* |
 | 4 | `11-milp_carga.py` | ventanas de carga | programación óptima *(a crear)* |
 

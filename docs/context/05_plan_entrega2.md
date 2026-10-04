@@ -433,10 +433,10 @@ sostiene con "no pagaríamos ~93% de la energía".
 ## 7. Qué se considera terminado
 
 - [x] Etapa 1 regenerada bajo ciclo diario; C2 = C1b verificado; mapas y tablas actualizados.
-- [ ] Escenarios E0, E1, E2, E2b y LB corridos, con retorno verificado y cobertura exacta.
+- [x] Escenarios E0, E1, E2, E2b y LB corridos, con retorno verificado y cobertura exacta.
 - [ ] Simulador reactivo corrido sobre los escenarios, con energía, colas y jornadas partidas.
 - [ ] MILP resuelto en la escalera de instancias, no trivial, con costo ≤ reactivo.
-- [ ] Calibración del deadhead (hecha, Bloque B) y sensibilidad de la flota al factor (pendiente, Bloque C).
+- [x] Calibración del deadhead (Bloque B) y sensibilidad de la flota al factor y al layover (Bloque C).
 - [ ] Análisis de recargas según el SOC.
 - [ ] Tabla de KPIs de todos los escenarios, con CSV y gráficos.
 - [ ] Siete justificaciones en `docs/justificaciones/`, concisas y con las tres etiquetas de respaldo.

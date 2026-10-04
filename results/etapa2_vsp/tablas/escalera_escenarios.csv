@@ -1,0 +1,6 @@
+etiqueta;buses;km_pullout;km_interlining;km_pullin;km_vacios_total;pct_km_vacios;espera_h;cost_bus_usd;cost_km_vacios_usd;cost_espera_usd;cost_operacion_usd;jornadas_cruzan_patio;jornadas_sin_retorno;delta_buses_vs_anterior;delta_costo_vs_anterior_usd;delta_costo_vs_anterior_pct;brecha_buses_vs_LB;brecha_buses_vs_LB_pct;brecha_costo_vs_LB_pct;brecha_buses_vs_cota_teorica
+E0;8654;98272.3;10087.7;98258.2;206618.3;13.31;25099.3;2163500.0;103309.0;45179.0;2311988.0;0;0;;;;1599;22.66;23.39;2115
+E1;7460;85855.4;14617.6;85207.9;185680.9;12.13;20834.9;1865000.0;92840.0;37503.0;1995343.0;0;0;-1194.0;-316645.0;-13.7;405;5.74;6.49;921
+E2;7460;85855.4;14617.6;85207.9;185680.9;12.13;20834.9;1865000.0;92840.0;37503.0;1995343.0;0;0;0.0;0.0;0.0;405;5.74;6.49;921
+E2b;7366;84392.9;14850.6;83590.7;182834.2;11.96;20749.1;1841500.0;91417.0;37348.0;1970265.0;1068;0;-94.0;-25078.0;-1.26;311;4.41;5.15;827
+LB;7055;66580.0;15256.0;64704.2;146540.2;9.82;20365.0;1763750.0;73270.0;36657.0;1873677.0;0;4192;-311.0;-96588.0;-4.9;0;0.0;0.0;516

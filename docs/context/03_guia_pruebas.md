@@ -4,12 +4,12 @@
 > corre y reproduce los resultados documentados en [`01_metodologia.md`](01_metodologia.md).
 > No asume que hayas leído el resto de `docs/context/`, aunque se recomienda.
 >
-> Cubre el pipeline **vigente**: Etapa 0 (preprocesamiento) y Etapa 1 (clustering de rutas a
-> electroterminales, bajo ciclo diario). La Etapa 2 (`scripts/6-vsp_asignacion_buses.py`,
-> `7-comparar_escenarios.py`) existe y funciona, pero se ajusta y corre en el Bloque C del plan: no
-> forma parte de esta guía todavía. Ver `01_metodologia.md` (Etapa 2) y `05_plan_entrega2.md`.
+> Cubre el pipeline **vigente**: Etapa 0 (preprocesamiento), Etapa 1 (clustering de rutas a
+> electroterminales, bajo condición cíclica), calibración del deadhead y Etapa 2 (asignación de buses,
+> escalera de escenarios). Las Etapas 3 y 4 (carga) aún no existen. Ver `01_metodologia.md` y
+> `05_plan_entrega2.md`.
 >
-> Última edición: **03/10/2026** (corrección: el nivel cíclico base pasa a 100%, dato del curso; ver `04_bitacora.md`).
+> Última edición: **04/10/2026**.
 >
 
 ---
@@ -144,6 +144,46 @@ Output: `data-processed/rutas_cluster_c2.csv`,
 `results/etapa1_clustering/tablas/{capacidad_por_terminal,capacidad_sin_vs_con_recuperacion,barrido_theta}.csv`,
 `results/etapa1_clustering/graficos/{capacidad_ciclo,capacidad_sin_vs_con_recuperacion,barrido_theta}.png`.
 
+### `scripts/6-vsp_asignacion_buses.py` y `7-comparar_escenarios.py` (Etapa 2) — requiere 3, 4 y 5 corridos en la red completa
+
+Un escenario por corrida de `6-`; `7-` compara. Gurobi con licencia (flujo de costo mínimo; ~10-70 s por
+escenario). Checkpoint chico (3 rutas, revisar a mano una jornada: orden temporal, traslados y kWh):
+
+```
+python scripts/6-vsp_asignacion_buses.py --modo ruta --asignacion data-processed/rutas_cluster_c1b.csv --subset 101 102 301 --etiqueta E0
+python scripts/6-vsp_asignacion_buses.py --modo libre --subset 101 102 301 --etiqueta LB
+```
+
+Las corridas con `--subset` guardan sus archivos con sufijo `_subset`; borrarlos antes de la red completa
+(`data-processed/jornadas_*_subset.csv` y su fila en `resumen_escenarios.csv`). Red completa:
+
+```
+python scripts/6-vsp_asignacion_buses.py --modo ruta    --asignacion data-processed/rutas_cluster_c1b.csv --etiqueta E0
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --etiqueta E1
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c2.csv  --etiqueta E2
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c2.csv  --unir-electroterminales --etiqueta E2b
+python scripts/6-vsp_asignacion_buses.py --modo libre --etiqueta LB
+
+# Sensibilidad sobre E1 (no escribe jornadas):
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --sin-jornadas --factor-desvio 1.2  --etiqueta E1_f1.2
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --sin-jornadas --factor-desvio 1.35 --etiqueta E1_f1.35
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --sin-jornadas --factor-desvio 1.5  --etiqueta E1_f1.5
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --sin-jornadas --layover 0  --etiqueta E1_l0
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --sin-jornadas --layover 10 --etiqueta E1_l10
+
+python scripts/7-comparar_escenarios.py
+```
+
+Cifras de referencia (04/10): **E0 8.654 · E1 7.460 · E2 7.460 · E2b 7.366 · LB 7.055** buses; costo de
+operación 2,31 / 2,00 / 2,00 / 1,97 / 1,87 millones de USD/día. Sensibilidad de E1: factor 1,2 / 1,35 / 1,5
+→ 7.403 / 7.477 / 7.515; layover 0 / 10 min → 7.257 / 7.908. Cada corrida verifica cobertura exacta (cada
+`expedicion_id` en una sola jornada) y retorno al electroterminal (en LB solo lo cuenta: 4.192 de 7.055
+jornadas no vuelven, por eso es cota inferior). `7-` falla si no se cumple `E0 >= E1 >= E2b >= LB >= 6.539`
+y avisa si E2 difiere de E1.
+
+Output: `data-processed/jornadas_{E0,E1,E2,E2b,LB}.csv` y `results/etapa2_vsp/{reporte.md, tablas/, graficos/}`
+(el `reporte.md` termina con un índice de archivos).
+
 ### `scripts/9-calibracion_deadhead.py` (calibración del factor de desvío) — independiente de las etapas
 
 ```
@@ -190,7 +230,8 @@ python scripts/8-clustering_comparacion.py
 python scripts/9-calibracion_deadhead.py
 ```
 
-Tiempo total estimado: ~1,5 minutos.
+Tiempo total estimado: ~1,5 minutos. La Etapa 2 (cinco escenarios y cinco sensibilidades, ~10 minutos) se corre
+aparte con los comandos de la sección de `6-` y `7-`.
 
 ## 6. Troubleshooting
 

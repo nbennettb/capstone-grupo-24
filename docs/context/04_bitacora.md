@@ -7,9 +7,64 @@
 > flota) quedaron como referencia, no como resultado vigente. Esos archivos se conservan fuera del
 > repositorio, en `_ronda_anterior/`.
 >
-> Última edición: **03/10/2026**.
+> Última edición: **04/10/2026**.
 
 ---
+
+### 04/10/2026 — Etapas 2 y 3, calibración del deadhead, y corrección de C2 (C7)
+
+Secuencia de decisiones (cada paso quedó escrito antes del siguiente):
+1. **Bloque B (calibración del deadhead).** Con los 839 trazados GTFS se midió el rodeo real: 1,04-1,22 a
+   escala de interlining y 1,29-1,38 a escala de pullout/pullin. El 1,3 se mantiene y se contrasta en la
+   sensibilidad (`docs/justificaciones/02_factor_desvio_deadhead.md`).
+2. **Bloque C (Etapa 2).** Escalera E0 → E1 → E2 → LB (8.654 → 7.460 → 7.366 → 7.055 buses; E2 = C1b con Los Espinos y Santa Rosa unidos).
+   El factor de desvío (1,2-1,5) mueve la flota entre −0,8% y +0,7%; el layover (0-10 min) entre −2,7% y +6,0%.
+3. **Bloque D (simulador de carga reactiva, nivel 100%).** Carga parcial como decisión (el operador no parte
+   una jornada que puede seguir). Resultado: la política casi no recarga a mitad del día y parte la jornada
+   (+30% buses en E0); la carga se concentra de noche; Los Espinos tenía déficit de energía.
+4. **Hallazgo C7.** Con la energía real de las jornadas, Los Espinos necesitaba 102-104% de su capacidad; la
+   Etapa 1 medía solo la energía comercial (89,9%) y por eso "C2 = C1b". Era un artefacto del estimador.
+5. **B6: regla del barrido de niveles declarada antes de correrlo** (`02`, B6): grilla 100/90/80/70%,
+   admisibilidad (no empeorar ciclos no cumplidos ni déficit), mínimo costo total, empate de 0,5% a favor del
+   nivel más alto, término por borde inferior o piso físico.
+6. **C7 corregido:** `h_rd = (kWh_r + 2·dist_rd·n_r·1,4)/180` (carga que depende del electroterminal, GAP),
+   validado contra la energía real (error de −9/−14% a −0,5/−3%). C2 mueve 5 rutas (Los Espinos 101,6% →
+   97,6%). Se regeneraron la Etapa 1, el VSP y el simulador de las variantes con C2 (E1_C2: 7.462 buses, 10.343 con
+   carga; E2_C2: 7.366, 10.258).
+7. **Nuevo abierto, C8:** C2 con θ = 1 es necesario pero no suficiente (E2 deja 21 MWh sin reponer con Los
+   Espinos al 98,5%). Pendiente de decisión.
+8. **Decisión B11: C1b + unión como configuración base; C2 como propuesta.** C2 mueve solo 5 rutas (+2 buses en el
+   VSP, −0,3% del costo total con carga si además se unen) y no resuelve la capacidad (déficit 21 MWh con Los
+   Espinos al 98,5%); la unión sí (déficit 0). Se renombran los escenarios: E2 = C1b + unión; las variantes con C2
+   pasan a E1_C2 y E2_C2 (fuera de la escalera). C1a se conserva como control de sensibilidad (se llama "C1" a C1b
+   en el relato; la limpieza queda para la entrega final).
+9. **B6 documentada:** el escenario que decide el nivel pasa a ser E2 (sin déficit estructural); E0 y E1 son
+   robustez. Justificación completa en `docs/justificaciones/04_nivel_carga_ciclico.md`.
+10. **Barrido de niveles (regla de B6 aplicada por código).** E2 elige **100%** (3.199.500 USD/día; 90% +13,1%, 80%
+   +25,3%, 70% +37,7%); E0 y E1 coinciden. El costo sube por la flota (~1.500 buses por cada 10 puntos menos). La
+   energía cargada sube 6% al 70% (traslados de jornadas partidas), así que "la energía total no depende del nivel"
+   solo se cumple aproximadamente. Limitación declarada: el costo no paga los ciclos no cumplidos (2.207 al 100%).
+11. **Corrección de la lectura del barrido (la condición cíclica es una restricción).** El usuario observó que el
+   modelo no terminaba el día con todos los buses al nivel inicial, así que el "100%" no era una solución factible. Se
+   confirmó: al 100%, el 21% de las cargas nocturnas termina después de la primera salida del día siguiente (2.207 de
+   10.295 en E1). El diagnóstico (en memoria, sin tocar el repo) descartó que fuera el orden de la cola (cargar primero
+   al que sale antes baja los incumplimientos solo de 2.199 a 2.160) y mostró que es **capacidad nocturna**: con un LP de
+   carga óptima solo cabe el 84% de la energía nocturna (faltan 354 MWh/día). La cota de "139% de holgura" de B6 queda
+   refutada: no miraba a qué hora está cada bus en el patio.
+12. **Decisiones tomadas con el usuario:** (a) el ciclo se cumple con **buses de reserva** (250 USD/día cada uno, incluidos
+   en el costo total), con la factibilidad definida como "sin déficit de energía y atraso < 24 h"; (b) **la unión de Los
+   Espinos y Santa Rosa pasa a todos los escenarios operacionales** para que el caso base sea factible (separados hay
+   déficit de energía a cualquier nivel); (c) la regla del barrido se **corrige antes de volver a correr**: solo compiten
+   soluciones factibles, grilla 100-50% (piso físico), dos familias (con y sin reservas), E1 decide y E0 es robustez.
+   **Nomenclatura vigente:** E0 (por línea, unidos), E1 (+ interlining, unidos), LB; E0_sep y E1_sep (separados,
+   evidencia); E1_C2 y E1_C2_sep (variantes con C2). Las menciones anteriores de este día a E2, E2b o E2_C2 usan la
+   nomenclatura previa (E2 = hoy E1; E2_C2 = hoy E1_C2; E0 y E1 de entonces = hoy E0_sep y E1_sep).
+13. **Resultado del barrido corregido.** Ningún nivel entre 100% y 55% cumple el ciclo sin reservas con la política
+   reactiva; 100% + reservas es el menor costo (E1: 3.751.250 USD/día; 90% +5,9%, 80% +8,5%, 70% +17,9%, 55% +52,8%; 50%
+   infactible por déficit). Con una carga perfecta el ciclo sí sería posible desde 80% hacia abajo, pero costaría
+   ≥ 4,0 M USD/día. **Caso base factible: E0 3.958.063 y E1 3.751.250 USD/día.**
+- **Pendiente:** MILP de carga en instancias chicas (con reservas o ventanas diurnas, o será infactible)
+  (Bloque E), KPIs y justificaciones (Bloque F).
 
 ### 03/10/2026 — Reunión con el profesor y reestructuración de la documentación
 

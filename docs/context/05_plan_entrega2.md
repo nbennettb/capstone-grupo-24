@@ -6,7 +6,11 @@
 > [`02_supuestos_y_decisiones.md`](02_supuestos_y_decisiones.md). Cómo correr lo que ya existe:
 > [`03_guia_pruebas.md`](03_guia_pruebas.md).
 >
-> Presentación: **06/10**. Informe: **11/10**. Última edición: **03/10/2026**.
+> Presentación: **06/10**. Informe: **11/10**. Última edición: **04/10/2026**.
+>
+> **Nomenclatura vigente de escenarios (04/10):** E0 (por línea, terminales unidos), E1 (+ interlining, unidos), LB; E0_sep y
+> E1_sep (separados: evidencia, infactibles); E1_C2 y E1_C2_sep (variantes con C2). Las referencias a E2, E2b o E2_C2 en este
+> plan usan la nomenclatura previa (E2 = hoy E1; E2_C2 = hoy E1_C2). Lo vigente está en `01_metodologia.md` (§5).
 
 ---
 
@@ -47,8 +51,8 @@ calibración del deadhead, análisis de recargas según el SOC, justificaciones.
 | Etapa 0 | 64.502 expediciones · 417 rutas · 641 terminales · concurrencia 6.539 a las 8:00 · 1.883,6 MWh | Medido, vigente |
 | Cierre ida-vuelta | 94,7% de 300 rutas a < 500 m; mediana 85 m | Medido, vigente |
 | C1a / C1b | Cambian 41 de 417 rutas; costo aprox. pullout/pullin 83.843 → 83.271 USD/día | Medido, vigente |
-| C2 (ciclo, θ = 1) | Igual a C1b; uso: Vespucio Norte 30,9% · El Conquistador 69,8% · Los Espinos 89,9% · La Reina 68,1% · Santa Rosa 58,6% | Medido, vigente |
-| Barrido de θ (ciclo) | 0 rutas movidas con θ = 1 y 0,9; 11 con 0,8; 21 con 0,7; infactible con 0,6 | Medido, vigente |
+| C2 (ciclo, θ = 1, carga con pullout/pullin) | Mueve 5 rutas respecto de C1b; uso: Vespucio Norte 33,7% · El Conquistador 80,8% · Los Espinos 97,6% · La Reina 76,2% · Santa Rosa 67,1% (con C1b, Los Espinos 101,6%) | Medido, vigente (corregido el 04/10, C7) |
+| Barrido de θ (ciclo) | 8 rutas movidas con θ = 0,9; 14 con 0,8; infactible con 0,7 | Medido, vigente |
 | Etapa 2 (ronda anterior) | sin interlining 8.654 buses · con clustering 7.456 (C1) / 7.454 (C2) · libre 7.055 · cota 6.539 | **Referencia**: debería reproducirse (el VSP no usa batería), salvo diferencias menores por usar C1b |
 | Jornadas con recarga a mitad del día (sin interlining) | 30,1% (nivel 100%), 45,2% (90%), 59,1% (80%) | Medido sobre las jornadas anteriores; debe reproducirse con el barrido |
 | Holgura de carga | ~16.500 h-cargador posibles contra ~11.900 necesarias (cota, 139%) | Medido, cota optimista |
@@ -71,7 +75,7 @@ base no se fija hasta tener ese barrido.
 **Orden de corte si el tiempo no alcanza** (de lo último que se sacrifica a lo primero):
 **A → B → C → D → barrido → F** cubre el mínimo exigido (caso base completo con KPIs, nivel elegido por
 costo y clusterización probada). **E** eleva la entrega de "mínimo" a "lo que el profesor dijo esperar".
-Se sacrifican primero: E2b, la sensibilidad de niveles por debajo de 90%, la variante del MILP con
+Se sacrifican primero: las variantes C2 (E1_C2, E2_C2), la sensibilidad de niveles por debajo de 90%, la variante del MILP con
 terminales unidos.
 
 **Versión mínima de D si aprieta el tiempo:** simular sin colas (cada bus carga en cuanto puede),
@@ -107,7 +111,7 @@ que alimenta la Etapa 2 sean coherentes con lo que se va a presentar.
      horas. Se conserva el barrido de θ.
    - Barrido de θ con capacidad **separada y combinada** (Los Espinos + Santa Rosa en una bolsa de
      270) para mostrar a partir de qué θ divergen. Es evidencia secundaria: la asignación a θ = 1 es la
-     misma. **El efecto real de unir está en el Bloque C (E2b)**, no acá.
+     misma. **El efecto real de unir está en el Bloque C (E2)**, no acá.
    - Nota de documentación: `h_r` bajo ciclo **no depende** del nivel de SOC (se recarga todo lo
      consumido), así que C2 no usa `SOC_CICLICO`.
 3. `scripts/8-clustering_comparacion.py`: dejar tres estrategias (C1a, C1b, C2); reescribir los textos
@@ -116,15 +120,16 @@ que alimenta la Etapa 2 sean coherentes con lo que se va a presentar.
 **Salidas.** `data-processed/rutas_cluster_{c1a,c1b,c2}.csv`, `rutas_clustering_completo.csv`,
 `results/etapa1_clustering/` regenerado.
 
-**Validación.** C2 sigue coincidiendo con C1b (0 rutas distintas); usos de capacidad iguales a la
-tabla de §1; las 417 rutas asignadas una sola vez; `h_r` total ≈ 10.464 horas-cargador.
+**Validación.** *(Versión original del Bloque A, con la carga medida solo con energía comercial: C2 = C1b, 10.464
+horas-cargador. Superada por la corrección C7 del 04/10: la carga incluye pullout y pullin, C2 mueve 5 rutas y la
+carga total es 11.760 horas-cargador; ver `02_supuestos_y_decisiones.md`, C7.)* Las 417 rutas se asignan una sola vez.
 
 ---
 
 ### Bloque C — Etapa 2 (VSP) bajo la escalera de escenarios
 *El código existe; hay que ajustarlo y correrlo.*
 
-**Por qué.** Entrega los escenarios E0, E1, E2, E2b y LB, que son el "aplicar el caso base una vez
+**Por qué.** Entrega los escenarios E0, E1, E2 (C1b + unión) y LB (y las variantes C2, propuesta), que son el "aplicar el caso base una vez
 clusterizado" que el profesor pidió, y mide el costo de cada decisión.
 
 **Cambios de código en `scripts/6-vsp_asignacion_buses.py`.**
@@ -147,17 +152,17 @@ clusterizado" que el profesor pidió, y mide el costo de cada decisión.
 
 | Etiqueta | Modo | Asignación | Notas |
 |---|---|---|---|
-| E0 | `ruta` | `rutas_cluster_c1b.csv` | Caso base |
-| E1 | `cluster` | `rutas_cluster_c1b.csv` | Con interlining |
-| E2 | `cluster` | `rutas_cluster_c2.csv` | Probablemente idéntico a E1 (ver abajo) |
-| E2b | `cluster` + unir 3 y 5 | `rutas_cluster_c2.csv` | Un solo terminal combinado |
+| E0 | `ruta` + unir 3 y 5 | `rutas_cluster_c1b.csv` | Caso base (por línea, terminales unidos) |
+| E1 | `cluster` + unir 3 y 5 | `rutas_cluster_c1b.csv` | Con interlining (**configuración propuesta**) |
 | LB | `libre` | — | Cota inferior; viola el retorno |
+| *E0_sep, E1_sep* | `ruta` / `cluster` | `rutas_cluster_c1b.csv` | Terminales separados: evidencia (infactibles en la carga) |
+| *E1_C2, E1_C2_sep* | `cluster` (+ unir) | `rutas_cluster_c2.csv` | Variantes C2 (propuesta) |
 
-**Expectativa a verificar.** E1 debería bajar fuertemente la flota respecto de E0. **E2 puede dar
-exactamente E1** porque la capacidad agregada no se activa; sería un resultado válido ("la capacidad
-agregada no condiciona el clustering") y se explica así, no se fuerza. **E2b debería bajar la flota
-respecto de E2** (más encadenamientos dentro de un grupo de 186 rutas); cuánto es justamente la
-evidencia para decidir si conviene unirlos. LB queda por debajo de todos.
+**Expectativa a verificar.** E1 debería bajar fuertemente la flota respecto de E0; unir los terminales debería bajar la
+flota de E1 (más encadenamientos dentro de un grupo de 186 rutas) y eliminar el déficit de carga. LB queda por debajo de
+todos. **Resultado:** E0 8.654 → E1 7.366 → LB 7.055 (E1_sep 7.460: unir baja 94 buses); las variantes C2 casi no cambian
+el VSP (+0 / +2 buses). *(Nota histórica: la primera versión de este plan esperaba
+"E2 = E1" con C2; era un artefacto del estimador de carga de C2, corregido en C7.)*
 
 **Sensibilidades del Etapa 2** (el VSP corre en ~1 min, es barato): sobre E1, factor de desvío 1,2 y
 1,5 (además del 1,3), y layover 0 y 10 min. Responde a la crítica anunciada sobre el deadhead: si la
@@ -169,11 +174,11 @@ recargas intermedias, y la distribución de energía por jornada con las líneas
 **Por qué:** es el análisis que decide el nivel con datos: la curva completa del barrido (costo, buses,
 eventos, jornadas partidas, % con recarga intermedia), con el criterio declarado en `02`, B6.
 
-**Salidas.** `data-processed/jornadas_{E0,E1,E2,E2b,LB}.csv`; `results/etapa2_vsp/` con
+**Salidas.** `data-processed/jornadas_{E0,E1,E2,LB,E1_C2,E2_C2}.csv`; `results/etapa2_vsp/` con
 `resumen_escenarios.csv`, tabla de sensibilidades, gráficos, `precio_del_clustering.csv`.
 
 **Validación.** Cobertura exacta (cada `expedicion_id` en una sola jornada); buses E0 ≈ 8.654 y LB ≈
-7.055 (referencia); orden `E0 ≥ E1 ≥ E2b ≥ LB ≥ 6.539`; retorno cumplido; recargas del análisis de SOC
+7.055 (referencia); orden `E0 ≥ E1 ≥ E2 ≥ LB ≥ 6.539`; retorno cumplido; recargas del análisis de SOC
 reproducen 45,2% / 59,1% (E0) y 57,5% / 76,0% (E1).
 
 ---
@@ -292,13 +297,16 @@ evitar es una instancia **trivial**: con 100 buses y los 150 puestos de un elect
 capacidad nunca aprieta y el MILP se reduce a "cada bus carga en la hora más barata", sin decidir nada
 interesante, lo que no probaría el modelo.
 
-1. **Escala proporcional.** La instancia conserva la congestión del sistema real: **~0,094 puestos por
-   bus** (700 puestos / 7.456 buses). Para N buses, puestos = `round(N × 0,094)`.
+1. **Escala proporcional.** La instancia conserva la congestión del sistema real: en E1 tras la carga, **~0,058
+   puestos por bus** en el terminal unido Los Espinos + Santa Rosa (270 puestos / 4.622 buses; red completa 0,068 =
+   700 / 10.295). Para N buses, puestos = `round(N × 0,058)`.
 2. **Selección determinista.** Muestra de N jornadas de **un** electroterminal, con **semilla fija**
-   (fijarla en el script y documentarla). **Electroterminal sugerido: Los Espinos**, donde la
-   capacidad más aprieta (89,9% bajo ciclo) y hay más buses por puesto (~15,1; los demás: Vespucio
-   Norte 6,2 · La Reina 10,4 · El Conquistador 10,8 · Santa Rosa 11,6). Es donde el MILP tiene más que
-   decidir. *(Cifras con las jornadas anteriores: confirmarlas con las regeneradas.)*
+   (fijarla en el script y documentarla). **Electroterminal sugerido: el terminal unido Los Espinos +
+   Santa Rosa**, el más exigido (82,5% de su capacidad de 24 h con la energía real y ~17 buses por puesto; los demás en
+   E1: Vespucio Norte 6,9 · La Reina 16,4 · El Conquistador 16,7). Es donde el MILP tiene más que decidir.
+   **Ojo con el ciclo:** con ventanas fijas el ciclo es infactible al 100% (cota LP 84%), así que el MILP necesita una
+   holgura de reserva (binaria "este bus necesita reserva", 250 USD) para ser siempre factible y comparable con el
+   simulador.
 3. **Tamaño por tratabilidad, definido operacionalmente.** "Chica" = resuelve a optimalidad (brecha
    < 1%) en menos de ~10 min con la licencia académica. Cada bus aporta ~37 intervalos de 15 min:
 
@@ -312,7 +320,7 @@ interesante, lo que no probaría el modelo.
 
    Se corre una **escalera de tres tamaños (50 / 200 / 400)**. El profesor habló de "instancias
    pequeñas", en plural; y mostrar cómo escala el tiempo es un resultado en sí mismo y la
-   justificación honesta de por qué no se corre sobre los 7.456 buses. Si 400 no resuelve en el
+   justificación honesta de por qué no se corre sobre los ~10.300 buses de E1 tras la carga. Si 400 no resuelve en el
    límite, se reporta tal cual (también es evidencia) y se baja a 300.
 4. **No trivialidad, con chequeo automático.** La capacidad debe estar saturada en al menos una
    fracción mínima de intervalos (umbral a fijar, p. ej. ≥ 10%). Si no, se descarta la instancia y se
@@ -361,7 +369,7 @@ como tal en cualquier gráfico o texto.
    - `02_factor_desvio_deadhead.md`
    - `03_caso_base_y_escalera.md`
    - `04_soc_ciclico.md` (contenido en `02_supuestos_y_decisiones.md`, B6)
-   - `05_unir_terminales.md` (juntos vs separados, con números de E2 vs E2b)
+   - `05_unir_terminales.md` (juntos vs separados, con números de E1 vs E2; por qué C2 queda como propuesta)
    - `06_eleccion_metodologia.md` (por qué MILP, por qué clustering espacial)
    - `07_instancia_chica_milp.md` (los 5 criterios del Bloque E)
 4. **Índice de figuras** (§6) en `results/INDICE_FIGURAS.md`.
@@ -417,7 +425,7 @@ sección sugerida.
 | Cuántas recargas intermedias según el SOC | `13-analisis_soc` | **Nuevo** |
 | El factor de desvío tiene respaldo | `9-calibracion_deadhead` | **Nuevo** |
 | El resultado casi no depende del 1,3 | sensibilidad de E1 (Bloque C) | **Nuevo** |
-| Escalera de escenarios: flota y costo desglosado E0 → E2b → LB | `12-kpis_comparacion` | **Nuevo** |
+| Escalera de escenarios: flota y costo desglosado E0 → E1 → E2 → LB | `12-kpis_comparacion` | **Nuevo** |
 | Costo de la miopía: jornadas partidas y colas | `10-carga_reactiva` | **Nuevo** |
 | Ocupación horaria de cargadores, reactiva vs MILP | `11-milp_carga` | **Nuevo** |
 | Energía por bloque tarifario (valle vs punta) | `11-milp_carga` | **Nuevo** |
@@ -432,12 +440,12 @@ sostiene con "no pagaríamos ~93% de la energía".
 
 ## 7. Qué se considera terminado
 
-- [x] Etapa 1 regenerada bajo ciclo diario; C2 = C1b verificado; mapas y tablas actualizados.
-- [x] Escenarios E0, E1, E2, E2b y LB corridos, con retorno verificado y cobertura exacta.
-- [ ] Simulador reactivo corrido sobre los escenarios, con energía, colas y jornadas partidas.
+- [x] Etapa 1 regenerada bajo ciclo diario; C2 con la carga corregida (C7) validada contra la energía real de las jornadas; mapas y tablas actualizados.
+- [x] Escenarios E0 y E1 (C1b, terminales unidos), LB, las evidencias de terminales separados (E0_sep, E1_sep) y las variantes C2 (E1_C2, E1_C2_sep) corridos, con retorno verificado y cobertura exacta.
+- [x] Simulador reactivo corrido sobre los escenarios, con energía, colas, jornadas partidas, buses de reserva (condición cíclica como restricción) y cota LP. **Caso base factible: E0 (3.958.063 USD/día) y E1 (3.751.250).**
 - [ ] MILP resuelto en la escalera de instancias, no trivial, con costo ≤ reactivo.
 - [x] Calibración del deadhead (Bloque B) y sensibilidad de la flota al factor y al layover (Bloque C).
-- [ ] Análisis de recargas según el SOC.
+- [x] Análisis de recargas según el nivel: barrido de niveles con la regla de B6 (`13-barrido_niveles.py`); nivel base 100%.
 - [ ] Tabla de KPIs de todos los escenarios, con CSV y gráficos.
 - [ ] Siete justificaciones en `docs/justificaciones/`, concisas y con las tres etiquetas de respaldo.
 - [ ] `results/INDICE_FIGURAS.md`.

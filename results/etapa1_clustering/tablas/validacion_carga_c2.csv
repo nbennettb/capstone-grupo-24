@@ -1,0 +1,11 @@
+escenario;electroterminal;capacidad_mwh_dia;energia_real_jornadas_mwh;solo_comercial_mwh;estimador_c2_mwh;error_solo_comercial_pct;error_estimador_c2_pct;uso_real_pct;uso_solo_comercial_pct;uso_estimador_c2_pct
+E0;Vespucio Norte;648.0;221.08;200.46;218.36;-9.33;-1.23;34.12;30.94;33.7
+E0;El Conquistador;777.6;632.57;542.98;615.45;-14.16;-2.71;81.35;69.83;79.15
+E0;Los Espinos;518.4;539.39;466.14;526.47;-13.58;-2.4;104.05;89.92;101.56
+E0;La Reina;432.0;338.93;294.38;329.22;-13.14;-2.87;78.46;68.14;76.21
+E0;Santa Rosa;648.0;440.87;379.61;427.24;-13.89;-3.09;68.04;58.58;65.93
+E1;Vespucio Norte;648.0;219.47;200.46;218.36;-8.66;-0.51;33.87;30.94;33.7
+E1;El Conquistador;777.6;621.58;542.98;615.45;-12.65;-0.99;79.94;69.83;79.15
+E1;Los Espinos;518.4;531.7;466.14;526.47;-12.33;-0.98;102.57;89.92;101.56
+E1;La Reina;432.0;335.97;294.38;329.22;-12.38;-2.01;77.77;68.14;76.21
+E1;Santa Rosa;648.0;434.8;379.61;427.24;-12.69;-1.74;67.1;58.58;65.93

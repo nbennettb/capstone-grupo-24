@@ -1,0 +1,3 @@
+escenario;rol;niveles_evaluados;piso_fisico_pct;nivel_minimo_costo_pct;nivel_elegido_pct;costo_elegido_usd;reservas_en_elegido;buses_totales_elegido;ciclica_sin_reservas_nivel_pct;ciclica_sin_reservas_costo_usd;costo_vs_100_pct;coincide_con_principal
+E1;decide;100,90,80,70,65,60,55,50;50;100;100;3751250.0;2207;12502;;;0.0;True
+E0;robustez;100,90,80,70,65,60,55,50;50;100;100;3958063.0;1988;13247;;;0.0;True

@@ -31,11 +31,12 @@ tablas por ruta) (heurística + MILP)    LP entera, exacto)         reactivo)   
 **Supuestos centrales** (con su origen en
 [`docs/context/02_supuestos_y_decisiones.md`](docs/context/02_supuestos_y_decisiones.md)):
 - **Ciclo diario:** todo bus empieza y termina el día con el mismo nivel de batería. Nivel base 100%
-  (máximo de los datos del curso), con barrido 70-100%. El supuesto de partir al 100% sin recuperar la
-  batería fue descartado.
+  (máximo de los datos del curso), con barrido 100-50%; el ciclo se cumple con buses de reserva. El supuesto
+  de partir al 100% sin recuperar la batería fue descartado.
 - Cada bus **vuelve a su propio electroterminal**. Los puestos limitan solo la carga simultánea;
   estacionar no consume puesto y se puede cargar las 24 horas.
 - Flota irrestricta.
+- Los Espinos y Santa Rosa (a 1,1 km) se tratan como un solo electroterminal en todos los escenarios.
 - Caso base: operación por línea (sin interlining) con carga reactiva.
 
 ## Estado
@@ -43,10 +44,12 @@ tablas por ruta) (heurística + MILP)    LP entera, exacto)         reactivo)   
 | Etapa | Estado |
 |---|---|
 | 0 — Preprocesamiento | ✅ Hecha y vigente |
-| 1 — Clustering de rutas a electroterminales | ✅ Hecha; **se regenera** bajo el supuesto de ciclo diario |
-| 2 — Asignación de buses (VSP) | 🔧 Código listo; se re-corre bajo la escalera de escenarios |
-| 3 — Inserción de recargas (simulador reactivo) | ⏳ Por construir |
-| 4 — Programación de carga (MILP, instancia chica) | ⏳ Por construir |
+| 1 — Clustering de rutas a electroterminales | ✅ Hecha (C1, C2 como propuesta) |
+| 2 — Asignación de buses (VSP) | ✅ Hecha (escalera E0 / E1 / LB y evidencias) |
+| 3 — Inserción de recargas (simulador reactivo y barrido de niveles) | ✅ Hecha; nivel base 100% con buses de reserva |
+| 4 — Programación de carga (MILP, instancia chica) | ⏳ Pendiente |
+
+Caso base factible (USD/día): E0 3.958.063 · E1 3.751.250.
 
 Qué falta, en qué orden y por qué: [`docs/context/05_plan_entrega2.md`](docs/context/05_plan_entrega2.md).
 Historial de lo hecho y decidido: [`docs/context/04_bitacora.md`](docs/context/04_bitacora.md).

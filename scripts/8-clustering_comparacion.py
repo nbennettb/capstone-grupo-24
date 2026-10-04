@@ -11,8 +11,9 @@ Junta las tres asignaciones ya generadas por scripts/4-clustering_c1.py
   - Arma una tabla ancha por ruta (una fila, todas las estrategias) para
     revisar a mano en Excel.
   - Genera los mapas: uno por estrategia, uno por electroterminal, el mapa
-    de paraderos terminales, y el mapa de diferencias entre la heuristica
-    mas simple (C1a) y el modelo final (C2).
+    de paraderos terminales, y el mapa de diferencias entre C1b (el mas
+    cercano) y C2 (el mismo criterio, mas la capacidad): las rutas que la
+    capacidad obliga a mover.
   - Escribe el reporte final de la Etapa 1 (resultado que se lleva a la
     reunion con el grupo y el profesor).
 
@@ -174,9 +175,10 @@ def construir_rutas_que_cambian(asignaciones):
     return pd.DataFrame(filas)
 
 
-def construir_tabla_ancha(asignaciones, rutas_resumen, dist_comun, depots, h_r_ciclo):
+def construir_tabla_ancha(asignaciones, rutas_resumen, dist_comun, depots, h_comercial, h_asignada_c2):
     ancha = rutas_resumen.set_index("route_id").copy()
-    ancha = ancha.join(pd.DataFrame({"h_r_horas_cargador": h_r_ciclo}, index=rutas_resumen["route_id"]))
+    ancha = ancha.join(pd.DataFrame({"h_r_comercial_horas_cargador": h_comercial,
+                                      "h_r_asignada_c2_horas_cargador": h_asignada_c2}, index=rutas_resumen["route_id"]))
 
     for nombre_col, depot_id in zip(depots["nombre"], depots["depot_id"].astype(str)):
         ancha[f"dist_km_a_{nombre_col.replace(' ', '_')}"] = dist_comun[depot_id].reindex(ancha.index)
@@ -280,9 +282,9 @@ def graficar_mapa_paraderos(terminales, depots, comunas, path_png):
     plt.close(fig)
 
 
-def graficar_mapa_diferencias(geom_rutas, asig_c1a, asig_c2, comunas, depots, path_png):
-    comunes = asig_c1a.index.intersection(asig_c2.index)
-    distintas = comunes[asig_c1a.loc[comunes, "depot_id"].values != asig_c2.loc[comunes, "depot_id"].values]
+def graficar_mapa_diferencias(geom_rutas, asig_ref, asig_c2, comunas, depots, path_png):
+    comunes = asig_ref.index.intersection(asig_c2.index)
+    distintas = comunes[asig_ref.loc[comunes, "depot_id"].values != asig_c2.loc[comunes, "depot_id"].values]
 
     fig, ax = plt.subplots(figsize=(9, 9))
     comunas.plot(ax=ax, facecolor="#f2f2f2", edgecolor="#cfcfcf", linewidth=0.5, zorder=0)
@@ -296,7 +298,7 @@ def graficar_mapa_diferencias(geom_rutas, asig_c1a, asig_c2, comunas, depots, pa
     ax.scatter(depots["lon"], depots["lat"], s=depots["capacity"] * 1.5, c="black", marker="^", zorder=3)
     ax.set_xlim(BBOX_MAPA[0], BBOX_MAPA[2])
     ax.set_ylim(BBOX_MAPA[1], BBOX_MAPA[3])
-    ax.set_title("Rutas que cambian de electroterminal: C1a (centroide) -> C2 (= C1b bajo ciclo, theta = 1)")
+    ax.set_title("Rutas que la capacidad obliga a mover: C1b (mas cercano) -> C2 (con capacidad, theta = 1)")
     ax.set_xticks([]); ax.set_yticks([])
     ax.legend(loc="lower left", fontsize=8, framealpha=0.9)
     fig.tight_layout()
@@ -309,7 +311,7 @@ def graficar_mapa_diferencias(geom_rutas, asig_c1a, asig_c2, comunas, depots, pa
 # Reporte
 # --------------------------------------------------------------------------- #
 
-def escribir_reporte(comparacion, resumen_terminal, capacidad, evidencia, barrido_theta,
+def escribir_reporte(comparacion, resumen_terminal, capacidad, validacion, evidencia, barrido_theta,
                       n_diferencias_mapa):
     uso_max = capacidad[capacidad["electroterminal"] != NOMBRE_UNIDO].sort_values("uso_pct").iloc[-1]
     tot = evidencia[evidencia["electroterminal"] == "TOTAL"]
@@ -322,9 +324,10 @@ def escribir_reporte(comparacion, resumen_terminal, capacidad, evidencia, barrid
     lineas = [
         "# Reporte Etapa 1 - Clustering de rutas a electroterminales (ciclo diario)",
         "",
-        "Compara C1a (heuristica, centroide), C1b (heuristica, paraderos terminales reales) y "
-        "C2 (MILP con capacidad, bajo ciclo diario: cada bus empieza y termina el dia con el mismo "
-        "nivel de bateria, asi que se recarga todo lo consumido).",
+        "**C1b** (el electroterminal mas cercano a los paraderos terminales reales de cada ruta) es la asignacion "
+        "base de la entrega y se llama simplemente 'C1' en el relato. **C1a** (distancia al centroide) es un control "
+        "de sensibilidad: no la usa ninguna etapa posterior. **C2** (MILP con capacidad bajo la condicion ciclica) "
+        "es la **propuesta** que se formula y se prueba, pero no entra al caso base.",
         "",
         "## Comparacion bajo criterio comun (distancia a paraderos terminales reales)",
         "",
@@ -334,20 +337,26 @@ def escribir_reporte(comparacion, resumen_terminal, capacidad, evidencia, barrid
         "",
         capacidad.round(1).to_markdown(index=False),
         "",
-        f"- C2 coincide EXACTAMENTE con C1b: con theta = 1 la restriccion de capacidad AGREGADA DIARIA "
-        f"no esta activa (uso maximo {uso_max['uso_pct']:.1f}% en {uso_max['electroterminal']}).",
-        "- Eso NO significa que la capacidad no importe. C2 ve un promedio diario en horas-cargador; la "
-        "carga real se concentra en ciertas horas, y esa saturacion horaria la medira el simulador de "
-        "carga reactiva (colas de espera), no C2.",
+        "La carga de cada ruta incluye su pullout y pullin (depende del electroterminal): ver "
+        "`tablas/validacion_carga_c2.csv`. Con esa carga, la asignacion C1b (mas cercano, sin capacidad) "
+        f"excede la capacidad donde `uso_c1b_con_carga_corregida_pct` pasa de 100%; C2 mueve "
+        f"{n_diferencias_mapa} rutas para respetarla (uso maximo de C2: {uso_max['uso_pct']:.1f}% en "
+        f"{uso_max['electroterminal']}).",
+        "- C2 ve un promedio diario en horas-cargador; la carga real se concentra en ciertas horas, y esa "
+        "saturacion horaria la mide el simulador de carga reactiva (colas de espera), no C2.",
         "",
-        "## Barrido de theta -- a partir de cuando C2 se separa de C1b",
+        "## Validacion del estimador de carga contra la energia real de las jornadas (asignacion C1b)",
+        "",
+        validacion.to_markdown(index=False) if len(validacion) else "(sin jornadas del VSP para validar)",
+        "",
+        "## Barrido de theta (rutas movidas respecto de C2 con theta = 1)",
         "",
         barrido_theta.to_markdown(index=False),
         "",
         "Capacidad `separada` = una restriccion por electroterminal; `combinada` = Los Espinos y Santa "
         "Rosa comparten una bolsa de 270 puestos. Las rutas movidas se miden contra la asignacion con "
         "theta = 1. Es evidencia secundaria: el efecto real de unir esos dos terminales esta en el "
-        "interlining (Etapa 2, escenario E2b).",
+        "interlining (Etapa 2, E1 frente a E1_sep) y en la carga (Etapa 3).",
         "",
         "## Evidencia: sin recuperacion vs con recuperacion, al mismo nivel (proxy por ruta, sin deadhead)",
         "",
@@ -374,7 +383,7 @@ def escribir_reporte(comparacion, resumen_terminal, capacidad, evidencia, barrid
         "",
         resumen_terminal.pivot(index="depot_nombre", columns="estrategia", values="n_rutas").to_markdown(),
         "",
-        f"## Rutas que cambian de electroterminal entre C1a y C2 (mapa de diferencias): {n_diferencias_mapa}",
+        f"## Rutas que la capacidad obliga a mover, de C1b a C2 (mapa de diferencias): {n_diferencias_mapa}",
         "",
         "## Indice de esta carpeta",
         "",
@@ -383,7 +392,8 @@ def escribir_reporte(comparacion, resumen_terminal, capacidad, evidencia, barrid
         "- `resumen_por_terminal.csv`: rutas, buses estimados, km y kWh por electroterminal y estrategia.",
         "- `rutas_que_cambian.csv`: cada ruta que cambia de electroterminal entre estrategias.",
         "- `distancias_ruta_terminal.csv`: distancia de cada ruta a cada electroterminal (centroide y paraderos reales).",
-        "- `capacidad_por_terminal.csv`: horas-cargador asignadas vs capacidad, bajo ciclo diario (incluye la fila combinada Los Espinos + Santa Rosa).",
+        "- `capacidad_por_terminal.csv`: horas-cargador asignadas vs capacidad, bajo ciclo diario, y el uso que tendria la asignacion C1b con la misma carga (incluye la fila combinada Los Espinos + Santa Rosa).",
+        "- `validacion_carga_c2.csv`: energia por electroterminal estimada por C2 vs la real de las jornadas del VSP.",
         "- `capacidad_sin_vs_con_recuperacion.csv`: sin recuperacion vs con recuperacion al mismo nivel de bateria (proxy por ruta).",
         "- `barrido_theta.csv`: rutas movidas y uso maximo al apretar la capacidad, separada y combinada.",
         "",
@@ -397,7 +407,7 @@ def escribir_reporte(comparacion, resumen_terminal, capacidad, evidencia, barrid
         "Mapas (`mapas/`): `mapa_c1a.png`, `mapa_c1b.png`, `mapa_c2.png` (rutas coloreadas por electroterminal), "
         "`mapa_terminal_<nombre>.png` (x5, rutas de cada electroterminal bajo C2), "
         "`mapa_paraderos_terminales.png` (641 paraderos por electroterminal mas cercano) y "
-        "`mapa_diferencias.png` (rutas que cambian entre C1a y C2).",
+        "`mapa_diferencias.png` (rutas que cambian de C1b a C2: las que la capacidad obliga a mover).",
         "",
         "Tabla ancha por ruta: `data-processed/rutas_clustering_completo.csv`.",
         "",
@@ -430,7 +440,9 @@ def main():
                                                             parametros.FACTOR_DESVIO)
     dist_comun = dist_comun.loc[rutas_resumen["route_id"].values]
 
-    h_r_ciclo = rutas_resumen.set_index("route_id")["kwh_dia"] / costos.charge_power_kw
+    h_comercial = rutas_resumen.set_index("route_id")["kwh_dia"] / costos.charge_power_kw
+    h_asignada_c2 = (pd.read_csv(DATA_PROCESSED / "rutas_cluster_c2.csv", sep=CSV_SEP, dtype={"route_id": str})
+                     .set_index("route_id")["h_r_horas_cargador"].reindex(h_comercial.index))
 
     print("--- Comparacion bajo criterio comun ---")
     comparacion = construir_comparacion(asignaciones, rutas_resumen, dist_comun, depots)
@@ -447,7 +459,7 @@ def main():
     print(f"  {len(rutas_que_cambian)} cambios registrados en total (sumando los 2 pares comparados)")
 
     print("\n--- Tabla ancha por ruta ---")
-    ancha = construir_tabla_ancha(asignaciones, rutas_resumen, dist_comun, depots, h_r_ciclo)
+    ancha = construir_tabla_ancha(asignaciones, rutas_resumen, dist_comun, depots, h_comercial, h_asignada_c2)
     ancha.to_csv(DATA_PROCESSED / "rutas_clustering_completo.csv", index=False, sep=CSV_SEP)
     print(f"  -> {DATA_PROCESSED / 'rutas_clustering_completo.csv'} ({len(ancha)} filas)")
 
@@ -473,7 +485,7 @@ def main():
     graficar_mapa_paraderos(terminales, depots, comunas, MAPAS / "mapa_paraderos_terminales.png")
     print(f"  -> {MAPAS / 'mapa_paraderos_terminales.png'}")
 
-    n_diferencias_mapa = len(graficar_mapa_diferencias(geom_rutas, asignaciones["c1a"], asignaciones["c2"],
+    n_diferencias_mapa = len(graficar_mapa_diferencias(geom_rutas, asignaciones["c1b"], asignaciones["c2"],
                                                           comunas, depots, MAPAS / "mapa_diferencias.png"))
     print(f"  -> {MAPAS / 'mapa_diferencias.png'} ({n_diferencias_mapa} rutas resaltadas)")
 
@@ -481,19 +493,23 @@ def main():
     capacidad = pd.read_csv(TABLAS / "capacidad_por_terminal.csv", sep=CSV_SEP)
     evidencia = pd.read_csv(TABLAS / "capacidad_sin_vs_con_recuperacion.csv", sep=CSV_SEP)
     barrido_theta = pd.read_csv(TABLAS / "barrido_theta.csv", sep=CSV_SEP)
-    escribir_reporte(comparacion, resumen_terminal, capacidad, evidencia, barrido_theta,
+    val_path = TABLAS / "validacion_carga_c2.csv"
+    validacion = pd.read_csv(val_path, sep=CSV_SEP) if val_path.exists() else pd.DataFrame()
+    escribir_reporte(comparacion, resumen_terminal, capacidad, validacion, evidencia, barrido_theta,
                       n_diferencias_mapa)
     print(f"  -> {RESULTS / 'reporte.md'}")
 
     # --- Chequeos de sanidad ---
     for etq, asign in asignaciones.items():
         assert asign.index.is_unique, f"{etq}: alguna ruta aparece mas de una vez."
-    assert (comparacion.loc[comparacion.estrategia == NOMBRES_ESTRATEGIA["c2"], "rutas_distintas_de_c1b"]
-            .iloc[0] == 0), ("Bajo ciclo y theta = 1 se esperaba C2 = C1b; si difiere, la restriccion de "
-                             "capacidad se activo y hay que explicarlo antes de seguir (ver script 5).")
+    assert (capacidad.loc[capacidad["electroterminal"] != NOMBRE_UNIDO, "uso_pct"] <= 100.0 + 1e-6).all(), \
+        "C2 deja algun electroterminal sobre su capacidad (ver tablas/capacidad_por_terminal.csv)."
+    assert n_diferencias_mapa == int(comparacion.loc[comparacion.estrategia == NOMBRES_ESTRATEGIA["c2"],
+                                                     "rutas_distintas_de_c1b"].iloc[0]), \
+        "El mapa de diferencias C1b -> C2 no calza con la tabla de comparacion."
     assert set(ancha["route_id"]) == set(rutas_resumen["route_id"]), \
         "La tabla ancha no tiene las mismas rutas que rutas_resumen.csv."
-    print("\n  [OK] Chequeos de sanidad pasaron (asignaciones unicas, C2 == C1b, tabla ancha completa).")
+    print("\n  [OK] Chequeos de sanidad pasaron (asignaciones unicas, capacidad de C2 respetada, tabla ancha completa).")
 
     print("\n=== FIN ETAPA 1 ===")
 

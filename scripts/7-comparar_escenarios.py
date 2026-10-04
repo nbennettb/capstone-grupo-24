@@ -1,30 +1,35 @@
 """
-Cierre de la Etapa 2 (ver docs/context/01_metodologia.md, seccion 5): compara la
-escalera de escenarios E0 -> E1 -> E2 -> E2b -> LB y la sensibilidad del
-deadhead, y calcula el "precio del clustering" (cuanto paga cada estrategia
+Cierre de la Etapa 2 (ver docs/context/01_metodologia.md, seccion 5): compara la escalera de escenarios
+E0 -> E1 -> LB y la sensibilidad del deadhead, y calcula el "precio del clustering" (cuanto paga cada configuracion
 frente a la cota inferior LB).
 
-No corre ningun modelo: lee los resumenes que va llenando
-scripts/6-vsp_asignacion_buses.py y las jornadas de E0 y E1.
+No corre ningun modelo: lee los resumenes que va llenando scripts/6-vsp_asignacion_buses.py y las jornadas de E0 y E1.
+
+TODOS los escenarios operacionales usan la asignacion C1b (el electroterminal mas cercano a los paraderos terminales
+reales de cada ruta) y tratan Los Espinos y Santa Rosa como UN solo electroterminal (infraestructura de carga
+compartida; sin unirlos, Los Espinos no tiene puestos para reponer su energia: ver Etapa 3).
 
 Escalera (cada escalon cambia UNA decision):
-  E0  caso base: sin interlining, asignacion C1b
-  E1  + interlining dentro del electroterminal (mismo C1b)
-  E2  + clustering con capacidad (C2)
-  E2b + Los Espinos y Santa Rosa como un solo terminal
-  LB  cota inferior: interlining libre y sin retorno al electroterminal
-      (NO es un escenario operacional)
+  E0  caso base: operacion por linea (sin interlining), terminales unidos
+  E1  + interlining dentro del electroterminal (configuracion propuesta)
+  LB  cota inferior: interlining libre y sin retorno al electroterminal (NO es un escenario operacional)
+
+Evidencia de por que se unen: E0_sep y E1_sep (mismos escenarios con terminales separados). En el VSP unir baja la flota
+solo con interlining (E1_sep -> E1); el efecto fuerte esta en la carga (deficit de energia, Etapa 3).
+
+Variantes con C2 (la asignacion con restriccion de capacidad, PROPUESTA; fuera de la escalera): E1_C2 (unidos) y
+E1_C2_sep (separados).
 
 Sensibilidad (sobre E1): factor de desvio del deadhead y layover.
 
 Requiere haber corrido antes (ver docstring de 6-):
-    E0, E1, E2, E2b, LB   -> tablas/resumen_escenarios.csv
-    E1_f1.2, E1_f1.35, E1_f1.5, E1_l0, E1_l10 (con --sin-jornadas)
-                          -> tablas/resumen_sensibilidad.csv
+    E0, E1, LB, E0_sep, E1_sep, E1_C2, E1_C2_sep -> tablas/resumen_escenarios.csv
+    E1_f1.2, E1_f1.35, E1_f1.5, E1_l0, E1_l10 (con --sin-jornadas y --unir-electroterminales)
+                                                  -> tablas/resumen_sensibilidad.csv
 
 Input:  results/etapa2_vsp/tablas/{resumen_escenarios,resumen_sensibilidad}.csv,
-        data-processed/jornadas_{E0,E1}.csv
-Output: results/etapa2_vsp/tablas/{escalera_escenarios,precio_del_clustering,
+        data-processed/{jornadas_E0,jornadas_E1,rutas_cluster_c1b,rutas_cluster_c2}.csv
+Output: results/etapa2_vsp/tablas/{escalera_escenarios,precio_del_clustering,variantes_c2,evidencia_union,
             sensibilidad_deadhead}.csv
         results/etapa2_vsp/graficos/{escalera_buses,escalera_costo,
             sensibilidad_deadhead,energia_por_jornada_E0_E1}.png
@@ -57,15 +62,15 @@ GRAFICOS.mkdir(exist_ok=True)
 # buses), ver results/etapa0_preprocesamiento/reporte.md.
 COTA_INFERIOR_TEORICA = 6539
 
-ESCALERA = ["E0", "E1", "E2", "E2b", "LB"]
+ESCALERA = ["E0", "E1", "LB"]
+VARIANTES_C2 = ["E1_C2", "E1_C2_sep"]
+SEPARADOS = ["E0_sep", "E1_sep"]
 NOMBRES = {
-    "E0": "E0\nCaso base\n(sin interlining)",
-    "E1": "E1\n+ interlining",
-    "E2": "E2\n+ clustering\ncon capacidad",
-    "E2b": "E2b\n+ Los Espinos y\nSanta Rosa unidos",
+    "E0": "E0\nCaso base\n(por linea, unidos)",
+    "E1": "E1\n+ interlining\n(unidos)",
     "LB": "LB\nCota inferior\n(no operacional)",
 }
-COLORES = {"E0": "#8f4a2c", "E1": "#2c6e8f", "E2": "#4a8f6e", "E2b": "#6e4a8f", "LB": "#9a9a9a"}
+COLORES = {"E0": "#8f4a2c", "E1": "#2c6e8f", "LB": "#9a9a9a"}
 C_FLOTA, C_KM, C_ESPERA = "#2c6e8f", "#d95f02", "#7f7f7f"
 
 SENSIBILIDAD = [  # (etiqueta, parametro, valor)
@@ -94,7 +99,7 @@ def cargar_resumenes():
                               f"(ver docstring de este script).")
     esc = pd.read_csv(p1, sep=CSV_SEP).set_index("etiqueta")
     sens = pd.read_csv(p2, sep=CSV_SEP).set_index("etiqueta")
-    faltan = [e for e in ESCALERA if e not in esc.index]
+    faltan = [e for e in ESCALERA + VARIANTES_C2 + SEPARADOS if e not in esc.index]
     if faltan:
         raise SystemExit(f"Faltan escenarios en {p1.name}: {faltan}.")
     faltan = [e for e, _, _ in SENSIBILIDAD if e != "E1" and e not in sens.index]
@@ -258,23 +263,33 @@ def escribir_reporte(t, s, esc):
                 "buses_pct": round((t.loc[b, "buses"] / t.loc[a, "buses"] - 1) * 100, 2),
                 "costo_operacion_usd": t.loc[b, "cost_operacion_usd"] - t.loc[a, "cost_operacion_usd"],
                 "costo_pct": round((t.loc[b, "cost_operacion_usd"] / t.loc[a, "cost_operacion_usd"] - 1) * 100, 2)}
-    marg = pd.DataFrame([fila_marg("E0", "E1"), fila_marg("E1", "E2"), fila_marg("E2", "E2b"),
-                         fila_marg("E2b", "LB")])
+    marg = pd.DataFrame([fila_marg("E0", "E1"), fila_marg("E1", "LB")])
     sob = [c for c in esc.columns if c.startswith("pct_jornadas_sobre_bateria_")]
     sobre = esc.loc[["E0", "E1"], sob].rename(columns=lambda c: c.replace("pct_jornadas_sobre_bateria_", "nivel ") + "%")
+
     def mi(v):   # miles con punto, como se escribe en espanol
         return f"{v:,.0f}".replace(",", ".")
     share_e1 = (t.loc["E0", "buses"] - t.loc["E1", "buses"]) / (t.loc["E0", "buses"] - t.loc["LB", "buses"])
-    iguales = bool(t.loc["E1", "buses"] == t.loc["E2", "buses"]
-                   and t.loc["E1", "cost_operacion_usd"] == t.loc["E2", "cost_operacion_usd"])
+    c2 = pd.read_csv(DATA_PROCESSED / "rutas_cluster_c2.csv", sep=CSV_SEP, dtype={"depot_id": str})
+    c1b = pd.read_csv(DATA_PROCESSED / "rutas_cluster_c1b.csv", sep=CSV_SEP, dtype={"depot_id": str})
+    movidas = int((c2["depot_id"].values != c1b.set_index("route_id").loc[c2["route_id"].values, "depot_id"].values).sum())
+    n_unidas = int(c1b["depot_id"].isin(parametros.ELECTROTERMINALES_UNIDOS).sum())
+    unir = esc.loc[["E0_sep", "E0", "E1_sep", "E1"], ["buses", "cost_operacion_usd", "jornadas_cruzan_patio"]]
+    var = esc.loc[VARIANTES_C2, ["buses", "cost_operacion_usd", "jornadas_cruzan_patio"]].copy()
+    var["delta_buses_vs_escalera"] = [esc.loc["E1_C2", "buses"] - t.loc["E1", "buses"],
+                                      esc.loc["E1_C2_sep", "buses"] - esc.loc["E1_sep", "buses"]]
+    var["delta_costo_vs_escalera_usd"] = [esc.loc["E1_C2", "cost_operacion_usd"] - t.loc["E1", "cost_operacion_usd"],
+                                          esc.loc["E1_C2_sep", "cost_operacion_usd"] - esc.loc["E1_sep", "cost_operacion_usd"]]
     base_f = s[s["parametro"] == "factor de desvio"]
     base_l = s[s["parametro"] == "layover (min)"]
     lineas = [
         "# Reporte Etapa 2 - Asignacion de buses (VSP, sin bateria)",
         "",
-        "Escalera de escenarios (cada escalon cambia una sola decision) y sensibilidad del deadhead. "
-        "El costo de operacion es flota + km sin pasajeros + espera; no incluye la energia (Etapa 3) ni los "
-        "km con pasajeros (iguales en todos los escenarios).",
+        "Escalera de escenarios (cada escalon cambia una sola decision) y sensibilidad del deadhead. La asignacion de "
+        "electroterminales es C1b (el mas cercano a los paraderos terminales reales de cada ruta) y Los Espinos y Santa "
+        "Rosa se tratan como UN solo electroterminal en todos los escenarios operacionales. El costo de operacion es "
+        "flota + km sin pasajeros + espera; no incluye la energia (Etapa 3) ni los km con pasajeros (iguales en todos los "
+        "escenarios).",
         "",
         "## Escalera de escenarios",
         "",
@@ -291,21 +306,32 @@ def escribir_reporte(t, s, esc):
         f"los buses se desplazan para encadenar viajes), pero los km de pullout/pullin bajan mas "
         f"({mi(t.loc['E0', 'km_pullout'] + t.loc['E0', 'km_pullin'])} -> "
         f"{mi(t.loc['E1', 'km_pullout'] + t.loc['E1', 'km_pullin'])} km, porque hay menos buses que salgan y vuelvan): "
-        f"el total de km sin pasajeros baja ({mi(t.loc['E0', 'km_vacios_total'])} -> {mi(t.loc['E1', 'km_vacios_total'])} km).",
-        ("- **E1 -> E2 (clustering con capacidad): IDENTICO.** La asignacion C2 coincide con C1b porque la "
-         "restriccion de capacidad agregada diaria no esta activa (Etapa 1). Es un resultado valido: la "
-         "capacidad agregada no condiciona el clustering; la capacidad se manifestara en las colas de carga "
-         "(Etapa 3)." if iguales else
-         "- **E1 -> E2 (clustering con capacidad): DIFIERE.** Se esperaba identico (C2 = C1b); revisar y explicar."),
-        f"- **E2 -> E2b (unir Los Espinos y Santa Rosa):** {mi(marg.iloc[2]['buses'])} buses "
-        f"({marg.iloc[2]['costo_pct']:.1f}% del costo). Unirlos habilita encadenar las 186 rutas de ambos en un solo "
-        f"grupo; {mi(t.loc['E2b', 'jornadas_cruzan_patio'])} jornadas salen de un patio y vuelven al otro "
+        f"el total de km sin pasajeros baja ({mi(t.loc['E0', 'km_vacios_total'])} -> {mi(t.loc['E1', 'km_vacios_total'])} km). "
+        f"En E1, {mi(t.loc['E1', 'jornadas_cruzan_patio'])} jornadas salen de un patio y vuelven al otro del terminal unido "
         "(estan a 1,1 km; no viola el retorno porque es un solo electroterminal).",
-        f"- **E2b -> LB:** quedan {mi(t.loc['E2b', 'brecha_buses_vs_LB'])} buses sobre la cota inferior "
-        f"({t.loc['E2b', 'brecha_buses_vs_LB_pct']:.1f}%): es el precio de exigir el retorno al electroterminal y "
-        f"de limitar el interlining al grupo. LB NO es operacional: {mi(esc.loc['LB', 'jornadas_sin_retorno'])} de "
-        f"sus {mi(t.loc['LB', 'buses'])} jornadas terminan en un electroterminal distinto al de salida.",
+        f"- **E1 -> LB:** quedan {mi(t.loc['E1', 'brecha_buses_vs_LB'])} buses sobre la cota inferior "
+        f"({t.loc['E1', 'brecha_buses_vs_LB_pct']:.1f}%): es el precio de exigir el retorno al electroterminal y de limitar el "
+        f"interlining al grupo. LB NO es operacional: {mi(esc.loc['LB', 'jornadas_sin_retorno'])} de sus "
+        f"{mi(t.loc['LB', 'buses'])} jornadas terminan en un electroterminal distinto al de salida.",
         f"- Todos quedan sobre la cota teorica de {mi(COTA_INFERIOR_TEORICA)} (maximo de expediciones simultaneas).",
+        "",
+        "## Evidencia de por que se unen Los Espinos y Santa Rosa (separados vs unidos)",
+        "",
+        unir.to_markdown(),
+        "",
+        f"En el VSP unir no cambia E0 (cada ruta encadena solo consigo misma) y baja {mi(esc.loc['E1_sep', 'buses'] - t.loc['E1', 'buses'])} "
+        f"buses en E1: las {n_unidas} rutas de ambos terminales pasan a poder encadenarse entre si. El efecto decisivo esta en la "
+        "carga (Etapa 3): sin unir, Los Espinos tiene deficit de energia por falta de puestos y la solucion es infactible.",
+        "",
+        "## Variantes con C2 (asignacion con restriccion de capacidad; propuesta, fuera de la escalera)",
+        "",
+        var.to_markdown(),
+        "",
+        f"C2 mueve {movidas} rutas respecto de C1b para respetar la capacidad de carga de Los Espinos. En el VSP casi no "
+        f"cambia nada ({mi(var.loc['E1_C2', 'delta_buses_vs_escalera'])} buses en E1_C2 frente a E1; "
+        f"{mi(var.loc['E1_C2_sep', 'delta_buses_vs_escalera'])} en E1_C2_sep frente a E1_sep): el VSP no ve la capacidad. Su "
+        "efecto aparece en la carga (Etapa 3). Se mantiene como propuesta y no como base (ver "
+        "`docs/justificaciones/05_unir_terminales.md`).",
         "",
         "## Sensibilidad del deadhead (sobre E1)",
         "",
@@ -335,7 +361,9 @@ def escribir_reporte(t, s, esc):
         "- `resumen_escenarios.csv`: una fila por escenario con todos los parametros de la corrida (trazabilidad).",
         "- `resumen_sensibilidad.csv`: corridas de sensibilidad (sin jornadas).",
         "- `escalera_escenarios.csv`: la tabla de la escalera con efectos marginales y brechas contra LB y la cota.",
-        "- `precio_del_clustering.csv`: buses y costo de E1, E2 y E2b frente a LB.",
+        "- `precio_del_clustering.csv`: buses y costo de E1 frente a LB.",
+        "- `evidencia_union.csv`: separados vs unidos en el VSP (E0_sep, E0, E1_sep, E1).",
+        "- `variantes_c2.csv`: las variantes con C2 (propuesta) frente a la escalera.",
         "- `sensibilidad_deadhead.csv`: la tabla de sensibilidad.",
         "",
         "Graficos (`graficos/`):",
@@ -345,7 +373,7 @@ def escribir_reporte(t, s, esc):
         "- `energia_por_jornada_E0_E1.png`: energia por jornada contra la bateria util de cada nivel.",
         "- `jornadas_<escenario>.png`: histogramas de energia y duracion de cada escenario.",
         "",
-        "Jornadas (insumo de la Etapa 3): `data-processed/jornadas_{E0,E1,E2,E2b,LB}.csv`.",
+        "Jornadas (insumo de la Etapa 3): `data-processed/jornadas_{E0,E1,LB,E0_sep,E1_sep,E1_C2,E1_C2_sep}.csv`.",
     ]
     (RESULTS / "reporte.md").write_text("\n".join(lineas), encoding="utf-8")
 
@@ -358,11 +386,15 @@ def main():
     t = construir_escalera(esc)
     s = construir_sensibilidad(esc, sens)
     t.to_csv(TABLAS / "escalera_escenarios.csv", sep=CSV_SEP)
-    precio = t.loc[["E1", "E2", "E2b"], ["buses", "brecha_buses_vs_LB", "brecha_buses_vs_LB_pct",
-                                          "cost_operacion_usd", "brecha_costo_vs_LB_pct"]]
+    precio = t.loc[["E1"], ["buses", "brecha_buses_vs_LB", "brecha_buses_vs_LB_pct",
+                            "cost_operacion_usd", "brecha_costo_vs_LB_pct"]]
     precio.to_csv(TABLAS / "precio_del_clustering.csv", sep=CSV_SEP)
+    cols_var = ["modo", "asignacion", "unir", "buses", "km_vacios_total", "cost_operacion_usd",
+                "jornadas_cruzan_patio", "jornadas_sin_retorno"]
+    esc.loc[VARIANTES_C2, cols_var].to_csv(TABLAS / "variantes_c2.csv", sep=CSV_SEP)
+    esc.loc[["E0_sep", "E0", "E1_sep", "E1"], cols_var].to_csv(TABLAS / "evidencia_union.csv", sep=CSV_SEP)
     s.to_csv(TABLAS / "sensibilidad_deadhead.csv", index=False, sep=CSV_SEP)
-    print(f"  -> {TABLAS}/ (escalera_escenarios, precio_del_clustering, sensibilidad_deadhead)")
+    print(f"  -> {TABLAS}/ (escalera_escenarios, precio_del_clustering, variantes_c2, evidencia_union, sensibilidad_deadhead)")
 
     graficar_escalera_buses(t, GRAFICOS / "escalera_buses.png")
     graficar_escalera_costo(t, GRAFICOS / "escalera_costo.png")
@@ -378,27 +410,31 @@ def main():
     print("\n=== Escalera ===")
     print(t[["buses", "delta_buses_vs_anterior", "cost_operacion_usd", "brecha_buses_vs_LB_pct",
              "jornadas_sin_retorno"]].to_string())
+    print("\n=== Separados vs unidos y variantes C2 ===")
+    print(esc.loc[["E0_sep", "E0", "E1_sep", "E1"] + VARIANTES_C2, ["buses", "cost_operacion_usd", "jornadas_cruzan_patio"]].to_string())
     print("\n=== Sensibilidad (E1) ===")
     print(s[["parametro", "valor", "buses", "delta_buses_vs_base_pct", "delta_costo_vs_base_pct"]].to_string(index=False))
 
     # --- Chequeos de sanidad ---
     b = t["buses"]
-    assert b["E0"] >= b["E1"] >= b["E2b"] >= b["LB"] >= COTA_INFERIOR_TEORICA, (
-        "Orden inesperado entre escenarios: se esperaba E0 >= E1 >= E2b >= LB >= cota teorica. Revisar si algun "
-        "escenario se corrio con parametros distintos (radio, factor, layover, subset).")
-    assert (t.loc[["E0", "E1", "E2", "E2b"], "jornadas_sin_retorno"] == 0).all(), \
-        "Un escenario operacional (E0-E2b) tiene jornadas que no vuelven a su electroterminal."
+    assert b["E0"] >= b["E1"] >= b["LB"] >= COTA_INFERIOR_TEORICA, (
+        "Orden inesperado entre escenarios: se esperaba E0 >= E1 >= LB >= cota teorica. Revisar si algun escenario "
+        "se corrio con parametros distintos (radio, factor, layover, subset).")
+    assert esc.loc["E0_sep", "buses"] == b["E0"], "En modo ruta unir terminales no debe cambiar el VSP (E0 == E0_sep)."
+    assert esc.loc["E1_sep", "buses"] >= b["E1"], "Unir terminales no deberia aumentar la flota del VSP (E1_sep >= E1)."
+    operacionales = ["E0", "E1", "E0_sep", "E1_sep"] + VARIANTES_C2
+    assert (esc.loc[operacionales, "jornadas_sin_retorno"] == 0).all(), \
+        "Un escenario operacional tiene jornadas que no vuelven a su electroterminal."
     assert t.loc["LB", "jornadas_sin_retorno"] > 0, \
         "Se esperaba que LB violara el retorno en alguna jornada (si no, no seria una cota inferior)."
-    for etq in ("E0", "E1", "E2", "E2b", "LB"):
+    for etq in ESCALERA + VARIANTES_C2 + SEPARADOS:
         assert pd.isna(esc.loc[etq, "subset"]) or esc.loc[etq, "subset"] == "", \
             f"{etq} se corrio sobre un subconjunto de rutas (checkpoint), no sobre la red completa."
         assert esc.loc[etq, "n_expediciones"] == 64502, f"{etq}: {esc.loc[etq, 'n_expediciones']} expediciones, se esperaban 64502."
-    if b["E1"] != b["E2"]:
-        print("\n  [aviso] E2 difiere de E1: se esperaba identico (C2 = C1b). Explicar antes de seguir.")
-    else:
-        print("\n  [OK] E2 == E1: la asignacion con capacidad no cambia la flota (C2 = C1b).")
-    print("  [OK] Orden de escenarios consistente (E0 >= E1 >= E2b >= LB >= cota teorica); retorno cumplido en E0-E2b.")
+    for etq in ("E0", "E1"):
+        assert esc.loc[etq, "asignacion"] == "rutas_cluster_c1b.csv" and str(esc.loc[etq, "unir"]).strip() == "3,5", \
+            f"{etq} debe correr con la asignacion C1b y los electroterminales 3 y 5 unidos."
+    print("\n  [OK] Orden de escenarios consistente (E0 >= E1 >= LB >= cota teorica); retorno cumplido en todos los operacionales.")
     print("\n=== FIN ETAPA 2 (cierre) ===")
 
 

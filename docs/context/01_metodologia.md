@@ -62,7 +62,7 @@ Detalle completo en [`00_contexto_entrega1.md`](00_contexto_entrega1.md) y
 
 | Supuesto | Valor | Origen |
 |---|---|---|
-| **Condición cíclica** | Todo bus **empieza y termina** el día con el mismo nivel `SOC_CICLICO` | **[Profesor]** pidió la condición (dejar batería para el día siguiente). Los 80-90% fueron un **ejemplo**. El **nivel** se busca con datos: se parte de 100% (máximo de `parameters.csv`) y se elige el que minimiza el costo total en un barrido 100-70%. Ver `02_supuestos_y_decisiones.md` B6 |
+| **Condición cíclica** (`SOC_CICLICO` es solo el nombre del nivel en estos textos; en el código es el argumento `--soc` y la grilla `SOC_CICLICO_BARRIDO`) | Todo bus **empieza y termina** el día con el mismo nivel `SOC_CICLICO` | **[Profesor]** pidió la condición (dejar batería para el día siguiente). Los 80-90% fueron un **ejemplo**. El **nivel** se busca con datos: se parte de 100% (máximo de `parameters.csv`) y se elige el que minimiza el costo total en un barrido 100-70%. **Resultado: 100%, con buses de reserva para cumplir el ciclo** (robusto en E0 y E1). Ver `02_supuestos_y_decisiones.md` B6 |
 | `SOC_CICLICO` como tope | La batería nunca se carga por sobre `SOC_CICLICO` | **[Dato]** con el base de 100% (es el `max_soc` del curso) |
 | Energía utilizable entre cargas | (`SOC_CICLICO` − 10%) × 350 kWh = **315 kWh** al 100%; 280 kWh al 90%; 245 kWh al 80% | Derivado |
 | Condición de fin de día | `SOC_fin ≥ SOC_inicio`; con el tope, el bus termina el día exactamente en `SOC_CICLICO` | **[Decisión]** |
@@ -140,63 +140,81 @@ clusterizar".
 **Para qué sirve el cluster.** Define el electroterminal base de cada bus (salida, retorno, dónde
 carga) y convierte un problema de 5 depósitos en 5 de un depósito.
 
-Tres estrategias, cada una cambia **un solo aspecto** respecto de la anterior:
+Tres criterios, cada uno cambia **un solo aspecto** respecto del anterior. **La asignación base de la entrega es
+C1b** (en el relato se llama simplemente **C1**); C1a es un control de sensibilidad y C2 es la **propuesta**:
 
-| | Qué decide | Qué aísla |
+| | Qué decide | Rol en la entrega |
 |---|---|---|
-| **C1a** | Electroterminal más cercano al **centroide** de la ruta | Referencia heredada |
-| **C1b** | Más cercano a los **paraderos terminales reales** de la ruta, ponderados por uso | Solo la forma de medir la distancia |
-| **C2** | MILP de asignación con restricción de capacidad, misma distancia que C1b | Solo agrega la capacidad |
+| **C1a** | Electroterminal más cercano al **centroide** de la ruta | Control: cambia 41 rutas y solo 0,7% del costo de pullout/pullin, así que la métrica de distancia importa poco. No la usa ninguna etapa posterior |
+| **C1b = C1** | Más cercano a los **paraderos terminales reales** de la ruta, ponderados por uso | **Asignación base** (E0, E1) |
+| **C2** | MILP de asignación con restricción de capacidad, misma distancia que C1b | **Propuesta**: formulada, probada y validada; fuera del caso base (ver `02`, B11) |
 
 **Formulación de C2.**
 
-$$\min \sum_{r\in R}\sum_{d\in D} c_{rd}\,x_{rd}\quad\text{s.a.}\quad \sum_{d} x_{rd}=1\;\;\forall r,\qquad \sum_{r} h_r\,x_{rd}\le \theta\,\kappa_d H\;\;\forall d,\qquad x_{rd}\in\{0,1\}$$
+$$\min \sum_{r\in R}\sum_{d\in D} c_{rd}\,x_{rd}\quad\text{s.a.}\quad \sum_{d} x_{rd}=1\;\;\forall r,\qquad \sum_{r} h_{rd}\,x_{rd}\le \theta\,\kappa_d H\;\;\forall d,\qquad x_{rd}\in\{0,1\}$$
 
 - $c_{rd}=2\cdot\text{dist}_{rd}\cdot c^{km}\cdot n_r$: costo diario aproximado de pullout + pullin de la
   ruta $r$ si su base es $d$ (`dist` = distancia esperada a sus paraderos reales, con factor 1,3;
   $n_r$ = buses estimados).
-- $h_r$ = horas-cargador por día que demanda la ruta = kWh/día de la ruta ÷ 180 kW. **Bajo el ciclo
-  diario se recarga todo lo consumido** (`ciclo`). Ambos lados de la restricción están en
-  horas-cargador/día (el Informe 1 mezclaba puestos simultáneos con expediciones/día).
+- $h_{rd}$ = horas-cargador por día que la ruta $r$ demanda en el electroterminal $d$:
+  $h_{rd}=\big(\text{kWh}_r + 2\cdot\text{dist}_{rd}\cdot n_r\cdot 1{,}4\big)/180$. **Bajo la condición cíclica
+  se recarga todo lo consumido, y lo consumido incluye salir del electroterminal y volver** (pullout y
+  pullin), con la misma distancia y el mismo $n_r$ que ya definen $c_{rd}$. Por eso la carga **depende del
+  electroterminal**: mandar una ruta lejos no solo cuesta más km, también exige más carga ahí. Es un problema
+  de asignación generalizada (GAP). Ambos lados de la restricción están en horas-cargador/día (el Informe 1
+  mezclaba puestos simultáneos con expediciones/día). *(Corrección C7: antes $h_r$ era solo la energía
+  comercial de la ruta, que subestimaba la carga 9-14%.)*
 - $\kappa_d$ = puestos, $H$ = horas disponibles (24, **[Profesor]**), $\theta$ = holgura.
 
-**Resultados [Medido, escenario cíclico, θ = 1, H = 24]:**
+**Validación del estimador de carga [Medido].** Contra la energía real de las jornadas del VSP (E0 y E1, que
+usan la asignación C1b), la energía comercial sola subestima 9-14% por electroterminal; el estimador con pullout
+y pullin (fórmula de arriba) subestima solo 0,5-3,1% (el resto son los traslados entre viajes y la diferencia
+entre buses estimados y reales). Detalle: `results/etapa1_clustering/tablas/validacion_carga_c2.csv` y
+`docs/justificaciones/08_carga_real_en_clustering.md`.
 
-| Electroterminal | Rutas C1a | Rutas C1b = C2 | Uso de capacidad (h-cargador) |
-|---|---|---|---|
-| Vespucio Norte | 59 | 56 | 30,9% |
-| El Conquistador | 98 | 108 | 69,8% |
-| Los Espinos | 85 | 88 | **89,9%** |
-| La Reina | 64 | 67 | 68,1% |
-| Santa Rosa | 111 | 98 | 58,6% |
+**Resultados [Medido, θ = 1, H = 24]:**
 
-- **C2 coincide exactamente con C1b** (0 rutas distintas): con θ = 1 la restricción **agregada diaria**
-  no está activa, porque la capacidad total alcanza (62% de uso global). Solo empieza a mover rutas
-  con θ ≈ 0,8 (11 rutas), 21 rutas con θ = 0,7, e infactible con θ = 0,6.
+| Electroterminal | Rutas C1a | Rutas C1b | Rutas C2 | Uso de capacidad con C1b | Uso de capacidad con C2 |
+|---|---|---|---|---|---|
+| Vespucio Norte | 59 | 56 | 56 | 33,7% | 33,7% |
+| El Conquistador | 98 | 108 | 109 | 79,1% | 80,8% |
+| Los Espinos | 85 | 88 | 83 | **101,6%** | **97,6%** |
+| La Reina | 64 | 67 | 67 | 76,2% | 76,2% |
+| Santa Rosa | 111 | 98 | 102 | 65,9% | 67,1% |
+
+- **Con la carga corregida, la restricción de capacidad sí se activa:** la asignación C1b (la más cercana, sin
+  capacidad) deja a Los Espinos al 101,6% y C2 mueve **5 rutas** (4 a Santa Rosa, a 1,1 km; 1 a El Conquistador)
+  para respetarla. Cuesta casi nada (pullout/pullin 83.271 → 83.276 USD/día). Carga total: 11.760 h-cargador
+  (70% de las 16.800) y 2.117 MWh. Con θ menor: 8 rutas movidas con θ = 0,9, 14 con 0,8 e infactible con 0,7
+  (capacidad separada); con Los Espinos + Santa Rosa combinados, 5 rutas con θ = 1 y 0,9, 8 con 0,8 e infactible
+  con 0,7.
 - **C1a vs C1b:** cambian 41 de 417 rutas (10%), pero el costo aproximado de pullout/pullin mejora
   solo 0,7% (83.843 → 83.271 USD/día). El centroide es una simplificación casi inocua.
 - **Límite de C2 que hay que entender:** su capacidad es un **promedio diario**. La carga real se
   concentra en ciertas horas, así que un electroterminal puede saturarse en las horas punta de carga
-  aunque su promedio diario sea 70%. Esa saturación **no** la ve C2; la verá el simulador de la
-  Etapa 3 como colas de espera. Por eso es posible que C2 no cambie la asignación (ver §5, E2).
+  aunque su promedio diario sea 70%. Esa saturación **no** la ve C2; la ve el simulador de la
+  Etapa 3 como colas y déficit. **Medido:** con C2 sin unir (E1_C2_sep) Los Espinos usa 98,5% de su capacidad real (energía de las
+  jornadas) y aun así el simulador reactivo deja 21 MWh sin reponer: respetar el 100% diario es **necesario,
+  no suficiente** (ver `02`, C8).
 - **Variante Los Espinos + Santa Rosa [Decisión, a implementar]:** están a solo 1,11 km entre sí (el
   resto de los pares a ≥ 5,9 km). La variante los trata como **un solo electroterminal de 270
   puestos** (los dos patios físicos se mantienen para las distancias). Tiene tres efectos, y solo uno
   se ve en la Etapa 1:
-  1. *Capacidad combinada en C2.* **[Medido]** No cambia la asignación: separados ya no aprietan
-     (Los Espinos 89,9%, Santa Rosa 58,6%; juntos 72,5%). Solo se nota al bajar θ.
-  2. ***Un solo grupo de interlining* en la Etapa 2 (el efecto esperado).** Las 186 rutas (88 + 98)
-     pasan a poder encadenarse entre sí, lo que en principio reduce buses. Es la parte del
-     "precio del clustering" que unir recuperaría.
+  1. *Capacidad combinada en C2.* **[Medido]** Con la carga corregida, Los Espinos separado queda al 97,6%
+     y Santa Rosa al 67,1%; combinados, 81,8%: la bolsa de 270 puestos tiene holgura. Con θ = 0,8 la
+     capacidad combinada sigue siendo factible.
+  2. ***Un solo grupo de interlining* en la Etapa 2 (el efecto esperado).** Las 186 rutas (88 + 98 con C1b)
+     pasan a poder encadenarse entre sí, lo que reduce buses (−94 en el VSP: E1_sep → E1).
   3. *Cargadores compartidos* en las Etapas 3-4: menos colas de espera.
 
-  Se reportan resultados **juntos y separados** (E2 vs E2b) para justificar con números si conviene
-  unirlos. El profesor dijo que es válido y es decisión nuestra, siempre justificando.
+  Se reportan resultados **juntos y separados** (E1_sep vs E1) para justificar con números si conviene
+  unirlos. **Decisión:** todos los escenarios operacionales los unen (`02`, B11). El profesor dijo que es válido y es decisión
+  nuestra, siempre justificando (`docs/justificaciones/05_unir_terminales.md`).
 - **Scripts:** `scripts/4-clustering_c1.py`, `5-clustering_c2.py`, `8-clustering_comparacion.py` ·
   **Salida:** `data-processed/rutas_cluster_*.csv`, `results/etapa1_clustering/` (tablas, gráficos y
   10 mapas).
 
-### Etapa 2 — Asignación de buses por cluster (VSP) · estado: HECHA (escalera E0-E2b y LB corrida)
+### Etapa 2 — Asignación de buses por cluster (VSP) · estado: HECHA (escalera E0-E1 y LB corrida)
 
 - **Qué decide.** Qué bus cubre qué expedición, y cuántos buses hacen falta. **Todavía sin batería**:
   eso lo corrige la Etapa 3.
@@ -217,51 +235,131 @@ entera**, exacta y rápida (~40 s sobre toda la red).
   `cluster` el electroterminal de cada ruta viene de la asignación de la Etapa 1 (`--asignacion`), y el
   script verifica que toda jornada vuelva a su electroterminal.
 - **Resultados [Medido]** (red completa, 64.502 expediciones, factor 1,3, layover 3 min; el costo de
-  operación es flota + km sin pasajeros + espera, sin energía):
+  operación es flota + km sin pasajeros + espera, sin energía). Todos los escenarios operacionales usan **C1b** y
+  tratan **Los Espinos y Santa Rosa como un solo electroterminal** (decisión B11, justificada por la carga: Etapa 3):
 
   | Escenario | Buses | Costo de operación (USD/día) | vs. escalón anterior |
   |---|---|---|---|
-  | E0 (sin interlining, C1b) | 8.654 | 2.311.988 | |
-  | E1 (+ interlining) | 7.460 | 1.995.343 | −1.194 buses (−13,7%) |
-  | E2 (C2) | 7.460 | 1.995.343 | idéntico a E1 |
-  | E2b (+ Los Espinos y Santa Rosa unidos) | 7.366 | 1.970.265 | −94 buses (−1,3%) |
+  | E0 (por línea, sin interlining, unidos) | 8.654 | 2.311.988 | |
+  | E1 (+ interlining, unidos) | 7.366 | 1.970.265 | −1.288 buses (−14,9%) |
   | LB (cota inferior, no operacional) | 7.055 | 1.873.677 | −311 buses |
+  | *Evidencia de la unión: E0_sep / E1_sep (separados)* | 8.654 / 7.460 | 2.311.988 / 1.995.343 | unir no cambia E0 y baja 94 buses en E1 |
+  | *Variantes con C2 (propuesta): E1_C2 / E1_C2_sep* | 7.366 / 7.462 | 1.970.319 / 1.995.921 | +0 frente a E1; +2 frente a E1_sep |
 
-  E0 y LB reproducen exactamente la ronda anterior (8.654 y 7.055); E1 da 7.460 contra 7.456 con C1a.
-  **E2 = E1** porque la asignación C2 coincide con C1b (la restricción agregada de capacidad no está
-  activa). El interlining concentra el 75% de lo que separa a E0 de LB. LB viola el retorno: 4.192 de sus
-  7.055 jornadas terminan en otro electroterminal. En E2b, 1.068 jornadas salen de un patio y vuelven al
-  otro (1,1 km), lo que no viola el retorno porque es un solo electroterminal.
+  E0 y LB reproducen exactamente la ronda anterior (8.654 y 7.055). El interlining concentra el 81% de lo que separa
+  a E0 de LB. LB viola el retorno: 4.192 de sus 7.055 jornadas terminan en otro electroterminal. En E1, 1.068
+  jornadas salen de un patio y vuelven al otro (1,1 km), lo que no viola el retorno porque es un solo electroterminal.
+  Unir no cambia el VSP de E0 (cada ruta encadena solo consigo misma): su efecto importante es en la carga. C2 mueve
+  solo 5 rutas respecto de C1b, así que el VSP casi no cambia: el VSP no ve la capacidad.
 - **Sensibilidad del deadhead (sobre E1) [Medido]:** el factor de desvío (1,2 a 1,5) mueve la flota entre
-  −0,8% y +0,7%; el layover (0 a 10 min) entre −2,7% y +6,0%. El 1,3 importa poco para el tamaño de la
+  −1,0% y +1,0%; el layover (0 a 10 min) entre −2,8% y +6,0%. El 1,3 importa poco para el tamaño de la
   flota; el layover (3 min, sin calibrar) es el supuesto más sensible de la Etapa 2.
 - **Script:** `scripts/6-vsp_asignacion_buses.py` (+ `7-comparar_escenarios.py`) · **Salida:**
-  `data-processed/jornadas_{E0,E1,E2,E2b,LB}.csv`, `results/etapa2_vsp/`.
+  `data-processed/jornadas_{E0,E1,LB,E0_sep,E1_sep,E1_C2,E1_C2_sep}.csv`, `results/etapa2_vsp/`.
 
-### Etapa 3 — Inserción de recargas · estado: POR CONSTRUIR
+### Etapa 3 — Inserción de recargas · estado: HECHA (simulador con buses de reserva y barrido de niveles; nivel base 100%)
 
 - **Qué decide.** Para cada jornada ya fija (secuencia de expediciones de un bus), en qué huecos
-  recarga, en qué electroterminal y cuánto, respetando el ciclo diario y la capacidad de puestos.
-- **Por qué hace falta.** **[Medido]** Con el ciclo diario, de 30% (nivel 100%) a 45% (90%) y 59% (80%) de las
+  recarga, en qué electroterminal y cuánto, respetando la condición cíclica y la capacidad de puestos.
+- **Por qué hace falta.** **[Medido]** Con la condición cíclica, de 30% (nivel 100%) a 45% (90%) y 59% (80%) de las
   jornadas del caso base necesitan recargar **a mitad del día**, y de 39% a 76% con interlining.
   La jornada más cara consume 676 kWh contra 350 kWh de batería: **ningún nivel de SOC inicial evita
   la recarga intermedia**.
-- **Para el caso base (E0, E1, E2): política reactiva**, implementada como simulador sobre las
-  jornadas fijas. Reglas:
-  1. El bus parte con `SOC_CICLICO`.
+- **Para el caso base (E0, E1 y las variantes): política reactiva**, implementada como simulador sobre las
+  jornadas fijas (`scripts/10-carga_reactiva.py`). Reglas:
+  1. El bus parte del electroterminal con el nivel de partida (`--soc`, base 100%), que es también el
+     nivel de llegada y el tope de carga.
   2. Antes de una expedición, si no podría completarla y volver a su electroterminal sin bajar del
-     mínimo (10%), debe cargar **antes**: va a su electroterminal, carga hasta `SOC_CICLICO` **sin
-     mirar la tarifa**, y vuelve. Requiere un hueco ≥ traslado de ida + carga + traslado de vuelta +
-     layover.
-  3. **Sin hueco suficiente, la jornada se parte (+1 bus)** y se reporta cuántas veces ocurre. Es un
-     resultado de la política miope, no un error.
-  4. Si el electroterminal no tiene puesto libre, el bus espera (costo de espera). Si la espera lo
-     atrasa para su siguiente expedición, se aplica la regla de partición.
-  5. Al terminar la jornada vuelve al electroterminal y carga hasta `SOC_CICLICO` (condición
-     cíclica). Si no alcanza a hacerlo antes de su primera salida del día siguiente, se registra
-     como **ciclo no cumplido**.
-- **Costo.** Energía por bloque tarifario del instante en que se carga, más 5 USD por evento de carga.
-- **Script (a crear):** `scripts/10-carga_reactiva.py`.
+     mínimo (10%), debe cargar **antes**: va a su electroterminal (traslado de ida), carga **sin mirar la
+     tarifa**, y vuelve con el layover de margen.
+  3. **[Decisión] Carga parcial:** carga hasta el nivel **o hasta que se acabe el hueco**, lo que ocurra
+     primero. Razón: un operador no partiría una jornada que puede continuar con una carga parcial, y la
+     regla estricta (cargar completo o partir) favorecería artificialmente los niveles bajos en el
+     barrido, porque su carga completa es más corta. Si ni así puede hacer la expedición y volver, **la
+     jornada se parte**: el bus queda en el electroterminal (carga final) y un **bus nuevo** sale con el
+     nivel completo a cubrir desde esa expedición (+1 bus). Se reporta el motivo: `sin_hueco` (el tiempo no
+     alcanza aunque hubiera puesto libre) o `sin_puesto`.
+  4. **Puestos:** se asignan en orden de llegada al electroterminal, al primer tramo continuo con puesto
+     libre. Si no hay, el bus espera (0,03 USD/min). El terminal unido comparte sus 270 puestos.
+  5. Al terminar la jornada vuelve al electroterminal y carga hasta el nivel. Si no termina antes de su
+     primera salida del día siguiente, es un **ciclo no cumplido**. Si el electroterminal no tiene
+     capacidad para reponer toda la energía, el faltante es un **déficit de energía** (la solución es infactible).
+  6. **Periodicidad módulo 24 h:** la ocupación de puestos y la tarifa son circulares; una carga que cruza
+     medianoche comparte puestos con las de la madrugada.
+  7. **[Decisión] La condición cíclica es una restricción y se cumple con buses de reserva.** Un ciclo no cumplido
+     se cubre con un **bus de reserva** ya cargado: en estado estacionario es una rotación (el bus atrasado termina
+     de cargar, con atraso < 24 h, y es la reserva del día siguiente). Se necesitan tantas reservas como ciclos no
+     cumplidos, a 250 USD/día cada una, y el costo total las incluye. Es una cota superior simple: lo que la carga
+     no alcanza a reponer a tiempo se paga con flota. Una solución es **factible** si no tiene déficit de energía y
+     todo atraso es menor a 24 h; con déficit, las reservas no la arreglan.
+- **Costo.** Energía por bloque tarifario del minuto en que se carga (primer uso de `electricity_prices.csv`),
+  más 5 USD por evento de carga, más los km de ir a cargar, la espera en cola y las reservas.
+- **Cota de factibilidad (LP) [Medido].** Para cada nivel se calcula el máximo de energía de las cargas finales que
+  cabe dentro de la ventana de cada bus (llegada al patio hasta su primera salida del día siguiente), dados los
+  puestos y repartiendo la carga de la **mejor forma posible** (LP con bloques de 15 min, módulo 24 h). Si es menor
+  a 100%, ningún programa de carga cierra el ciclo con esas jornadas.
+- **Validación [Medido].** Antes de simular, cada jornada se reconstruye sin cargas y calza con el VSP (kWh por
+  jornada y espera total: 25.099,3 h en E0, 20.749,1 h en E1, idénticas a las del VSP). Después: cobertura intacta,
+  SOC entre el mínimo y el tope, ocupación ≤ puestos y balance de energía por jornada (cargado + déficit = consumido).
+- **Resultados al nivel 100% [Medido]** (red completa; todos con C1b salvo las variantes C2):
+
+  | | **E0** (por línea, unidos) | **E1** (+ interlining, unidos) | *E0_sep* | *E1_sep* | *E1_C2* | *E1_C2_sep* |
+  |---|---|---|---|---|---|---|
+  | Buses del VSP → tras la carga | 8.654 → 11.259 | 7.366 → **10.295** | 8.654 → 11.259 | 7.460 → 10.415 | 7.366 → 10.258 | 7.462 → 10.343 |
+  | Jornadas partidas | 2.605 | 2.929 | 2.605 | 2.955 | 2.892 | 2.881 |
+  | Ciclos no cumplidos = buses de reserva | 1.988 | 2.207 | 2.357 | 2.518 | 2.204 | 2.363 |
+  | Déficit de energía (no hay puestos) | **0** | **0** | 48,2 MWh | 44,1 MWh | 0 | 21,3 MWh |
+  | Cota LP: % de la carga final que cabe | 89,5% | 84,0% | 89,4% | 84,4% | 84,0% | 84,3% |
+  | Costo sin reservas (USD/día) | 3.461.063 | 3.199.500 | 3.446.972 | 3.219.970 | 3.189.069 | 3.208.806 |
+  | Costo de las reservas (USD/día) | 497.000 | 551.750 | 589.250 | 629.500 | 551.000 | 590.750 |
+  | **Costo total (USD/día)** | **3.958.063** | **3.751.250** | 4.036.222 | 3.849.470 | 3.740.069 | 3.799.556 |
+  | **Factible** | **sí** | **sí** | no | no | sí | no |
+
+  *Los escenarios `_sep` y `E1_C2_sep` (terminales separados) son infactibles: son la evidencia de por qué se unen.
+  E1_C2 es la variante con C2 (propuesta); con la unión mejora el costo total solo 0,3% frente a E1.*
+- **Lectura.**
+  - **La política reactiva casi no recarga a mitad del día: parte la jornada.** Los huecos entre expediciones
+    de las jornadas largas son cortos (mediana 12,7 min; solo 3% supera 70 min) y ir al electroterminal
+    (~10 km a 20 km/h) y volver cuesta ~63 min. Casi toda jornada que supera la batería se parte: la flota
+    sube 30% en E0 (+2.605 buses, +651.250 USD/día) y 40% en E1. **El VSP que minimiza la flota ignorando la
+    batería produce jornadas que no se pueden recargar:** es el precio de la descomposición secuencial.
+  - **La carga nocturna no cabe y el ciclo se paga con reservas.** Casi todos los buses vuelven al patio entre las
+    19:00 y las 02:00 y la capacidad de puestos no alcanza en esas horas: 21% de las cargas finales de E1 termina
+    después de la primera salida del día siguiente (atraso mediano 3,2 h). **La cota LP lo confirma:** con una carga
+    perfecta solo cabe el **84%** de la energía nocturna de E1 (faltan 354 MWh/día) y el 89,5% en E0; ningún programa
+    de carga, ni el MILP, cierra el ciclo con estas jornadas al 100%. No es el orden de la cola (cargar primero al
+    que sale antes baja los incumplimientos solo de 2.199 a 2.160). El 73% de uso diario promedio de los puestos
+    lo ocultaba, porque los buses solo están en el patio de noche. *(Esto refuta la cota "139% de holgura" de B6,
+    que no miraba a qué hora está cada bus en el patio.)*
+  - **Capacidad y unión (ver `02`, C7, C8 y B11):** sin unir, Los Espinos necesita 104% (E0) y 102,6% (E1) de su
+    capacidad de 24 h y queda con déficit de 44-48 MWh: infactible, y ni las reservas ni bajar el nivel lo arreglan.
+    Unido a Santa Rosa necesita 82,5% y el déficit es 0.
+- **Barrido de niveles [Medido]** (`scripts/13-barrido_niveles.py`; regla corregida en `02`, B6, la condición cíclica
+  como restricción). En E1, política reactiva (USD/día; reservas = ciclos no cumplidos; `n.c.` = cota LP no calculada):
+
+  | Nivel | Buses tras la carga | Reservas | Cota LP | Costo total (con reservas) | vs. 100% | Factible |
+  |---|---|---|---|---|---|---|
+  | **100%** | 10.295 | 2.207 | 84,0% | **3.751.250** | | sí |
+  | 90% | 11.791 | 1.417 | 95,5% | 3.973.783 | +5,9% | sí |
+  | 80% | 13.267 | 246 | 100% | 4.069.352 | +8,5% | sí |
+  | 70% | 14.747 | 73 | 100% | 4.424.005 | +17,9% | sí |
+  | 65% | 15.936 | 50 | 100% | 4.737.923 | +26,3% | sí |
+  | 60% | 17.717 | 20 | n.c. | 5.206.564 | +38,8% | sí |
+  | 55% | 19.671 | 13 | n.c. | 5.732.581 | +52,8% | sí |
+  | 50% | 22.549 | 274 (déficit 25,3 MWh) | n.c. | 6.573.732 | | **no** |
+
+  **El nivel base es 100%** (con reservas) y E0 elige lo mismo (robusto). Hallazgos: (1) **ningún nivel entre 100% y
+  55% cierra el ciclo sin reservas** con la política reactiva; el que más se acerca (55%) deja 13 reservas pero
+  cuesta 52,8% más; (2) **la cota LP dice que con una carga perfecta el ciclo sí sería posible desde 80% hacia
+  abajo**, pero esa solución costaría ≥ 4,0 M USD/día (sin reservas), más que 100% con reservas (3,75 M); (3) bajar
+  el nivel no "arregla" el ciclo: lo paga con flota (cada 10 puntos menos agregan ~1.500 buses); (4) el 50% (piso
+  físico) ya es infactible por déficit. Detalle: `docs/justificaciones/04_nivel_carga_ciclico.md` y
+  `results/etapa3_carga_reactiva/barrido/`.
+- **Para el MILP (Etapa 4):** con las ventanas fijas de estas jornadas la restricción cíclica es infactible al 100%
+  (la cota LP es 84%). El MILP debe poder usar reservas, o ventanas de carga de día, o será infactible; su valor está en
+  reducir las reservas y el costo de la energía, no en cerrar el ciclo por sí solo.
+- **Script:** `scripts/10-carga_reactiva.py` (+ `13-barrido_niveles.py`) · **Salida:** `results/etapa3_carga_reactiva/`
+  (eventos, ventanas, jornadas, ocupación, `resumen_carga.csv` y `barrido/`). Las `ventanas` son el insumo del MILP.
 
 ### Etapa 4 — Programación de carga (MILP) · estado: POR CONSTRUIR (instancia chica)
 
@@ -308,24 +406,28 @@ Cada escenario cambia **una sola decisión** respecto del anterior, para medir s
 (lo que el profesor pidió: "al prohibir el interlining vamos a obtener toda la ganancia luego por
 habilitarlo; sirve para medir el efecto marginal de cada supuesto").
 
-| id | Clustering | Interlining | Carga | Qué aísla |
-|---|---|---|---|---|
-| **E0** | C1b | No | Reactiva | **Caso base** (validado por el profesor) |
-| **E1** | C1b | Sí, dentro del electroterminal | Reactiva | Efecto del interlining (el "segundo caso base" que sugirió el profesor) |
-| **E2** | C2 | Sí | Reactiva | Efecto del clustering con capacidad |
-| **E2b** | Como E2, con Los Espinos + Santa Rosa como **un solo electroterminal** (un grupo de interlining, cargadores compartidos) | Sí | Reactiva | Efecto de unir los dos terminales cercanos |
-| **E3** | El mejor entre E2 y E2b | Sí | **Optimizada (MILP)** | Efecto de la carga inteligente |
-| **LB** | — | Libre | — | Cota inferior teórica; viola el retorno al electroterminal |
+Todos los escenarios operacionales usan **C1b** y tratan **Los Espinos y Santa Rosa como un solo electroterminal**
+(la unión es parte de la infraestructura: sin ella el caso base es infactible en energía; ver `02`, B11).
 
-**Expectativa a verificar, no a asumir.** (i) E1 debería mejorar fuertemente a E0 en flota (el
-interlining concentra la ganancia). (ii) **E2 podría ser idéntico a E1** si la restricción agregada de
-capacidad no se activa (ver Etapa 1): sería un resultado válido —la capacidad agregada no condiciona el
-clustering— y la capacidad se manifestaría después, en las colas del simulador. (iii) E3 contra E2
-mide el valor de programar la carga. Si algún resultado no sigue lo esperado, hay que explicar por
+| id | Interlining | Terminales | Carga | Qué aísla |
+|---|---|---|---|---|
+| **E0** | No (por línea) | Unidos | Reactiva + reservas | **Caso base** (operación por línea + carga reactiva, factible) |
+| **E1** | Sí, dentro del electroterminal | Unidos | Reactiva + reservas | Efecto del interlining (el "segundo caso base" que sugirió el profesor; configuración propuesta) |
+| **E3** | Sí | Unidos | **Optimizada (MILP)** | Efecto de la carga inteligente (sobre E1) |
+| **LB** | Libre | — | — | Cota inferior teórica; viola el retorno al electroterminal |
+| *E0_sep, E1_sep* | Como E0 y E1 | **Separados** | Reactiva | **Evidencia de por qué se unen:** infactibles (déficit de energía 44-48 MWh) |
+| *E1_C2, E1_C2_sep* | Sí | Unidos / separados | Reactiva | Variantes con la asignación C2 (propuesta): no son parte de la escalera |
+
+**Expectativa a verificar, no a asumir.** (i) E1 debería mejorar fuertemente a E0 en flota (el interlining concentra la
+ganancia). **Resultado:** −1.288 buses en el VSP y −207.000 USD/día de costo total con carga (3.958.063 → 3.751.250). (ii) **Unir los terminales
+debería eliminar el déficit de carga de Los Espinos.** **Resultado:** déficit 44-48 MWh → 0; el VSP baja 94 buses en
+E1. (iii) **El ciclo debería poder cumplirse.** **Resultado:** no con la política reactiva a ningún nivel evaluado: se
+cumple pagando buses de reserva (2.207 en E1), y la cota LP muestra que al 100% ni una carga perfecta lo cerraría.
+(iv) E3 contra E1 mide el valor de programar la carga. Si algún resultado no sigue lo esperado, hay que explicar por
 qué antes de seguir, no ajustar el modelo para que calce.
 
 Esta escalera responde a la sugerencia del profesor de **aplicar el caso base una vez clusterizado**:
-el costo de E1/E2 frente a E0 y LB dice qué tan buena o mala es la clusterización.
+el costo de E1 frente a E0 y LB dice qué tan buena o mala es la clusterización.
 
 ---
 
@@ -380,14 +482,14 @@ explicar, y separa el valor de cada decisión.
 | 1 | `4-clustering_c1.py` | tablas por ruta | `rutas_cluster_c1a.csv`, `rutas_cluster_c1b.csv` |
 | 1 | `5-clustering_c2.py` | tablas por ruta | `rutas_cluster_c2.csv` (ciclo diario), tablas de capacidad, de evidencia del rechazo de SOC 100% y barrido de θ |
 | 1 | `8-clustering_comparacion.py` | las 3 asignaciones (C1a, C1b, C2) | `rutas_clustering_completo.csv`, `results/etapa1_clustering/` |
-| 2 | `6-vsp_asignacion_buses.py`, `7-comparar_escenarios.py` | expediciones + asignación | `jornadas_{E0,E1,E2,E2b,LB}.csv`, `results/etapa2_vsp/` |
-| 3 | `10-carga_reactiva.py` | jornadas | eventos de carga, ocupación, costo *(a crear)* |
+| 2 | `6-vsp_asignacion_buses.py`, `7-comparar_escenarios.py` | expediciones + asignación | `jornadas_{E0,E1,LB,E0_sep,E1_sep,E1_C2,E1_C2_sep}.csv`, `results/etapa2_vsp/` |
+| 3 | `10-carga_reactiva.py` | jornadas del VSP | `results/etapa3_carga_reactiva/` (eventos, ventanas, jornadas, ocupación, resumen) |
 | 4 | `11-milp_carga.py` | ventanas de carga | programación óptima *(a crear)* |
 
 Utilidades compartidas en `scripts/common/` (`parametros.py`, `geo.py`, `tiempo.py`, `rutas.py`,
 `clustering.py`). `9-calibracion_deadhead.py` calibra el factor de desvío con los trazados GTFS
-(salida en `results/etapa0_calibracion_deadhead/`). Los números 12 y 13 están reservados para la
-comparación de KPIs y el análisis de recargas según el SOC (ver el plan). Cómo correr y verificar: [`03_guia_pruebas.md`](03_guia_pruebas.md).
+(salida en `results/etapa0_calibracion_deadhead/`). `13-barrido_niveles.py` aplica la regla de B6 y elige el nivel
+de batería. El número 12 está reservado para la comparación de KPIs (ver el plan). Cómo correr y verificar: [`03_guia_pruebas.md`](03_guia_pruebas.md).
 
 ---
 

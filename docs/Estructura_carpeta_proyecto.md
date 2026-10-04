@@ -68,11 +68,13 @@
         ├── vehicles.csv
     └── 📁data-processed
         ├── expediciones.csv                  (Etapa 0, 64.502 filas)
-        ├── jornadas_E0.csv                    (Etapa 2, caso base: sin interlining)
-        ├── jornadas_E1.csv                    (Etapa 2, con interlining)
-        ├── jornadas_E2.csv                    (Etapa 2, con C2; idéntico a E1)
-        ├── jornadas_E2b.csv                   (Etapa 2, Los Espinos + Santa Rosa unidos)
+        ├── jornadas_E0.csv                    (Etapa 2, caso base: por línea, terminales unidos)
+        ├── jornadas_E1.csv                    (Etapa 2, con interlining, terminales unidos)
         ├── jornadas_LB.csv                    (Etapa 2, cota inferior; no operacional)
+        ├── jornadas_E0_sep.csv                (Etapa 2, E0 con terminales separados: evidencia)
+        ├── jornadas_E1_sep.csv                (Etapa 2, E1 con terminales separados: evidencia)
+        ├── jornadas_E1_C2.csv                 (Etapa 2, variante con C2, terminales unidos)
+        ├── jornadas_E1_C2_sep.csv             (Etapa 2, variante con C2, terminales separados)
         ├── rutas_cluster_c1a.csv              (Etapa 1, C1a: centroide)
         ├── rutas_cluster_c1b.csv              (Etapa 1, C1b: terminales reales)
         ├── rutas_cluster_c2.csv               (Etapa 1, C2: bajo ciclo diario)
@@ -187,24 +189,44 @@
                 ├── comparacion_estrategias.csv
                 ├── distancias_ruta_terminal.csv
                 ├── resumen_por_terminal.csv
+                ├── validacion_carga_c2.csv
                 ├── rutas_que_cambian.csv
             ├── reporte.md
+        └── 📁etapa3_carga_reactiva
+            └── 📁barrido
+                └── 📁graficos
+                    ├── barrido_costo_total.png
+                    ├── barrido_ciclos_y_cota.png
+                    ├── barrido_robustez.png
+                └── 📁tablas
+                    ├── barrido_niveles.csv
+                    ├── decision_barrido.csv
+                    ├── evidencia_terminales_separados.csv
+                ├── reporte_barrido.md
+            └── 📁graficos
+                ├── ocupacion_<escenario>_soc100.png        (buses cargando por minuto y electroterminal; x4 escenarios)
+                ├── soc_ejemplo_<escenario>_soc100.png      (SOC de jornadas reales; x4)
+            └── 📁tablas
+                ├── eventos_<escenario>_soc100.csv          (cada carga: tipo, llegada, inicio, fin, espera, kWh, costo)
+                ├── jornadas_<escenario>_soc100.csv         (jornadas tras las particiones)
+                ├── ocupacion_<escenario>_soc100.csv        (buses cargando por minuto, módulo 24 h)
+                ├── ventanas_<escenario>_soc100.csv         (ventanas de carga; insumo del MILP)
+                ├── resumen_carga.csv                       (una fila por escenario y nivel)
+            ├── reporte_<escenario>_soc100.md
         └── 📁etapa2_vsp
             └── 📁graficos
                 ├── energia_por_jornada_E0_E1.png
                 ├── escalera_buses.png
                 ├── escalera_costo.png
-                ├── jornadas_E0.png
-                ├── jornadas_E1.png
-                ├── jornadas_E2.png
-                ├── jornadas_E2b.png
-                ├── jornadas_LB.png
+                ├── jornadas_<escenario>.png                (histogramas por escenario: E0, E1, LB, E0_sep, E1_sep, E1_C2, E1_C2_sep)
                 ├── sensibilidad_deadhead.png
             └── 📁tablas
                 ├── escalera_escenarios.csv
                 ├── precio_del_clustering.csv
                 ├── resumen_escenarios.csv
                 ├── resumen_sensibilidad.csv
+                ├── variantes_c2.csv
+                ├── evidencia_union.csv
                 ├── sensibilidad_deadhead.csv
             ├── reporte.md
     └── 📁scripts
@@ -224,6 +246,8 @@
         ├── 7-comparar_escenarios.py                    (Etapa 2: escalera de escenarios y sensibilidad)
         ├── 8-clustering_comparacion.py                 (cierre Etapa 1: comparación y mapas)
         ├── 9-calibracion_deadhead.py                   (calibración del factor de desvío con trazados GTFS)
+        ├── 10-carga_reactiva.py                        (Etapa 3: simulador de carga reactiva sobre las jornadas del VSP)
+        ├── 13-barrido_niveles.py                       (Etapa 3: barrido de niveles de bateria con la regla de B6)
     ├── .gitignore
     ├── README.md
 ```

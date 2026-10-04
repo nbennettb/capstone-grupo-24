@@ -29,6 +29,9 @@ RADIO_INTERLINING_KM = 3.0   # radio maximo para permitir encadenar viajes de di
 # 245 al 80%, 210 al 70%. Con inicio = fin se recarga TODO lo consumido, asi que el nivel no cambia
 # la energia total a cargar: cambia cuantas jornadas necesitan recargar a mitad del dia.
 SOC_CICLICO_BARRIDO = [1.0, 0.9, 0.8, 0.7]
+# Grilla extendida del barrido de niveles (scripts/13-barrido_niveles.py): llega al piso fisico (50%), por debajo del cual
+# ningun bus puede cubrir la expedicion mas exigente partiendo y volviendo a su electroterminal.
+SOC_BARRIDO_EXTENDIDO = [1.0, 0.9, 0.8, 0.7, 0.65, 0.6, 0.55, 0.5]
 
 # --- Union de electroterminales (decision B9): Los Espinos (3) y Santa Rosa (5), a 1,11 km ---
 # Se tratan como UN solo electroterminal (puestos sumados, un grupo de interlining). Los patios

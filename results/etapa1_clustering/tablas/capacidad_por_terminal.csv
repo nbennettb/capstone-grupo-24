@@ -1,7 +1,7 @@
-electroterminal;h_r_asignadas;capacidad;uso_pct
-Vespucio Norte;1113.68;3600.0;30.9
-El Conquistador;3016.55;4320.0;69.8
-Los Espinos;2589.66;2880.0;89.9
-La Reina;1635.47;2400.0;68.1
-Santa Rosa;2108.96;3600.0;58.6
-Los Espinos + Santa Rosa;4698.62;6480.0;72.5
+electroterminal;h_r_asignadas;capacidad;uso_pct;uso_c1b_con_carga_corregida_pct
+Vespucio Norte;1213.1;3600.0;33.7;33.7
+El Conquistador;3490.84;4320.0;80.8;79.1
+Los Espinos;2810.24;2880.0;97.6;101.6
+La Reina;1828.98;2400.0;76.2;76.2
+Santa Rosa;2416.56;3600.0;67.1;65.9
+Los Espinos + Santa Rosa;5226.8;6480.0;80.7;81.8

@@ -6,7 +6,7 @@
 >
 > Cubre el pipeline **vigente**: Etapa 0 (preprocesamiento), Etapa 1 (clustering de rutas a
 > electroterminales, bajo condición cíclica), calibración del deadhead y Etapa 2 (asignación de buses,
-> escalera de escenarios). Las Etapas 3 y 4 (carga) aún no existen. Ver `01_metodologia.md` y
+> escalera de escenarios). La Etapa 3 (carga reactiva y barrido de niveles) está hecha; la Etapa 4 (MILP) aún no existe. Ver `01_metodologia.md` y
 > `05_plan_entrega2.md`.
 >
 > Última edición: **04/10/2026**.
@@ -126,19 +126,21 @@ python scripts/5-clustering_c2.py    # red completa (~30-40 s: asignación, evid
 ```
 
 Resuelve bajo la **condición cíclica** (se recarga todo lo consumido, sin importar el nivel de batería; H = 24 h). En el checkpoint, revisa que
-ningún electroterminal supere el 100% y que se reasignen rutas (3 de 20). En la red completa
-(referencia, regenerada el 03/10):
+ningún electroterminal supere el 100% y que se reasignen rutas (4 de 20). En la red completa
+(referencia, regenerada el 04/10; ~2 min por el barrido de θ):
 
-- **C2 coincide exactamente con C1b** (0 rutas distintas): con θ = 1 la restricción agregada diaria
-  no está activa. Uso: Vespucio Norte 30,9% · El Conquistador 69,8% · **Los Espinos 89,9%** · La Reina
-  68,1% · Santa Rosa 58,6%. `h_r` total = 10.464 horas-cargador/día (1.884 MWh) de 16.800 disponibles.
-- **Barrido de θ** (capacidad separada): 0 rutas movidas con θ = 1 y 0,9; 11 con 0,8; 21 con 0,7;
-  infactible con 0,6. Con Los Espinos + Santa Rosa combinados: 0 rutas movidas hasta θ = 0,8; 9 con 0,7;
-  infactible con 0,6.
+- La carga de cada ruta incluye su pullout y pullin y depende del electroterminal (C7). Con ella, la
+  asignación C1b deja a Los Espinos al 101,6% y **C2 mueve 5 rutas** (4 a Santa Rosa, 1 a El Conquistador).
+  Uso de C2: Vespucio Norte 33,7% · El Conquistador 80,8% · **Los Espinos 97,6%** · La Reina 76,2% · Santa
+  Rosa 67,1%. Carga total 11.760 h-cargador/día (2.117 MWh) de 16.800. Costo pullout/pullin 83.271 → 83.276 USD/día.
+- **Validación del estimador** (`validacion_carga_c2.csv`): error contra la energía real de las jornadas
+  −9 a −14% con solo energía comercial y −0,5 a −3,1% con el estimador de C2. El script falla si pasa de 5%.
+- **Barrido de θ** (capacidad separada): 0 rutas movidas con θ = 1 (referencia), 8 con 0,9, 14 con 0,8,
+  infactible con 0,7. Con Los Espinos + Santa Rosa combinados: 5 con 1 y 0,9, 8 con 0,8, infactible con 0,7.
 - **Evidencia "sin recuperación" vs "con recuperación"** (proxy por ruta, sin deadhead; mismo nivel de
-  batería en ambos lados). Con recuperación (ciclo): 10.464 horas-cargador (62,3% de la capacidad),
-  igual para todo nivel. Sin recuperación: 108 h (0,6%) al 100%, 380 h (2,3%) al 90%, 1.086 h (6,5%) al
-  80% y 2.201 h (13,1%) al 70%. No genera ninguna asignación.
+  batería en ambos lados). Con recuperación (ciclo): 11.760 horas-cargador (70,0% de la capacidad),
+  igual para todo nivel. Sin recuperación: 375 h (2,2%) al 100%, 1.054 h (6,3%) al 90%, 2.106 h (12,5%) al
+  80% y 3.352 h (20,0%) al 70%. No genera ninguna asignación.
 
 Output: `data-processed/rutas_cluster_c2.csv`,
 `results/etapa1_clustering/tablas/{capacidad_por_terminal,capacidad_sin_vs_con_recuperacion,barrido_theta}.csv`,
@@ -146,7 +148,7 @@ Output: `data-processed/rutas_cluster_c2.csv`,
 
 ### `scripts/6-vsp_asignacion_buses.py` y `7-comparar_escenarios.py` (Etapa 2) — requiere 3, 4 y 5 corridos en la red completa
 
-Un escenario por corrida de `6-`; `7-` compara. Gurobi con licencia (flujo de costo mínimo; ~10-70 s por
+Un escenario por corrida de `6-`; `7-` compara. Gurobi con licencia (flujo de costo mínimo; ~5-55 s por
 escenario). Checkpoint chico (3 rutas, revisar a mano una jornada: orden temporal, traslados y kWh):
 
 ```
@@ -155,34 +157,92 @@ python scripts/6-vsp_asignacion_buses.py --modo libre --subset 101 102 301 --eti
 ```
 
 Las corridas con `--subset` guardan sus archivos con sufijo `_subset`; borrarlos antes de la red completa
-(`data-processed/jornadas_*_subset.csv` y su fila en `resumen_escenarios.csv`). Red completa:
+(`data-processed/jornadas_*_subset.csv` y su fila en `resumen_escenarios.csv`). Red completa. **Todos los escenarios
+operacionales usan C1b y los electroterminales 3 y 5 (Los Espinos y Santa Rosa) unidos:**
 
 ```
-python scripts/6-vsp_asignacion_buses.py --modo ruta    --asignacion data-processed/rutas_cluster_c1b.csv --etiqueta E0
-python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --etiqueta E1
-python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c2.csv  --etiqueta E2
-python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c2.csv  --unir-electroterminales --etiqueta E2b
+python scripts/6-vsp_asignacion_buses.py --modo ruta    --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --etiqueta E0
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --etiqueta E1
 python scripts/6-vsp_asignacion_buses.py --modo libre --etiqueta LB
 
+# Evidencia de por que se unen (mismos escenarios con terminales separados; infactibles en la carga):
+python scripts/6-vsp_asignacion_buses.py --modo ruta    --asignacion data-processed/rutas_cluster_c1b.csv --etiqueta E0_sep
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --etiqueta E1_sep
+
+# Variantes con C2 (propuesta, fuera de la escalera):
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c2.csv --unir-electroterminales --etiqueta E1_C2
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c2.csv --etiqueta E1_C2_sep
+
 # Sensibilidad sobre E1 (no escribe jornadas):
-python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --sin-jornadas --factor-desvio 1.2  --etiqueta E1_f1.2
-python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --sin-jornadas --factor-desvio 1.35 --etiqueta E1_f1.35
-python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --sin-jornadas --factor-desvio 1.5  --etiqueta E1_f1.5
-python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --sin-jornadas --layover 0  --etiqueta E1_l0
-python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --sin-jornadas --layover 10 --etiqueta E1_l10
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --sin-jornadas --factor-desvio 1.2  --etiqueta E1_f1.2
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --sin-jornadas --factor-desvio 1.35 --etiqueta E1_f1.35
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --sin-jornadas --factor-desvio 1.5  --etiqueta E1_f1.5
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --sin-jornadas --layover 0  --etiqueta E1_l0
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --sin-jornadas --layover 10 --etiqueta E1_l10
 
 python scripts/7-comparar_escenarios.py
 ```
 
-Cifras de referencia (04/10): **E0 8.654 · E1 7.460 · E2 7.460 · E2b 7.366 · LB 7.055** buses; costo de
-operación 2,31 / 2,00 / 2,00 / 1,97 / 1,87 millones de USD/día. Sensibilidad de E1: factor 1,2 / 1,35 / 1,5
-→ 7.403 / 7.477 / 7.515; layover 0 / 10 min → 7.257 / 7.908. Cada corrida verifica cobertura exacta (cada
-`expedicion_id` en una sola jornada) y retorno al electroterminal (en LB solo lo cuenta: 4.192 de 7.055
-jornadas no vuelven, por eso es cota inferior). `7-` falla si no se cumple `E0 >= E1 >= E2b >= LB >= 6.539`
-y avisa si E2 difiere de E1.
+Cifras de referencia (04/10): **E0 8.654 · E1 7.366 · LB 7.055** buses; costo de operación 2,31 / 1,97 / 1,87 millones de
+USD/día. Separados: E0_sep 8.654 · E1_sep 7.460. Variantes C2: E1_C2 7.366 · E1_C2_sep 7.462. Sensibilidad de E1: factor
+1,2 / 1,35 / 1,5 → 7.294 / 7.401 / 7.441; layover 0 / 10 min → 7.161 / 7.810. Cada corrida verifica cobertura exacta
+(cada `expedicion_id` en una sola jornada) y retorno al electroterminal (en LB solo lo cuenta: 4.192 de 7.055 jornadas
+no vuelven, por eso es cota inferior). `7-` falla si no se cumple `E0 >= E1 >= LB >= 6.539`, si E0 y E1 no se corrieron
+con C1b y los electroterminales 3 y 5 unidos, o si unir cambia E0 (en modo `ruta` no debe cambiar el VSP).
 
-Output: `data-processed/jornadas_{E0,E1,E2,E2b,LB}.csv` y `results/etapa2_vsp/{reporte.md, tablas/, graficos/}`
-(el `reporte.md` termina con un índice de archivos).
+Output: `data-processed/jornadas_{E0,E1,LB,E0_sep,E1_sep,E1_C2,E1_C2_sep}.csv` y
+`results/etapa2_vsp/{reporte.md, tablas/, graficos/}` (el `reporte.md` termina con un índice de archivos).
+
+### `scripts/10-carga_reactiva.py` (Etapa 3, carga reactiva) — requiere las jornadas de la Etapa 2
+
+```
+python scripts/10-carga_reactiva.py --escenario E0 --jornadas data-processed/jornadas_E0_subset.csv --soc 0.7 --traza 1   # checkpoint chico
+python scripts/10-carga_reactiva.py --escenario E0 --cota-lp      # red completa, nivel 100% (~10 s; con la cota LP ~40 s)
+python scripts/10-carga_reactiva.py --escenario E1 --cota-lp
+python scripts/10-carga_reactiva.py --escenario E0_sep            # y E1_sep, E1_C2, E1_C2_sep
+python scripts/10-carga_reactiva.py --escenario E1 --soc 0.9      # otro nivel
+```
+
+No usa Gurobi (la cota LP usa scipy/HiGHS). El terminal unido se lee de la columna `unir` del resumen del VSP. El
+checkpoint chico necesita antes `python scripts/6-vsp_asignacion_buses.py --modo ruta --asignacion
+data-processed/rutas_cluster_c1b.csv --subset 101 102 301 --etiqueta E0`; con `--traza <jornada>` imprime el SOC paso a
+paso para revisarlo a mano (borrar después los archivos `*_subset*`). Antes de simular, el script reconstruye cada
+jornada sin cargas y exige que calce con el VSP (kWh y espera total); después verifica cobertura, SOC entre el mínimo y
+el tope, ocupación ≤ puestos y balance de energía por jornada. Los ciclos no cumplidos se cubren con **buses de reserva**
+(250 USD/día) incluidos en `costo_total_usd`; una solución es **factible** si no tiene déficit de energía y todo atraso
+es < 24 h. `--cota-lp` calcula el máximo de energía nocturna que cabe en las ventanas de los buses con carga perfecta.
+
+Cifras de referencia (nivel 100%, 04/10):
+
+| | E0 | E1 | E0_sep | E1_sep | E1_C2 | E1_C2_sep |
+|---|---|---|---|---|---|---|
+| Buses tras la carga | 11.259 | 10.295 | 11.259 | 10.415 | 10.258 | 10.343 |
+| Ciclos no cumplidos = reservas | 1.988 | 2.207 | 2.357 | 2.518 | 2.204 | 2.363 |
+| Déficit de energía (MWh) | 0 | 0 | 48,2 | 44,1 | 0 | 21,3 |
+| Cota LP | 89,5% | 84,0% | 89,4% | 84,4% | 84,0% | 84,3% |
+| Costo total con reservas (USD/día) | 3.958.063 | 3.751.250 | 4.036.222 | 3.849.470 | 3.740.069 | 3.799.556 |
+| Factible | sí | sí | no | no | sí | no |
+
+Ver `01_metodologia.md` (Etapa 3) para la lectura. Output: `results/etapa3_carga_reactiva/{tablas/,graficos/,
+reporte_<esc>_soc<nivel>.md}`. Los nombres llevan el nivel (`_soc100`) para que el barrido no pise archivos;
+`tablas/resumen_carga.csv` tiene una fila por escenario y nivel. `--solo-resumen` escribe solo esa fila.
+
+### `scripts/13-barrido_niveles.py` (barrido de niveles de batería) — requiere las jornadas de E0 y E1
+
+```
+python scripts/13-barrido_niveles.py     # ~2 min si las filas ya estan simuladas; ~35 min desde cero (la cota LP crece al bajar el nivel)
+```
+
+Aplica por código la regla corregida de `02`, B6 (la condición cíclica como restricción): grilla 100/90/80/70/65/60/55/50%
+(piso físico 50%), solo soluciones factibles, buses de reserva, dos familias (con y sin reservas), mínimo costo total,
+empate de 0,5% a favor del nivel más alto, robustez en E0, y la cota LP (solo hasta 65%: a menor nivel ya alcanza
+100%). Cada nivel se simula con `10-carga_reactiva.py --solo-resumen` (reutiliza las filas ya simuladas); al final se
+corre completo el nivel elegido. Referencia (04/10): E1 elige **100%** (3.751.250 USD/día con 2.207 reservas; 90%
++5,9%, 80% +8,5%, 70% +17,9%, 65% +26,3%, 60% +38,8%, 55% +52,8%; 50% infactible); E0 también. Ningún nivel cumple el
+ciclo sin reservas.
+
+Output: `results/etapa3_carga_reactiva/barrido/{reporte_barrido.md, tablas/{barrido_niveles,decision_barrido,
+evidencia_terminales_separados}.csv, graficos/{barrido_costo_total,barrido_ciclos_y_cota,barrido_robustez}.png}`.
 
 ### `scripts/9-calibracion_deadhead.py` (calibración del factor de desvío) — independiente de las etapas
 
@@ -208,10 +268,10 @@ python scripts/8-clustering_comparacion.py     # ~35-40 s (la mayor parte es lee
 ```
 
 Falla con un mensaje claro si falta alguna de las 3 asignaciones (`rutas_cluster_{c1a,c1b,c2}.csv`) o
-alguna tabla del script 5. Valida que C2 coincida exactamente con C1b (si no, la restricción de
-capacidad se activó y hay que explicarlo antes de confiar en el resultado). Genera la tabla ancha por
+alguna tabla del script 5. Valida que C2 respete la capacidad y que el mapa de diferencias C1b → C2 calce
+con la tabla de comparación. Genera la tabla ancha por
 ruta y **10 mapas** (uno por estrategia ×3, uno por electroterminal ×5, paraderos, diferencias). Referencia:
-C1a vs C1b cambia 41 de 417 rutas; costo aproximado de pullout/pullin 83.843 → 83.271 USD/día.
+C1a vs C1b cambia 41 de 417 rutas (83.843 → 83.271 USD/día de pullout/pullin); C1b vs C2 cambia 5.
 
 Output: `data-processed/rutas_clustering_completo.csv`, `results/etapa1_clustering/{reporte.md,
 tablas/{resumen_por_terminal,comparacion_estrategias,rutas_que_cambian}.csv,

@@ -89,6 +89,57 @@ eso puede hacer que los juntemos después".
   depende del nivel. Un nivel más alto debería reducir recargas intermedias, eventos (5 USD cada uno)
   y jornadas partidas. Si el barrido no lo confirma, se reporta tal cual.
 
+**Regla del barrido.** *Declarada el 04/10/2026, antes de correr cualquier nivel distinto de 100%. **Corregida el 04/10/2026,
+antes de volver a correr**, por un error de diseño: la versión original comparaba cada nivel contra el 100%, que a su vez
+incumplía la condición cíclica (21% de las cargas nocturnas terminaba después de la primera salida del día siguiente), y
+trataba los "ciclos no cumplidos" como un indicador y no como una restricción. Lo detectamos antes de presentar.*
+
+**Principio:** la condición cíclica (inicio = fin) es una **restricción** [Profesor]; el nivel se elige **entre las
+soluciones que la cumplen**, y entre ellas, la de menor costo. Un bus que no termina de cargar antes de su salida del día
+siguiente se reemplaza por un **bus de reserva** ya cargado (250 USD/día): en estado estacionario es una rotación (el
+bus atrasado termina de cargar, con atraso < 24 h, y es la reserva del día siguiente). El costo total incluye las
+reservas. Se decide el nivel en **E1** (C1b, con interlining, Los Espinos y Santa Rosa unidos: la configuración
+propuesta); **E0** (por línea, unidos) se corre como **robustez**. *Por qué no se decide en los escenarios con
+terminales separados (E0_sep, E1_sep):* son infactibles por déficit de energía en Los Espinos a cualquier nivel y no
+compiten; se muestran como evidencia de la unión.
+1. **Grilla obligatoria:** 100, 90, 80, 70, 65, 60, 55 y 50%. 100% es el dato del curso y el punto de partida; 90 y 80%
+   son los ejemplos del profesor; los niveles menores permiten ver si el costo sigue bajando o si algún nivel llega a
+   cumplir el ciclo sin reservas; **50% es el piso físico** (el menor nivel con que toda expedición se puede hacer
+   partiendo y volviendo al electroterminal sin bajar del 10%; la expedición más exigente necesita 41,8% de la batería).
+2. **Factibilidad.** Solo compiten las soluciones **factibles**: sin déficit de energía y con todo atraso de carga
+   menor a 24 h. Con déficit (la energía no se puede reponer por falta de puestos) las reservas no la arreglan.
+3. **Dos familias, reportadas lado a lado:** (a) **cíclica sin reservas** (0 ciclos no cumplidos) y (b) **con reservas**
+   (cualquier nivel factible, con el costo de sus reservas). *Por qué:* responde la pregunta "¿existe un nivel que haga
+   cíclica la operación sin pagar reservas, y cuánto cuesta frente a 100% + reservas?".
+4. **Criterio.** Entre todas las soluciones factibles de (a) y (b), la de **menor costo total** (flota + km vacíos +
+   espera + energía + eventos de carga + reservas). *Por qué:* es el objetivo del proyecto.
+5. **Empate práctico.** Si dos niveles difieren en menos de **0,5% del costo total**, se elige el **más alto**. *Por qué
+   0,5%:* es el orden de magnitud del efecto del parámetro menos seguro del modelo (pasar el factor de desvío del
+   deadhead de 1,3 al valor medido de 1,35 cambia el costo de operación en +0,6%, Bloque C); diferencias menores no se
+   distinguen del error del modelo. *Por qué el más alto:* es el dato del curso (`max_soc = 1,0`) y no requiere un
+   supuesto adicional.
+6. **Robustez (no decide, se reporta).** Si el nivel óptimo de E0 coincide con el de E1, la elección no depende de la
+   decisión de interlining.
+7. **Razón externa para bajar de 100%.** Solo con fuente citada (CC-CV, vida útil); si aparece y cambia el óptimo, se
+   reporta como caso alternativo y no reemplaza el resultado del barrido.
+8. **Cota de factibilidad (evidencia, no decide).** Para cada nivel se calcula el máximo de energía de las cargas finales
+   que cabe dentro de las ventanas de los buses con una carga **perfecta** (LP). Si es menor a 100%, ningún programa de
+   carga, ni el MILP, cierra el ciclo con esas jornadas.
+
+Documentada para el informe en `docs/justificaciones/04_nivel_carga_ciclico.md`.
+
+**Resultado del barrido (04/10/2026): el nivel base es 100%, con buses de reserva.** En E1, el menor costo total entre los
+niveles factibles es 100% (3.751.250 USD/día con 2.207 reservas); 90% +5,9%, 80% +8,5%, 70% +17,9%, 65% +26,3%,
+60% +38,8%, 55% +52,8%; 50% es infactible (déficit de 25 MWh). E0 elige lo mismo: la elección es robusta. Hallazgos:
+- **Ningún nivel entre 100% y 55% cumple el ciclo sin reservas** con la política reactiva; el que más se acerca (55%)
+  deja 13 reservas pero cuesta 52,8% más. Bajar el nivel no arregla el ciclo: lo paga con flota (cada 10 puntos menos
+  agregan ~1.500 buses por jornadas partidas).
+- **La cota LP:** al 100% solo cabe el 84% de la energía nocturna (faltan 354 MWh/día); desde 80% hacia abajo cabe el
+  100%, es decir, con una carga perfecta el ciclo sí sería posible, pero esa solución costaría ≥ 4,0 M USD/día sin
+  reservas, más que 100% con reservas (3,75 M).
+- Hipótesis confirmada: más nivel, menos recargas intermedias y menos jornadas partidas. Hipótesis solo aproximada: la
+  energía total cargada sube 6% al bajar a 70% por los traslados de las jornadas partidas.
+
 **Por qué exigir la condición cíclica (inicio = fin)** — medido, no depende del nivel:
 1. **[Medido]** Bajo SOC 100% sin recuperación, el modelo solo paga la recarga de lo que excede la
    batería durante la jornada: ~150-160 MWh de ~2.150 MWh consumidos. **No paga ~93% de la energía que
@@ -125,19 +176,25 @@ regla, porque la jornada más cara consume **676 kWh** y la batería completa so
 inicial evita la recarga intermedia. Lo que sí aporta es el análisis de **cuántas jornadas necesitan 0,
 1 o 2+ recargas intermedias según el nivel** (Bloque C).
 
-**Factibilidad [Medido, cota optimista]:** considerando solo las ventanas en que cada bus está fuera de
-su jornada, caben ~16.500 horas-cargador contra ~11.900 necesarias (139%). No está descartado que el
-ciclo sea factible, pero con ~28% de holgura y reparto perfecto.
+**Factibilidad [Medido]. La cota anterior de "139% de holgura" queda REFUTADA.** Se calculó sumando las ventanas en
+que cada bus está fuera de su jornada, sin mirar a qué hora está cada bus en el patio. Con las jornadas del VSP los
+buses vuelven de noche y los puestos no alcanzan en esas horas: el LP con las ventanas reales muestra que al 100% solo cabe
+el 84% de la energía nocturna (E1) y el 89,5% (E0). La condición cíclica no es factible con una carga perfecta al
+100%; se cumple pagando buses de reserva, o con niveles ≤ 80% (a mayor flota).
 
 ### B7. Retorno, puestos y horario de carga
 - **[Profesor]** (A5-A7). Se modela: pullout y pullin en el mismo electroterminal; puestos solo para
   carga simultánea; ventana de 24 h.
 
 ### B8. Caso base y escalera de escenarios
-- **[Profesor]** El caso base es válido. **[Propio]** La escalera E0 → E3 aísla una decisión por
-  escalón (ver `01_metodologia.md` §5).
-- **Expectativa a verificar:** E2 podría ser idéntico a E1 si la capacidad agregada no se activa.
-  Sería un resultado, no un error.
+- **[Profesor]** El caso base es válido. **[Propio]** La escalera E0 → E1 → E3 aísla una decisión por
+  escalón (ver `01_metodologia.md` §5). **Todos los escenarios operacionales tratan Los Espinos y Santa Rosa como un
+  solo electroterminal** (B11): E0 es "por línea + carga reactiva + terminales unidos", y es **factible** (con buses de
+  reserva para el ciclo). Los escenarios con terminales separados (E0_sep, E1_sep) son infactibles por déficit de
+  energía y se muestran como evidencia.
+- **Expectativas que se verificaron:** (1) E1 mejora a E0 (−1.288 buses en el VSP); (2) unir elimina el déficit de
+  energía de Los Espinos (44-48 MWh → 0); (3) el ciclo se puede cumplir: **no** con la política reactiva a ningún nivel
+  (se cumple con reservas), y la cota LP muestra que al 100% ni una carga perfecta lo cerraría.
 
 ### B9. Unir Los Espinos y Santa Rosa
 - **[Medido]** Están a **1,11 km** entre sí; Vespucio Norte y El Conquistador, a 5,86 km; el resto de
@@ -145,12 +202,13 @@ ciclo sea factible, pero con ~28% de holgura y reparto perfecto.
   volado.
 - **[Profesor]** Es válido y decisión nuestra, justificando.
 - **[Propio]** Se mantienen los dos patios físicos para las distancias, pero se tratan como **un solo
-  electroterminal de 270 puestos** (120 + 150): un único grupo de interlining (186 rutas) y cargadores
-  compartidos. Se reportan resultados **juntos y separados** (E2b vs E2) para justificar con números
-  si conviene unirlos.
-- **[Medido] Combinar solo la capacidad no sirve como prueba:** la asignación de C2 no cambia (separados
-  ya no aprietan: Los Espinos 89,9%, Santa Rosa 58,6%; juntos 72,5%). El efecto de unir está en el
-  interlining (Etapa 2) y en las colas de carga (Etapas 3-4), no en la asignación de la Etapa 1.
+  electroterminal de 270 puestos** (120 + 150): un único grupo de interlining (186 rutas con C1b) y cargadores
+  compartidos. Se reportan resultados **juntos y separados** (E1 vs E1_sep) para justificar con números
+  si conviene unirlos. **Decisión: se unen en todos los escenarios operacionales (B11).**
+- **[Medido] Evidencia de la unión (nivel 100%):** con la carga real, Los Espinos separado necesita
+  98,5-104% de su capacidad (déficit de energía de 21-48 MWh en el simulador, infactible) y unido a Santa Rosa
+  82,5% (déficit 0, factible). Además el VSP baja 94 buses en E1 (E1_sep → E1: 7.460 → 7.366) y el costo total con carga
+  (con reservas) baja de 3.849.470 a 3.751.250 USD/día; en E0 el VSP no cambia, pero E0_sep es infactible y E0 no.
 - **Como el terminal unido es uno solo**, un bus puede salir de un patio y volver al otro sin violar
   el retorno al electroterminal [Profesor]; hay que dejarlo explícito.
 
@@ -160,16 +218,40 @@ ciclo sea factible, pero con ~28% de holgura y reparto perfecto.
 
 ---
 
+### B11. Asignación base: C1b con Los Espinos y Santa Rosa unidos; C2 queda como propuesta
+**Decisión [Propio]** (04/10/2026). La asignación de rutas a electroterminales de la entrega es **C1b** (en el
+relato, "C1"): el electroterminal más cercano a los paraderos terminales reales de cada ruta; y Los Espinos y Santa
+Rosa se tratan como un solo electroterminal en **todos** los escenarios operacionales (B9). **C2** (MILP con
+capacidad) se formula, se prueba y se valida, pero no entra al caso base. Nomenclatura vigente: E0 (por línea, unidos),
+E1 (+ interlining, unidos), LB; E0_sep y E1_sep (separados, evidencia); E1_C2 y E1_C2_sep (variantes con C2).
+- **[Medido]** C2 mueve **5 de 417 rutas** (con la carga corregida, C7), el VSP cambia en +2 buses (+0,03%) y el costo
+  total con carga mejora 0,3% si además se unen los terminales (E1: 3.751.250 → E1_C2: 3.740.069 USD/día).
+- **[Medido]** C2 **no resuelve el problema de capacidad**: sin unir (E1_C2_sep), Los Espinos usa 98,5% de su capacidad
+  real y aun así el simulador deja 21 MWh sin reponer (C8). Unir los dos terminales sí lo resuelve (82,5%, déficit 0).
+- **[Propio]** C1b es simple y explicable; C2 aporta rigor (GAP con carga que depende del electroterminal) pero su
+  parámetro θ no está calibrado. Queda como **metodología propuesta** (el profesor pidió una metodología bien
+  propuesta, incluido el modelo de clusterización) y como continuación: calibrar θ con el simulador o delegar la carga
+  al MILP (Etapa 4).
+- **[Profesor]** Unir los terminales es válido y es decisión nuestra, siempre justificando; la justificación son los
+  datos de arriba (`docs/justificaciones/05_unir_terminales.md`).
+- **C1a (centroide)** se conserva como control de sensibilidad (cambia 41 rutas y 0,7% del costo de pullout/pullin), sin
+  usarse en etapas posteriores. La limpieza (borrarlo y renombrar `c1b` → `c1`) queda para la entrega final.
+
+---
+
 ## C. Abierto
 
 | # | Tema | Qué falta | Riesgo |
 |---|---|---|---|
 | C1 | Factor de desvío 1,3 | Calibración empírica (Bloque B) y feedback de la presentación | La crítica anunciada por el profesor |
 | C2 | Cita bibliográfica de la condición cíclica | Buscar y verificar una referencia | Menor: el argumento se sostiene solo, pero conviene citar |
-| C3 | Nivel de carga cíclico | Base 100% por ser el máximo de los datos del curso. Cualquier nivel menor exige una fuente externa que hoy no tenemos (CC-CV, vida útil) | Se decide con el barrido 70-100% (B6). Si el grupo prefiere un nivel menor, debe citarse la razón |
-| C4 | E2 idéntico a E1 | Confirmar al correr | Que "no cambia nada" requiera explicación en la presentación |
-| C5 | Jornadas partidas bajo política reactiva | Cuantificar cuántos buses extra exige el ciclo diario | Puede encarecer fuertemente E0 y E1; es resultado, pero hay que anticiparlo |
-| C6 | Unir o no Los Espinos y Santa Rosa | Resultados juntos y separados | Ninguno: es decisión nuestra, falta la evidencia |
+| C3 | Nivel de carga cíclico | **Resuelto: 100% con buses de reserva.** Es el máximo de los datos del curso y el barrido 100-50% (regla de B6, corregida y aplicada por código) lo confirma como el de menor costo total entre las soluciones factibles, en E1 y E0. Ningún nivel entre 100% y 55% cumple el ciclo sin reservas; bajar el nivel lo paga con flota. Cualquier nivel menor exigiría además una fuente externa que hoy no tenemos (CC-CV, vida útil) | Ninguno. Si el grupo prefiriera un nivel menor, debe citarse la razón y se reporta como caso alternativo |
+| C4 | E2 idéntico a E1 | **Resuelto:** era un artefacto del estimador de carga de C2 (C7). Con la carga corregida, C2 mueve 5 rutas y el VSP cambia en +2 buses; con la nueva nomenclatura la comparación es E1_C2_sep vs E1_sep | Ninguno |
+| C5 | Jornadas partidas bajo política reactiva | **Medido (nivel 100%):** +2.605 buses en E0 (+30%) y +2.955 en E1 (+40%); casi toda jornada sobre la batería se parte porque los huecos son cortos y el electroterminal queda a ~10 km | Es el resultado más fuerte del caso base; hay que presentarlo como precio de la descomposición secuencial, no como error |
+| C6 | Unir o no Los Espinos y Santa Rosa | **Resuelto: se unen en todos los escenarios operacionales.** Evidencia (nivel 100%): sin unir la solución es infactible (déficit de energía de 21-48 MWh en Los Espinos) y unidos es factible (82,5% de la capacidad, déficit 0); además el VSP baja 94 buses en E1 | Ninguno: es decisión nuestra con respaldo medido |
+| C7 | La Etapa 1 (C2) medía la carga de cada ruta solo con su energía comercial | **Resuelto el 04/10:** $h_{rd}=(\text{kWh}_r+2\,\text{dist}_{rd}\,n_r\,1{,}4)/180$, que depende del electroterminal (GAP). Validado contra la energía real de las jornadas: error de −9 a −14% pasa a −0,5 a −3,1%. Con ella C1b excede Los Espinos (101,6%) y C2 mueve 5 rutas (Los Espinos 97,6%). Ver `docs/justificaciones/08_carga_real_en_clustering.md` | Subestima levemente (traslados entre viajes); se declara como limitación |
+| C8 | La capacidad de C2 es un promedio diario: respetar θ = 1 es necesario, no suficiente | Con C2 sin unir (E1_C2_sep) Los Espinos usa 98,5% de su capacidad real y el simulador reactivo deja 21 MWh sin reponer (la carga solo ocurre cuando los buses están en el patio). **Por eso C2 queda como propuesta** (B11). Continuación: calibrar θ < 1 con el simulador o programar la carga (MILP, Etapa 4) | Presentar C2 como "la asignación factible" lo contradice el simulador; se presenta como propuesta con su límite declarado |
+| C9 | La condición cíclica no se cumple con la política reactiva a ningún nivel | **Medido:** al 100% el 21% de las cargas nocturnas (2.207 de 10.295 en E1) termina después de la primera salida del día siguiente; la cota LP dice que solo cabe el 84% de la energía nocturna aun con carga perfecta. Se cumple con buses de reserva (551.750 USD/día en E1). Continuación: el MILP de carga (Etapa 4) con reservas o con ventanas de día; o un VSP que "vea" la batería (jornadas con pausas de carga) | Es el resultado más fuerte del caso base: el VSP que ignora la batería produce jornadas que no se pueden recargar a tiempo. Hay que presentarlo como el precio de la descomposición secuencial, no como un error |
 
 ---
 

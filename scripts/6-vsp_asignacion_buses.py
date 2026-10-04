@@ -22,11 +22,13 @@ Tres modos (--modo):
            (interlining solo dentro de la misma ruta). El electroterminal de
            cada ruta sale del archivo --asignacion de la Etapa 1.
   cluster: interlining solo entre rutas asignadas al mismo electroterminal
-           segun --asignacion (escenarios E1, E2). Con --unir-electroterminales
-           los electroterminales indicados forman UN solo grupo de
-           interlining (escenario E2b): una jornada puede salir de un patio y
-           volver al otro; no viola el retorno porque es un solo
-           electroterminal.
+           segun --asignacion (escenario E1).
+  En ambos modos, --unir-electroterminales trata los electroterminales indicados
+  como UN solo terminal (Los Espinos y Santa Rosa, en todos los escenarios
+  operacionales; sin unirlos Los Espinos no tiene puestos para reponer su energia,
+  Etapa 3). En cluster forman ademas UN solo grupo de interlining: una jornada puede
+  salir de un patio y volver al otro; no viola el retorno porque es un solo
+  electroterminal. Sin la opcion se obtienen los escenarios de evidencia E0_sep y E1_sep.
   libre:   COTA INFERIOR (LB). Interlining libre entre cualquier ruta (sujeto
            al radio maximo) y cada bus elige el electroterminal mas barato en
            cada pullout/pullin. VIOLA el retorno al propio electroterminal:
@@ -53,15 +55,21 @@ Uso:
     python scripts/6-vsp_asignacion_buses.py --modo ruta --asignacion data-processed/rutas_cluster_c1b.csv --subset 101 102 301 --etiqueta E0
     python scripts/6-vsp_asignacion_buses.py --modo libre --subset 101 102 301 --etiqueta LB
 
-    # Escalera de escenarios, red completa:
-    python scripts/6-vsp_asignacion_buses.py --modo ruta    --asignacion data-processed/rutas_cluster_c1b.csv --etiqueta E0
-    python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --etiqueta E1
-    python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c2.csv  --etiqueta E2
-    python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c2.csv  --unir-electroterminales --etiqueta E2b
+    # Escalera de escenarios, red completa (terminales unidos):
+    python scripts/6-vsp_asignacion_buses.py --modo ruta    --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --etiqueta E0
+    python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --etiqueta E1
     python scripts/6-vsp_asignacion_buses.py --modo libre --etiqueta LB
 
+    # Evidencia de por que se unen (separados):
+    python scripts/6-vsp_asignacion_buses.py --modo ruta    --asignacion data-processed/rutas_cluster_c1b.csv --etiqueta E0_sep
+    python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --etiqueta E1_sep
+
+    # Variantes con C2 (la asignacion con restriccion de capacidad, propuesta; fuera de la escalera):
+    python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c2.csv --unir-electroterminales --etiqueta E1_C2
+    python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c2.csv --etiqueta E1_C2_sep
+
     # Sensibilidad (no escribe jornadas):
-    python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --factor-desvio 1.5 --sin-jornadas --etiqueta E1_f1.5
+    python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --factor-desvio 1.5 --sin-jornadas --etiqueta E1_f1.5
 """
 
 import argparse
@@ -402,7 +410,7 @@ def main():
                          help="Requerido en los modos ruta y cluster: CSV de la Etapa 1 con columnas "
                               "route_id, depot_id (ej. data-processed/rutas_cluster_c1b.csv).")
     parser.add_argument("--unir-electroterminales", nargs="*", default=None, metavar="DEPOT_ID",
-                         help="Solo modo cluster: depot_id de los electroterminales que forman UN solo grupo "
+                         help="Modos cluster y ruta: depot_id de los electroterminales que forman UN solo terminal (en cluster, ademas, un grupo "
                               "de interlining. Sin valores, usa parametros.ELECTROTERMINALES_UNIDOS "
                               f"{parametros.ELECTROTERMINALES_UNIDOS}.")
     parser.add_argument("--radio", type=float, default=parametros.RADIO_INTERLINING_KM,
@@ -413,7 +421,7 @@ def main():
     parser.add_argument("--layover", type=float, default=parametros.LAYOVER_MIN,
                          help=f"Layover minimo en minutos (default {parametros.LAYOVER_MIN}).")
     parser.add_argument("--etiqueta", type=str, default=None,
-                         help="Nombre del escenario para los archivos de salida (E0, E1, E2, E2b, LB...). "
+                         help="Nombre del escenario para los archivos de salida (E0, E1, LB, E0_sep, E1_sep, E1_C2, E1_C2_sep...). "
                               "Default: el --modo.")
     parser.add_argument("--sin-jornadas", action="store_true",
                          help="Corrida de sensibilidad: no escribe jornadas ni grafico; la fila va a "
@@ -423,8 +431,8 @@ def main():
     if args.modo in ("ruta", "cluster") and not args.asignacion:
         raise SystemExit(f"--modo {args.modo} requiere --asignacion <csv de la Etapa 1> "
                           f"(ej. data-processed/rutas_cluster_c1b.csv).")
-    if args.unir_electroterminales is not None and args.modo != "cluster":
-        raise SystemExit("--unir-electroterminales solo tiene sentido en --modo cluster.")
+    if args.unir_electroterminales is not None and args.modo not in ("cluster", "ruta"):
+        raise SystemExit("--unir-electroterminales solo tiene sentido en --modo cluster o --modo ruta.")
 
     etiqueta = args.etiqueta or args.modo
     if args.subset:

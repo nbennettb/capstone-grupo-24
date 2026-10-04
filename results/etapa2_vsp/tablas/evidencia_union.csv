@@ -1,0 +1,5 @@
+etiqueta;modo;asignacion;unir;buses;km_vacios_total;cost_operacion_usd;jornadas_cruzan_patio;jornadas_sin_retorno
+E0_sep;ruta;rutas_cluster_c1b.csv;;8654;206618.3;2311988.0;0;0
+E0;ruta;rutas_cluster_c1b.csv;3,5;8654;206618.3;2311988.0;0;0
+E1_sep;cluster;rutas_cluster_c1b.csv;;7460;185680.9;1995343.0;0;0
+E1;cluster;rutas_cluster_c1b.csv;3,5;7366;182834.2;1970265.0;1068;0

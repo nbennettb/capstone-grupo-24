@@ -1,0 +1,7 @@
+N_objetivo;buses;reservas_simulador;reservas_milp;reservas_piso;ganancia_pct;brecha_pct;resuelta_optimo
+10;9;0;0;0;10.5;0.262;1
+30;34;4;2;1;23.8;1.377;0
+50;55;12;9;8;15.1;2.023;0
+100;106;23;19;15;10.6;2.707;0
+200;210;48;39;32;11.5;1.935;0
+400;404;107;82;68;14.3;8.606;0

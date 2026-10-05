@@ -69,3 +69,15 @@ Las figuras marcadas con ★ son las candidatas a la presentación de 10 minutos
 | `etapa5_kpis_comparacion/graficos/costo_desglose_E0_E1.png` ★ | El interlining baja el costo total 5,2%; la flota es ~70% del costo, la energía solo 8% | `etapa5_kpis_comparacion/tablas/desglose_costo.csv` | P (resultados) / I |
 | `etapa5_kpis_comparacion/graficos/flota_de_donde_viene.png` ★ | La batería agrega 5.136 buses a E1; el clustering, solo 311 sobre la cota LB (precio de la descomposición) | `etapa5_kpis_comparacion/tablas/precio_descomposicion.csv` | P (hallazgo central) / I |
 | `etapa5_kpis_comparacion/graficos/uso_electroterminales.png` | Tres de cuatro electroterminales tienen todos sus puestos ocupados 71-79% del día | `etapa5_kpis_comparacion/tablas/uso_electroterminales.csv` | I |
+
+## Gráficos para la presentación (`scripts/14-graficos_presentacion.py`)
+
+| Figura | Mensaje | Datos | Sección |
+|---|---|---|---|
+| `presentacion/graficos/G1_demanda_y_tarifa.png` ★ | Los buses se necesitan de día; solo pueden cargar de noche, cuando la tarifa es más baja | `presentacion/tablas/G1_demanda_y_tarifa.csv` | P (lámina 1) |
+| `presentacion/graficos/G2_ida_vuelta.png` ★ | 94,7% de las rutas cierra su ida y vuelta a < 500 m: se agrupan rutas | `presentacion/tablas/G2_ida_vuelta.csv` | P (lámina 2) |
+| `presentacion/graficos/G3_mapa_electroterminales.png` ★ | Los Espinos y Santa Rosa a 1,1 km: un solo electroterminal de 270 puestos | `presentacion/tablas/G3_distancias_electroterminales.csv` | P (lámina 2) |
+| `presentacion/graficos/G4_diagrama_metodologia.png` ★ | Cuatro etapas por tipo de decisión, cada una con su validación | `presentacion/tablas/G4_diagrama_metodologia.csv` | P (lámina 3) / I |
+| `presentacion/graficos/G5_patio_vs_puestos.png` ★ | De noche casi todos los buses están en el patio y los 700 puestos se llenan | `presentacion/tablas/G5_patio_vs_puestos.csv` | P (lámina 8) / I |
+| `presentacion/graficos/G6_barrido.png` ★ | 100% con reservas es el menor costo factible | `presentacion/tablas/G6_barrido.csv` | P (lámina 9) |
+| `presentacion/graficos/G7_reservas_milp.png` ★ | El MILP reduce las reservas y queda cerca del piso posible (instancia reducida) | `presentacion/tablas/G7_reservas_milp.csv` | P (lámina 10) / I |

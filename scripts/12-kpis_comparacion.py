@@ -204,16 +204,16 @@ def graficar_desglose(k, path):
         ax.bar(range(2), v, 0.55, bottom=base, color=COLORES[col], label=lab, edgecolor="white")
         for i in range(2):
             if v[i] > 0.12:
-                ax.text(i, base[i] + v[i] / 2, f"{v[i]:.2f}", ha="center", va="center", fontsize=8, color="white")
+                ax.text(i, base[i] + v[i] / 2, fmt(v[i], 2), ha="center", va="center", fontsize=8, color="white")
         base += v
     for i, t in enumerate(base):
-        ax.text(i, t + 0.04, f"{t:.2f} M USD/dia", ha="center", va="bottom", fontsize=10, fontweight="bold")
+        ax.text(i, t + 0.04, f"{fmt(t, 2)} M USD/dia", ha="center", va="bottom", fontsize=10, fontweight="bold")
     ahorro = (1 - base[1] / base[0]) * 100
     ax.set_xticks(range(2))
     ax.set_xticklabels(cols)
     ax.set_ylabel("Millones de USD por dia")
     ax.set_ylim(0, base.max() * 1.12)
-    ax.set_title(f"El interlining baja el costo total {ahorro:.1f}% (flota: {k.loc['costo_flota_usd', cols[0]] / 1e6 / base[0] * 100:.0f}% del costo de E0)", fontsize=11, loc="left")
+    ax.set_title(f"El interlining baja el costo total {fmt(ahorro, 1)}% (flota: {k.loc['costo_flota_usd', cols[0]] / 1e6 / base[0] * 100:.0f}% del costo de E0)", fontsize=11, loc="left")
     estilo(ax)
     ax.legend(frameon=False, fontsize=8, loc="center left", bbox_to_anchor=(1.0, 0.5))
     fig.tight_layout()

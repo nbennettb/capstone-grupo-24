@@ -1,0 +1,5 @@
+etapa;que_decide;modelo;validacion
+1. Clustering;Electroterminal de cada ruta;Mas cercano a los paraderos reales (MILP con capacidad: propuesta);Energia real de las jornadas
+2. Asignacion de buses (VSP);Que bus hace que viaje;Flujo de costo minimo en red espacio-tiempo (exacto);Cota LB y cota 6.539
+3. Carga reactiva (caso base);Cuando y donde carga cada bus;Simulador: carga cuando lo necesita + buses de reserva;Cota LP de la carga nocturna
+4. Programacion de carga;Cuando y cuanto carga (tarifa y puestos);MILP (instancia reducida);"Piso de reservas; MILP <= reactiva"

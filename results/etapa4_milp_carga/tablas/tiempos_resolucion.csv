@@ -1,0 +1,6 @@
+N_objetivo;buses;segundos;estado;brecha_pct;cota_inferior_usd;objetivo_usd
+30;34;600.1;limite de tiempo;3.043;1562.27;1611.29
+50;55;600.1;limite de tiempo;3.767;4040.14;4198.28
+100;106;600.1;limite de tiempo;4.833;8134.06;8547.16
+200;210;600.3;limite de tiempo;5.328;16657.89;17595.42
+400;404;600.4;limite de tiempo;14.591;33351.56;39049.33

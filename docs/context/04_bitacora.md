@@ -11,6 +11,23 @@
 
 ---
 
+### 04/10/2026 (noche) — Bloque E: MILP de carga en instancia reducida
+
+Secuencia (cada paso quedó escrito antes del siguiente):
+1. **Plan aprobado:** holgura = binaria de bus de reserva (250 USD; misma regla del simulador, la energía se carga igual); espera en cola fuera del
+   objetivo; instancia = terminal unido Los Espinos + Santa Rosa en E1, muestra anidada con semilla fija, puestos proporcionales (270 / 4.622). Se
+   aclaró que los bloques de 15 min son unidad de medida y no una descomposición temporal.
+2. **Checkpoint chico (N = 10), revisado a mano:** la energía por bus calza, sin solapes con 1 puesto, el MILP pasa todos los chequeos. Se detectó que el MILP
+   dejaba buses "enchufados sin cargar" para ahorrar eventos de 5 USD; se exigió evento continuo a plena potencia.
+3. **Resultado inesperado:** ni N = 50 cerraba la brecha del 1% en 10 min (28,8% con el modelo inicial). Se reforzó la formulación con desigualdades válidas
+   (la brecha de N = 50 bajó a 4,0% en 240 s) y se agregaron N = 30 y 100 a la escalera. Un redondeo numérico (energía ~1e-4 kWh con y casi cero) rompió un chequeo
+   de puestos y se corrigió con integralidad estricta y redondeo explícito.
+4. **Escalera N = 30 / 50 / 100 / 200 / 400 (600 s c/u):** ninguna llega al 1% (brecha 3,0 a 14,6%). El MILP cuesta menos que la reactiva en todas.
+5. **Hallazgo al revisar los gráficos:** la reactiva en bloques (la misma regla en la grilla del MILP) es peor que el simulador al minuto (21-50% más reservas):
+   comparar contra ella inflaba la ganancia (de 6-24% a 18-39%). Se cambió la referencia al simulador al minuto y los gráficos y el reporte se corrigieron
+   (`--regenerar`). Quedan abiertos C10 (brecha) y C11 (efecto de la grilla); ver `02`.
+6. **Lectura:** la ganancia viene de las reservas (el MILP usa los puestos que la reactiva deja ociosos entre las 16:00 y 19:00), no de la tarifa. Ver `01`, Etapa 4.
+
 ### 04/10/2026 — Etapas 2 y 3, calibración del deadhead, y corrección de C2 (C7)
 
 Secuencia de decisiones (cada paso quedó escrito antes del siguiente):

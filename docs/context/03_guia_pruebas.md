@@ -6,7 +6,7 @@
 >
 > Cubre el pipeline **vigente**: Etapa 0 (preprocesamiento), Etapa 1 (clustering de rutas a
 > electroterminales, bajo condición cíclica), calibración del deadhead y Etapa 2 (asignación de buses,
-> escalera de escenarios). La Etapa 3 (carga reactiva y barrido de niveles) está hecha; la Etapa 4 (MILP) aún no existe. Ver `01_metodologia.md` y
+> escalera de escenarios). La Etapa 3 (carga reactiva y barrido de niveles) y la Etapa 4 (MILP en instancia reducida) están hechas. Ver `01_metodologia.md` y
 > `05_plan_entrega2.md`.
 >
 > Última edición: **04/10/2026**.
@@ -243,6 +243,26 @@ ciclo sin reservas.
 
 Output: `results/etapa3_carga_reactiva/barrido/{reporte_barrido.md, tablas/{barrido_niveles,decision_barrido,
 evidencia_terminales_separados}.csv, graficos/{barrido_costo_total,barrido_ciclos_y_cota,barrido_robustez}.png}`.
+
+### `scripts/11-milp_carga.py` (Etapa 4, MILP de carga en instancia reducida) — requiere las jornadas de E1 y los resultados de la Etapa 3
+
+```
+python scripts/11-milp_carga.py --n 10 --detalle --sin-salidas   # checkpoint chico (~10 s): imprime bus por bus la ventana, la energía y los bloques de la reactiva y del MILP
+python scripts/11-milp_carga.py                                  # escalera N = 30 / 50 / 100 / 200 / 400 (cada una hasta 600 s: ~50 min en total)
+python scripts/11-milp_carga.py --n 200 --semilla 7              # otra semilla (variabilidad)
+python scripts/11-milp_carga.py --regenerar                      # gráficos y reporte desde los CSV, sin resolver
+```
+
+Gurobi con licencia (13.0). Importa el simulador de `10-carga_reactiva.py` sin modificarlo. En cada instancia verifica con `assert`: la
+reconstrucción de las jornadas contra el VSP, la solución del MILP (energía exacta por bus, ≤ 45 kWh por bloque, puestos, fuera de ventana solo con
+reserva, costo recalculado coherente con Gurobi) y **MILP ≤ reactiva en bloques**; marca la instancia como no trivial si los puestos están saturados en
+≥ 10% de los bloques. Los límites de tiempo no son deterministas: las brechas y los costos del MILP pueden variar algo entre corridas.
+Cifras de referencia (04/10, semilla 24): costo de la carga simulador → MILP (USD/día en la instancia) 2.115 → 1.611 (N=30), 4.947 → 4.198 (50),
+9.519 → 8.547 (100), 19.532 → 17.624 (200), 41.573 → 39.078 (400); reservas 4→2, 12→9, 23→19, 48→40, 107→96; brecha 3,0 / 3,8 / 4,8 / 5,3 / 14,6%
+(ninguna llega al 1%). Todo es **instancia reducida**.
+
+Output: `results/etapa4_milp_carga/{reporte.md, tablas/{instancias,comparacion_reactiva_milp,tiempos_resolucion,representatividad,energia_por_tarifa,
+ocupacion_N<n>,programa_reactiva_N<n>,programa_milp_N<n>}.csv, graficos/{ocupacion_reactiva_vs_milp_N<n>,energia_por_tarifa,costo_reactiva_vs_milp,brecha_vs_N}.png}`.
 
 ### `scripts/9-calibracion_deadhead.py` (calibración del factor de desvío) — independiente de las etapas
 

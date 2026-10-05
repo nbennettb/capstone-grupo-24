@@ -361,7 +361,7 @@ entera**, exacta y rápida (~40 s sobre toda la red).
 - **Script:** `scripts/10-carga_reactiva.py` (+ `13-barrido_niveles.py`) · **Salida:** `results/etapa3_carga_reactiva/`
   (eventos, ventanas, jornadas, ocupación, `resumen_carga.csv` y `barrido/`). Las `ventanas` son el insumo del MILP.
 
-### Etapa 4 — Programación de carga (MILP) · estado: POR CONSTRUIR (instancia chica)
+### Etapa 4 — Programación de carga (MILP) · estado: HECHA en instancia reducida (N = 30 a 400 buses; brecha 3-15%, no llegó al 1%)
 
 - **Qué decide.** Dentro de las ventanas en que cada bus puede estar conectado, **cuánta energía
   carga en cada intervalo de 15 min**, minimizando el costo de la energía (tarifa por bloque) y de los
@@ -396,7 +396,35 @@ $$\begin{aligned}
 - **Orden de magnitud [Medido, estimación]:** ~2.150 MWh/día × tarifa entre 0,10 y 0,22 USD/kWh ⇒
   215.000-470.000 USD/día de energía. Esa es la banda en que puede moverse el costo energético según
   cuándo se cargue.
-- **Script (a crear):** `scripts/11-milp_carga.py`.
+- **Formulación implementada (por ventanas, ver `02`, B12).** Se resuelven las 24 h de una vez; los 96 bloques de 15 min son solo la
+  unidad de medida del tiempo (no hay descomposición temporal). Por bus: `Σ_t e_bt = E_b` (vuelve exactamente al nivel),
+  `e_bt ≤ q y_bt` (q = 45 kWh), `y_bt ≤ r_b` fuera de su ventana en el patio, puestos `Σ_b y_bt ≤ κ − f_t` (módulo 24 h), `z_bt ≥ y_bt −
+  y_b,t−1`, y evento continuo a plena potencia (`e_bt ≥ q (y_bt + y_b,t+1 − 1)`). **`r_b` es el bus de reserva** (250 USD): puede
+  terminar de cargar hasta 24 h desde su llegada, y su salida la cubre otro bus; es la regla del simulador y hace el modelo siempre
+  factible. Objetivo: tarifa × energía + 5 USD × eventos + 250 USD × reservas. Las cargas intermedias (0,5% de los buses) quedan fijas.
+- **Instancia reducida (rotularla siempre así, no es el resultado de toda la red).** Terminal unido Los Espinos + Santa Rosa en E1 al
+  100%; muestra de jornadas del VSP con semilla fija (24) y anidada; puestos = N × 270 / 4.622 (0,0584 por bus). Representativa
+  [Medido]: carga/capacidad 80-89% (red 86%), 91-95% de las llegadas entre 19:00 y 02:00 (red 90%), USD/kWh 0,137-0,145 (red 0,142), reservas de
+  la reactiva 12-27% (red 26%); puestos saturados en 82-96% de los bloques (no trivial).
+- **Resultado [Medido]** (costo de la carga = energía + eventos + reservas; ganancia frente al simulador real, al minuto, es una
+  cota inferior porque el MILP usa bloques de 15 min):
+
+  | N (buses) | Puestos | Costo de la carga: simulador → MILP (USD/día en la instancia) | Ganancia | Reservas: simulador → MILP | Brecha en 600 s |
+  |---|---|---|---|---|---|
+  | 34 (N=30) | 2 | 2.115 → 1.611 | ≥ 23,8% | 4 → 2 | 3,0% |
+  | 55 (N=50) | 3 | 4.947 → 4.198 | ≥ 15,1% | 12 → 9 | 3,8% |
+  | 106 (N=100) | 6 | 9.519 → 8.547 | ≥ 10,2% | 23 → 19 | 4,8% |
+  | 210 (N=200) | 12 | 19.532 → 17.624 | ≥ 9,8% | 48 → 40 | 5,3% |
+  | 404 (N=400) | 23 | 41.573 → 39.078 | ≥ 6,0% | 107 → 96 | 14,6% |
+
+  Lectura: (1) el MILP **siempre cuesta menos que la reactiva en bloques** (prueba de correctitud) y menos que el simulador real; (2) **la
+  ganancia viene de las reservas**, no de la tarifa: el costo medio de la energía casi no cambia (0,1445 → 0,1451 USD/kWh en N=400) y el %
+  en valle tampoco; el MILP usa los puestos que la reactiva deja ociosos entre las 16:00 y las 19:00 (nadie ha llegado aún) para cargar
+  buses que de otro modo exigirían reserva; (3) la ganancia baja con N porque la brecha sube (14,6% en N=400): es un piso, no el óptimo; (4) la grilla de 15 min
+  **no es inocua**: la misma regla reactiva en bloques deja 21-50% más reservas que el simulador al minuto, por eso la referencia es el simulador
+  (`02`, C11). **No se extrapola a toda la red**: E3 solo se estima.
+- **Script:** `scripts/11-milp_carga.py` · **Salida:** `results/etapa4_milp_carga/` (instancias, comparación, tiempos, representatividad, programas
+  por bus, ocupación, energía por tarifa y 8 gráficos; `reporte.md`).
 
 ---
 
@@ -423,7 +451,7 @@ ganancia). **Resultado:** −1.288 buses en el VSP y −207.000 USD/día de cost
 debería eliminar el déficit de carga de Los Espinos.** **Resultado:** déficit 44-48 MWh → 0; el VSP baja 94 buses en
 E1. (iii) **El ciclo debería poder cumplirse.** **Resultado:** no con la política reactiva a ningún nivel evaluado: se
 cumple pagando buses de reserva (2.207 en E1), y la cota LP muestra que al 100% ni una carga perfecta lo cerraría.
-(iv) E3 contra E1 mide el valor de programar la carga. Si algún resultado no sigue lo esperado, hay que explicar por
+(iv) E3 contra E1 mide el valor de programar la carga. **Resultado (iv), a escala de instancia:** el MILP baja el costo de la carga al menos 6-24% frente al simulador reactivo (según el tamaño de la instancia; cota inferior, brecha 3-15%), casi todo por menos buses de reserva. Si algún resultado no sigue lo esperado, hay que explicar por
 qué antes de seguir, no ajustar el modelo para que calce.
 
 Esta escalera responde a la sugerencia del profesor de **aplicar el caso base una vez clusterizado**:
@@ -484,7 +512,7 @@ explicar, y separa el valor de cada decisión.
 | 1 | `8-clustering_comparacion.py` | las 3 asignaciones (C1a, C1b, C2) | `rutas_clustering_completo.csv`, `results/etapa1_clustering/` |
 | 2 | `6-vsp_asignacion_buses.py`, `7-comparar_escenarios.py` | expediciones + asignación | `jornadas_{E0,E1,LB,E0_sep,E1_sep,E1_C2,E1_C2_sep}.csv`, `results/etapa2_vsp/` |
 | 3 | `10-carga_reactiva.py` | jornadas del VSP | `results/etapa3_carga_reactiva/` (eventos, ventanas, jornadas, ocupación, resumen) |
-| 4 | `11-milp_carga.py` | ventanas de carga | programación óptima *(a crear)* |
+| 4 | `11-milp_carga.py` | jornadas del VSP + simulador de la Etapa 3 | `results/etapa4_milp_carga/` (instancia reducida: programa por bus, comparación con la reactiva, tiempos) |
 
 Utilidades compartidas en `scripts/common/` (`parametros.py`, `geo.py`, `tiempo.py`, `rutas.py`,
 `clustering.py`). `9-calibracion_deadhead.py` calibra el factor de desvío con los trazados GTFS

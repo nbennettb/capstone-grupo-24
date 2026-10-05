@@ -237,6 +237,28 @@ E1 (+ interlining, unidos), LB; E0_sep y E1_sep (separados, evidencia); E1_C2 y 
 - **C1a (centroide)** se conserva como control de sensibilidad (cambia 41 rutas y 0,7% del costo de pullout/pullin), sin
   usarse en etapas posteriores. La limpieza (borrarlo y renombrar `c1b` → `c1`) queda para la entrega final.
 
+### B12. MILP de carga en instancia reducida (04/10/2026)
+**Decisiones [Propio]**, tomadas antes de correr y documentadas con lo que se midió después:
+- **Holgura = bus de reserva (binaria `r_b`, 250 USD).** Es la misma regla del simulador (B6): el bus puede terminar de cargar hasta 24 h desde su
+  llegada y su salida la cubre otro bus ya cargado. **La energía se carga igual y ocupa puestos.** *Descartada:* multar la energía no repuesta, porque
+  deja energía y puestos gratis y haría el MILP artificialmente mejor. Sin holgura el MILP sería infactible al 100% (cota LP 77-96% en las instancias).
+- **Espera en cola fuera del objetivo** (como en la formulación de `01`); se reporta aparte como demora hasta iniciar la carga. *Pendiente de
+  decisión en el Bloque F:* el caso base cobra ~107.000 USD/día de espera en cola de la carga nocturna (buses estacionados esperando puesto), que el VSP no cobra.
+- **Bloques de 15 min = unidad de medida, no descomposición temporal:** el MILP resuelve las 24 h de una vez (la descomposición temporal del
+  Informe 1 se descartó y no vuelve). Misma grilla que la cota LP.
+- **Evento de carga continuo a plena potencia** (`e_bt ≥ q (y_bt + y_b,t+1 − 1)`). *Cómo se descubrió:* en el checkpoint chico (N = 10) el MILP dejaba buses
+  "enchufados sin cargar" durante horas para unir tramos y ahorrar los 5 USD del evento, ocupando puestos. Se corrigió antes de escalar.
+- **Desigualdades válidas** (energía cargada fuera de la ventana ≤ E_b · r_b; al menos ⌈E_b/q⌉ bloques enchufado): no cambian el modelo, ajustan la relajación.
+  [Medido, corrida exploratoria N = 50] bajaron la brecha de 28,8% (600 s) a 4,0% (240 s).
+- **Cargas intermedias fijas** (0,5% de los buses): quedan como ocupación fija.
+- **Instancia:** terminal unido, E1 al 100%, muestra anidada con semilla 24, puestos proporcionales a la razón medida (270 / 4.622 = 0,0584),
+  N = 30 / 50 / 100 / 200 / 400. *Se agregaron N = 30 y 100 a la escalera 50 / 200 / 400 del plan* porque ni N = 50 cerró la brecha del 1% en 10 min
+  (regla del plan: bajar el tamaño si no resuelve). Con la razón medida los puestos son 3 / 12 / 23 para N = 50 / 200 / 400 (la tabla del plan decía 5 / 19 / 38).
+- **Comparación:** el simulador real (al minuto) y la misma regla reactiva en bloques sobre los mismos buses y puestos. La reactiva en bloques es la
+  solución inicial del MILP y la prueba de correctitud (MILP ≤ reactiva: se cumple en todas). **La referencia para el valor de la carga inteligente es
+  el simulador al minuto**, porque la grilla encarece la reactiva en bloques (C11).
+- **[Medido]** Resultado en `01`, Etapa 4: ganancia ≥ 6-24%, casi toda por reservas; la tarifa casi no se mueve. Instancias representativas (carga/capacidad 80-89%, red 86%).
+
 ---
 
 ## C. Abierto
@@ -252,6 +274,8 @@ E1 (+ interlining, unidos), LB; E0_sep y E1_sep (separados, evidencia); E1_C2 y 
 | C7 | La Etapa 1 (C2) medía la carga de cada ruta solo con su energía comercial | **Resuelto el 04/10:** $h_{rd}=(\text{kWh}_r+2\,\text{dist}_{rd}\,n_r\,1{,}4)/180$, que depende del electroterminal (GAP). Validado contra la energía real de las jornadas: error de −9 a −14% pasa a −0,5 a −3,1%. Con ella C1b excede Los Espinos (101,6%) y C2 mueve 5 rutas (Los Espinos 97,6%). Ver `docs/justificaciones/08_carga_real_en_clustering.md` | Subestima levemente (traslados entre viajes); se declara como limitación |
 | C8 | La capacidad de C2 es un promedio diario: respetar θ = 1 es necesario, no suficiente | Con C2 sin unir (E1_C2_sep) Los Espinos usa 98,5% de su capacidad real y el simulador reactivo deja 21 MWh sin reponer (la carga solo ocurre cuando los buses están en el patio). **Por eso C2 queda como propuesta** (B11). Continuación: calibrar θ < 1 con el simulador o programar la carga (MILP, Etapa 4) | Presentar C2 como "la asignación factible" lo contradice el simulador; se presenta como propuesta con su límite declarado |
 | C9 | La condición cíclica no se cumple con la política reactiva a ningún nivel | **Medido:** al 100% el 21% de las cargas nocturnas (2.207 de 10.295 en E1) termina después de la primera salida del día siguiente; la cota LP dice que solo cabe el 84% de la energía nocturna aun con carga perfecta. Se cumple con buses de reserva (551.750 USD/día en E1). Continuación: el MILP de carga (Etapa 4) con reservas o con ventanas de día; o un VSP que "vea" la batería (jornadas con pausas de carga) | Es el resultado más fuerte del caso base: el VSP que ignora la batería produce jornadas que no se pueden recargar a tiempo. Hay que presentarlo como el precio de la descomposición secuencial, no como un error |
+| C10 | El MILP no llega a la brecha del 1% en 10 min | **Medido:** brecha 3,0% (N=30), 3,8% (50), 4,8% (100), 5,3% (200), 14,6% (400); ninguna instancia certificó el 1% pedido (todas en el límite de 600 s). Las soluciones son factibles y verificadas, así que la ganancia reportada es una cota inferior. Falta: decidir si se acepta esa brecha declarada, se baja N (p. ej. 10-20 buses, que sí cierran), se alarga el límite o se refuerza la formulación (el problema es combinatorio: casi todo el costo son reservas y hay simetría entre buses) | Presentar "MILP resuelto al óptimo" sería falso; se presenta con su brecha |
+| C11 | La grilla de 15 min encarece la reactiva en bloques | **Medido:** la misma regla reactiva en bloques deja 21-50% más reservas que el simulador al minuto (6 vs 4, 17 vs 12, 33 vs 23, 61 vs 48, 130 vs 107), porque las ventanas de carga son ajustadas (cota LP 77-96%) y un bus solo usa bloques completos dentro de su ventana. Por eso la ganancia del MILP se mide contra el simulador, no contra la reactiva en bloques (que la inflaría de 6-24% a 18-39%). Falta: sensibilidad con bloques de 5 min en una instancia chica para ver cuánto del efecto es la grilla | La ganancia reportada es conservadora, pero el tamaño de la grilla condiciona el resultado |
 
 ---
 

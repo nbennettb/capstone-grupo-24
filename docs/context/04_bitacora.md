@@ -11,6 +11,16 @@
 
 ---
 
+### 05/10/2026 — Bloque F: KPIs, justificaciones e índice de figuras
+
+1. **`scripts/12-kpis_comparacion.py`:** tabla de KPIs de E0, E1 y LB, desglose del costo (espera separada en entre viajes y por puesto), precio de la descomposición y valor del MILP por instancia. Todos los chequeos pasan
+   (el desglose suma el costo del simulador; el precio de la batería cuadra con el desglose).
+2. **Hallazgo:** el precio de la descomposición es de dos tamaños muy distintos: exigir el retorno y limitar el interlining cuesta +311 buses (+4,4%) sobre LB, pero ignorar la batería en el VSP cuesta +5.136 buses (+69,7%) en E1.
+3. **Corrección propia al revisar un gráfico:** el gráfico de uso de electroterminales decía que el promedio diario "no mostraba" la saturación; los datos muestran lo contrario (el promedio ya es 81-88% en tres terminales, y están saturados 71-79% del día).
+   Se corrigieron el título y la lectura antes de cerrar.
+4. **Justificaciones:** `01_clusterizar_por_ruta`, `03_caso_base_y_escalera`, `06_eleccion_metodologia` y `07_instancia_chica_milp` (con `02`, `04`, `05` y `08` ya hechas, quedan las ocho). **Índice de figuras:** `results/INDICE_FIGURAS.md`, con las candidatas a la presentación marcadas.
+5. **Decisión:** la espera por puesto en el patio se mantiene en el total oficial y se reporta aparte (`02`, B12).
+
 ### 04/10/2026 (noche) — Bloque E: MILP de carga en instancia reducida
 
 Secuencia (cada paso quedó escrito antes del siguiente):

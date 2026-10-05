@@ -1,0 +1,9 @@
+escenario;terminal;puestos;uso_maximo_pct;uso_promedio_pct;pct_del_dia_saturado
+E0;Los Espinos + Santa Rosa;270;100.0;87.9;78.3
+E0;Vespucio Norte;150;100.0;34.9;25.6
+E0;El Conquistador;180;100.0;84.8;74.2
+E0;La Reina;100;100.0;81.9;71.0
+E1;Los Espinos + Santa Rosa;270;100.0;86.8;79.0
+E1;Vespucio Norte;150;100.0;34.8;26.5
+E1;El Conquistador;180;100.0;83.5;75.3
+E1;La Reina;100;100.0;80.9;71.0

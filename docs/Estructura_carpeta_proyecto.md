@@ -229,6 +229,35 @@
                 ├── evidencia_union.csv
                 ├── sensibilidad_deadhead.csv
             ├── reporte.md
+        └── 📁etapa4_milp_carga
+            └── 📁graficos
+                ├── ocupacion_reactiva_vs_milp_N<n>.png     (N = 10, 30, 50, 100, 200, 400)
+                ├── energia_por_tarifa.png
+                ├── costo_reactiva_vs_milp.png
+                ├── brecha_vs_N.png
+            └── 📁tablas
+                ├── instancias.csv
+                ├── comparacion_reactiva_milp.csv
+                ├── tiempos_resolucion.csv
+                ├── representatividad.csv
+                ├── energia_por_tarifa.csv
+                ├── ocupacion_N<n>.csv
+                ├── programa_reactiva_N<n>.csv
+                ├── programa_milp_N<n>.csv
+            ├── reporte.md
+        └── 📁etapa5_kpis_comparacion
+            └── 📁graficos
+                ├── costo_desglose_E0_E1.png
+                ├── flota_de_donde_viene.png
+                ├── uso_electroterminales.png
+            └── 📁tablas
+                ├── kpis_escenarios.csv
+                ├── desglose_costo.csv
+                ├── precio_descomposicion.csv
+                ├── uso_electroterminales.csv
+                ├── milp_instancia.csv
+            ├── reporte.md
+        ├── INDICE_FIGURAS.md                           (cada figura: mensaje, datos y sección sugerida)
     └── 📁scripts
         └── 📁common
             ├── __init__.py
@@ -247,6 +276,8 @@
         ├── 8-clustering_comparacion.py                 (cierre Etapa 1: comparación y mapas)
         ├── 9-calibracion_deadhead.py                   (calibración del factor de desvío con trazados GTFS)
         ├── 10-carga_reactiva.py                        (Etapa 3: simulador de carga reactiva sobre las jornadas del VSP)
+        ├── 11-milp_carga.py                            (Etapa 4: MILP de programación de carga, instancia reducida)
+        ├── 12-kpis_comparacion.py                      (KPIs de E0, E1 y LB, desglose y precio de la descomposición)
         ├── 13-barrido_niveles.py                       (Etapa 3: barrido de niveles de bateria con la regla de B6)
     ├── .gitignore
     ├── README.md

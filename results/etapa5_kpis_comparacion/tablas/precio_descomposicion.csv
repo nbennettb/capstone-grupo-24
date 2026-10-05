@@ -1,0 +1,5 @@
+concepto;buses;buses_pct;costo_usd;costo_pct
+Descomposicion: E1 frente a LB (VSP, exigir retorno al electroterminal y limitar el interlining);311;4.4;96588;5.2
+Interlining: E0 frente a E1 (VSP);1288;17.5;341723;17.3
+Bateria: E0 tras la carga frente a su VSP (jornadas partidas 2605 + reservas 1988);4593;53.1;1646075;71.2
+Bateria: E1 tras la carga frente a su VSP (jornadas partidas 2929 + reservas 2207);5136;69.7;1780985;90.4

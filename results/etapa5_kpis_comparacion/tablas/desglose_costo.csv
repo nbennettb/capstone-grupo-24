@@ -1,0 +1,11 @@
+;E0 (por linea);E1 (+ interlining)
+costo_flota_usd;2814750.0;2573750.0
+costo_km_vacios_usd;129830.0;120668.0
+costo_espera_entre_viajes_usd;44342;36504
+costo_espera_por_puesto_usd;100928;106714
+costo_energia_usd;314653.0;310089.0
+costo_eventos_usd;56560.0;51775.0
+costo_reservas_usd;497000.0;551750.0
+costo_medio_energia_usd_kwh;0.14;0.1396
+costo_total_usd;3958063.0;3751250.0
+costo_total_sin_espera_por_puesto_usd;3857135;3644536

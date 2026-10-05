@@ -264,6 +264,18 @@ Cifras de referencia (05/10, semilla 24): costo de la carga simulador → MILP (
 Output: `results/etapa4_milp_carga/{reporte.md, tablas/{instancias,comparacion_reactiva_milp,tiempos_resolucion,representatividad,energia_por_tarifa,
 ocupacion_N<n>,programa_reactiva_N<n>,programa_milp_N<n>}.csv, graficos/{ocupacion_reactiva_vs_milp_N<n>,energia_por_tarifa,costo_reactiva_vs_milp,brecha_vs_N}.png}`.
 
+### `scripts/12-kpis_comparacion.py` (KPIs de E0, E1 y LB) — requiere las Etapas 2, 3 y 4 corridas
+
+```
+python scripts/12-kpis_comparacion.py     # segundos; solo lee CSV, no corre ningún modelo
+```
+
+Arma la tabla de KPIs (`01`, §6), el desglose del costo (con la espera separada en entre viajes y por puesto en el patio), el precio de la descomposición y el valor del MILP por tamaño de instancia.
+Falla con `assert` si el desglose no suma el costo total del simulador, si los buses de las Etapas 2 y 3 no coinciden, si no se cumple E0 ≥ E1 ≥ LB ≥ 6.539, o si la energía sale del orden esperado (215.000-470.000 USD/día).
+Referencia (05/10): costo total E0 3.958.063 y E1 3.751.250 USD/día; precio de la batería +5.136 buses en E1 (+69,7%) frente a +311 de la descomposición (+4,4%).
+
+Output: `results/etapa5_kpis_comparacion/{reporte.md, tablas/{kpis_escenarios,desglose_costo,precio_descomposicion,uso_electroterminales,milp_instancia}.csv, graficos/{costo_desglose_E0_E1,flota_de_donde_viene,uso_electroterminales}.png}`.
+
 ### `scripts/9-calibracion_deadhead.py` (calibración del factor de desvío) — independiente de las etapas
 
 ```

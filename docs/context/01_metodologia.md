@@ -480,6 +480,24 @@ explicar, y separa el valor de cada decisión.
 | Jornadas partidas y ciclos no cumplidos | Cuántas veces la política reactiva no pudo cargar | Cuánto cuesta la miopía |
 | Precio de la descomposición | Buses y costo con clustering menos LB | Validez de la metodología |
 
+**Valores medidos (nivel 100%, política reactiva con reservas; `results/etapa5_kpis_comparacion/`).** LB es una cota y solo tiene VSP.
+
+| KPI | E0 | E1 | LB |
+|---|---|---|---|
+| Buses del VSP (brecha con la cota 6.539) | 8.654 (+32,3%) | 7.366 (+12,6%) | 7.055 (+7,9%) |
+| Buses tras la carga / con reservas | 11.259 / 13.247 | 10.295 / 12.502 | — |
+| Costo total (USD/día) | 3.958.063 | 3.751.250 | — |
+| Flota / reservas / energía (USD/día) | 2.814.750 / 497.000 / 314.653 | 2.573.750 / 551.750 / 310.089 | — |
+| Espera: entre viajes / por puesto en el patio (USD/día) | 44.342 / 100.928 | 36.504 / 106.714 | — |
+| % km vacíos (VSP / tras la carga) | 13,3 / 16,2 | 12,0 / 15,2 | 9,8 / — |
+| USD/kWh y % de la energía en valle | 0,140 / 50,4% | 0,1396 / 51,4% | — |
+| Utilización del bus (horas con pasajeros / jornada, VSP) | 68,6% | 71,8% | 73,2% |
+| Jornadas partidas / ciclos no cumplidos | 2.605 / 1.988 | 2.929 / 2.207 | — |
+| Electroterminales con puestos saturados 71-79% del día | 3 de 4 (Vespucio Norte 26%) | 3 de 4 (26%) | — |
+
+**Precio de la descomposición:** exigir el retorno y limitar el interlining (E1 frente a LB) cuesta +311 buses (+4,4%) y +5,2% del costo de operación; **ignorar la batería en el VSP cuesta +5.136 buses (+69,7%) en E1** y +4.593 (+53,1%) en E0
+(hallazgo central, C9). La espera por puesto en el patio (~100.000 USD/día) se cobra en el total y se reporta aparte; sin ella E1 = 3.644.536 y E0 = 3.857.135 (`02`, B12).
+
 ---
 
 ## 7. Limitaciones conocidas (a declarar, no a esconder)
@@ -514,11 +532,12 @@ explicar, y separa el valor de cada decisión.
 | 2 | `6-vsp_asignacion_buses.py`, `7-comparar_escenarios.py` | expediciones + asignación | `jornadas_{E0,E1,LB,E0_sep,E1_sep,E1_C2,E1_C2_sep}.csv`, `results/etapa2_vsp/` |
 | 3 | `10-carga_reactiva.py` | jornadas del VSP | `results/etapa3_carga_reactiva/` (eventos, ventanas, jornadas, ocupación, resumen) |
 | 4 | `11-milp_carga.py` | jornadas del VSP + simulador de la Etapa 3 | `results/etapa4_milp_carga/` (instancia reducida: programa por bus, comparación con la reactiva, tiempos) |
+| KPIs | `12-kpis_comparacion.py` | resultados de las Etapas 2, 3 y 4 | `results/etapa5_kpis_comparacion/` (tabla de KPIs, desglose, precio de la descomposición, gráficos) |
 
 Utilidades compartidas en `scripts/common/` (`parametros.py`, `geo.py`, `tiempo.py`, `rutas.py`,
 `clustering.py`). `9-calibracion_deadhead.py` calibra el factor de desvío con los trazados GTFS
 (salida en `results/etapa0_calibracion_deadhead/`). `13-barrido_niveles.py` aplica la regla de B6 y elige el nivel
-de batería. El número 12 está reservado para la comparación de KPIs (ver el plan). Cómo correr y verificar: [`03_guia_pruebas.md`](03_guia_pruebas.md).
+de batería. `11-milp_carga.py` es la Etapa 4 (MILP de carga, instancia reducida) y `12-kpis_comparacion.py` arma la tabla de KPIs (`results/etapa5_kpis_comparacion/`). Cómo correr y verificar: [`03_guia_pruebas.md`](03_guia_pruebas.md).
 
 ---
 

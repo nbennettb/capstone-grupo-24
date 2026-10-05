@@ -448,11 +448,11 @@ sostiene con "no pagaríamos ~93% de la energía".
 - [x] MILP resuelto en la escalera de instancias (N = 10 a 400), no trivial, con costo ≤ reactivo en todas. **Salvedad:** la brecha quedó en 1,4-8,6% salvo N = 10 (óptimo); solo N = 10 certifica el 1% (`02`, C10); la ganancia se reporta como cota inferior.
 - [x] Calibración del deadhead (Bloque B) y sensibilidad de la flota al factor y al layover (Bloque C).
 - [x] Análisis de recargas según el nivel: barrido de niveles con la regla de B6 (`13-barrido_niveles.py`); nivel base 100%.
-- [ ] Tabla de KPIs de todos los escenarios, con CSV y gráficos.
-- [ ] Siete justificaciones en `docs/justificaciones/`, concisas y con las tres etiquetas de respaldo.
-- [ ] `results/INDICE_FIGURAS.md`.
-- [ ] Documentos de `docs/context/` al día, sin afirmaciones que contradigan los resultados.
-- [ ] Cada resultado contrastado con lo esperado, y lo inesperado explicado.
+- [x] Tabla de KPIs de todos los escenarios, con CSV y gráficos (`results/etapa5_kpis_comparacion/`).
+- [x] Justificaciones en `docs/justificaciones/` (01 a 08), concisas y con las tres etiquetas de respaldo.
+- [x] `results/INDICE_FIGURAS.md`.
+- [x] Documentos de `docs/context/` al día, sin afirmaciones que contradigan los resultados.
+- [x] Cada resultado contrastado con lo esperado, y lo inesperado explicado (ver `04_bitacora.md`).
 
 ## 8. Qué no hacer
 

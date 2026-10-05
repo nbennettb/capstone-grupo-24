@@ -248,7 +248,7 @@ evidencia_terminales_separados}.csv, graficos/{barrido_costo_total,barrido_ciclo
 
 ```
 python scripts/11-milp_carga.py --n 10 --detalle --sin-salidas   # checkpoint chico (~10 s): imprime bus por bus la ventana, la energía y los bloques de la reactiva y del MILP
-python scripts/11-milp_carga.py                                  # escalera N = 30 / 50 / 100 / 200 / 400 (cada una hasta 600 s: ~50 min en total)
+python scripts/11-milp_carga.py                                  # escalera N = 10 / 30 / 50 / 100 / 200 / 400 (cada una hasta 600 s: ~50 min en total)
 python scripts/11-milp_carga.py --n 200 --semilla 7              # otra semilla (variabilidad)
 python scripts/11-milp_carga.py --regenerar                      # gráficos y reporte desde los CSV, sin resolver
 ```
@@ -256,10 +256,10 @@ python scripts/11-milp_carga.py --regenerar                      # gráficos y r
 Gurobi con licencia (13.0). Importa el simulador de `10-carga_reactiva.py` sin modificarlo. En cada instancia verifica con `assert`: la
 reconstrucción de las jornadas contra el VSP, la solución del MILP (energía exacta por bus, ≤ 45 kWh por bloque, puestos, fuera de ventana solo con
 reserva, costo recalculado coherente con Gurobi) y **MILP ≤ reactiva en bloques**; marca la instancia como no trivial si los puestos están saturados en
-≥ 10% de los bloques. Los límites de tiempo no son deterministas: las brechas y los costos del MILP pueden variar algo entre corridas.
-Cifras de referencia (04/10, semilla 24): costo de la carga simulador → MILP (USD/día en la instancia) 2.115 → 1.611 (N=30), 4.947 → 4.198 (50),
-9.519 → 8.547 (100), 19.532 → 17.624 (200), 41.573 → 39.078 (400); reservas 4→2, 12→9, 23→19, 48→40, 107→96; brecha 3,0 / 3,8 / 4,8 / 5,3 / 14,6%
-(ninguna llega al 1%). Todo es **instancia reducida**.
+≥ 10% de los bloques. También verifica que el programa del MILP se ejecuta al minuto sin exceder puestos y que la cota de reservas ≤ reservas del MILP. Los límites de tiempo no son deterministas: las brechas y los costos del MILP pueden variar algo entre corridas.
+Cifras de referencia (05/10, semilla 24): costo de la carga simulador → MILP (USD/día en la instancia) 283 → 253 (N=10, óptimo en 2,6 s), 2.115 → 1.612 (30), 4.947 → 4.199 (50),
+9.519 → 8.507 (100), 19.532 → 17.294 (200), 41.573 → 35.608 (400); reservas 4→2, 12→9, 23→19, 48→39, 107→82 (cota de reservas 1 / 8 / 15 / 32 / 68); brecha 1,4 / 2,0 / 2,7 / 1,9 / 8,6%
+(solo N=10 certifica el 1%). N=20 se descarta por inválida (1 puesto, carga > 100%). 
 
 Output: `results/etapa4_milp_carga/{reporte.md, tablas/{instancias,comparacion_reactiva_milp,tiempos_resolucion,representatividad,energia_por_tarifa,
 ocupacion_N<n>,programa_reactiva_N<n>,programa_milp_N<n>}.csv, graficos/{ocupacion_reactiva_vs_milp_N<n>,energia_por_tarifa,costo_reactiva_vs_milp,brecha_vs_N}.png}`.

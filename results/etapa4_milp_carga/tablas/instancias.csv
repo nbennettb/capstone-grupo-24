@@ -1,6 +1,7 @@
-N_objetivo;jornadas_vsp;buses;puestos;puestos_por_bus;semilla;jornadas_partidas;jornadas_partidas_igual_que_red;cargas_intermedias_fijas;energia_mwh;carga_pct_capacidad;saturacion_reactiva_pct;saturacion_milp_pct;cota_lp_pct;no_trivial;n_binarias;n_variables;n_restricciones
-30;21;34;2;0.0588;24;13;21/21;0;6.91;80.0;82.3;86.5;96.1;1;3298;9826;11454
-50;35;55;3;0.0545;24;20;35/35;0;11.58;89.3;95.8;94.8;81.1;1;5335;15895;18603
-100;69;106;6;0.0566;24;37;69/69;0;22.66;87.4;92.7;86.5;79.9;1;10282;30634;35825
-200;139;210;12;0.0571;24;71;139/139;2;45.2;87.2;91.7;81.2;78.5;1;20370;60690;70903
-400;277;404;23;0.0569;24;127;277/277;2;88.53;89.1;94.8;88.5;76.6;1;39188;116756;136732
+N_objetivo;jornadas_vsp;buses;puestos;puestos_por_bus;semilla;jornadas_partidas;jornadas_partidas_igual_que_red;cargas_intermedias_fijas;energia_mwh;carga_pct_capacidad;saturacion_reactiva_pct;saturacion_milp_pct;cota_lp_pct;no_trivial;n_binarias;n_variables;n_restricciones;reservas_cota;reservas_milp_bloques;reservas_milp_al_minuto
+10;7;9;1;0.1111;24;2;7/7;0;1.92;44.5;49.0;49.0;100.0;1;873;2601;3130;0;0;0
+30;21;34;2;0.0588;24;13;21/21;0;6.91;80.0;82.3;85.4;96.1;1;3298;9826;11488;1;2;2
+50;35;55;3;0.0545;24;20;35/35;0;11.58;89.3;95.8;94.8;81.1;1;5335;15895;18658;8;9;9
+100;69;106;6;0.0566;24;37;69/69;0;22.66;87.4;92.7;83.3;79.9;1;10282;30634;35931;15;19;19
+200;139;210;12;0.0571;24;71;139/139;2;45.2;87.2;91.7;83.3;78.5;1;20370;60690;71113;32;39;39
+400;277;404;23;0.0569;24;127;277/277;2;88.53;89.1;94.8;84.4;76.6;1;39188;116756;137136;68;82;82

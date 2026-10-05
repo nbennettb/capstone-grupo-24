@@ -42,7 +42,7 @@ ELECTROTERMINALES_UNIDOS = ("3", "5")
 # El MILP resuelve el dia completo en un solo modelo; los bloques son solo la unidad con que se mide el tiempo
 # (96 bloques de 15 min, igual que la cota LP de la Etapa 3).
 BLOQUE_MILP_MIN = 15           # minutos por bloque
-N_MILP = [30, 50, 100, 200, 400]   # escalera de tamanos de la instancia (buses tras la carga, aprox.); si no resuelve al 1% en el limite, se reporta tal cual
+N_MILP = [10, 30, 50, 100, 200, 400]   # escalera de tamanos de la instancia (buses tras la carga, aprox.); si no resuelve al 1% en el limite, se reporta tal cual
 SEMILLA_MILP = 24              # semilla fija del muestreo de jornadas (el muestreo es anidado: 50 dentro de 200 dentro de 400)
 TIEMPO_LIMITE_MILP_S = 600     # limite de resolucion por instancia
 GAP_MILP = 0.01                # brecha de optimalidad pedida (1%)

@@ -27,6 +27,11 @@ Secuencia (cada paso quedó escrito antes del siguiente):
    comparar contra ella inflaba la ganancia (de 6-24% a 18-39%). Se cambió la referencia al simulador al minuto y los gráficos y el reporte se corrigieron
    (`--regenerar`). Quedan abiertos C10 (brecha) y C11 (efecto de la grilla); ver `02`.
 6. **Lectura:** la ganancia viene de las reservas (el MILP usa los puestos que la reactiva deja ociosos entre las 16:00 y 19:00), no de la tarifa. Ver `01`, Etapa 4.
+7. **05/10, decisiones sobre la brecha, la grilla y la espera en cola** (planteadas con pruebas en memoria antes de tocar el código): (a) se reforzó el modelo con `Σz ≥ 1` y `MIPFocus = 2`
+   (la brecha de N = 30 bajó de 3,0% a 1,4% y la de N = 50 de 3,8% a 2,0%) y se agregó una **cota de reservas** (segundos); (b) **regla declarada antes de correr:** solo se llama "resuelta" a una
+   instancia con brecha ≤ 1%; (c) la sensibilidad de 5 min se descartó (triplica el modelo y no cambia la conclusión) y se verificó en cambio el **programa del MILP al minuto** (respeta los puestos; mismas reservas);
+   (d) la **espera en cola se mantiene en el total oficial** y se reporta aparte (sin ella E1 = 3.644.536 y E0 = 3.857.135 USD/día; el nivel 100% sigue siendo el óptimo y la ventaja de E1 pasa de 206.813 a 212.599).
+   N = 20 resultó inválida (1 puesto, carga > 100%) y se descartó. **Escalera final N = 10 / 30 / 50 / 100 / 200 / 400:** óptimo certificado solo en N = 10; ganancia ≥ 10-24% frente al simulador; el MILP queda a 1-14 reservas del piso.
 
 ### 04/10/2026 — Etapas 2 y 3, calibración del deadhead, y corrección de C2 (C7)
 

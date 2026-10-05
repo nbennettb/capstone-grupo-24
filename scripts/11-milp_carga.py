@@ -276,6 +276,7 @@ def resolver_milp(fin, kappa, f, c, inicio, limite, gap, log):
     m.Params.OutputFlag = 1 if log else 0
     m.Params.TimeLimit = limite
     m.Params.MIPGap = gap
+    m.Params.MIPFocus = 2                                      # foco en probar optimalidad
     m.Params.IntegralityFocus = 1                              # integralidad estricta (evita y casi cero con energia positiva)
     r = m.addVars(len(fin), vtype=GRB.BINARY, name="r")
     y, e, z = {}, {}, {}
@@ -300,6 +301,7 @@ def resolver_milp(fin, kappa, f, c, inicio, limite, gap, log):
         if b["we"] < a + NB:
             m.addConstr(gp.quicksum(e[i, t] for t in range(b["we"], a + NB)) <= b["kwh"] * r[i])
         m.addConstr(gp.quicksum(y[i, t] for t in range(a, a + NB)) >= b["n"])
+        m.addConstr(gp.quicksum(z[i, t] for t in range(a, a + NB)) >= 1)       # todo bus tiene al menos un evento de carga
     for k in range(NB):
         m.addConstr(gp.quicksum(cap[k]) <= kappa - int(f[k]))
     m.setObjective(gp.quicksum(c.tb[t % NB] * e[i, t] for (i, t) in e) + c_ev * gp.quicksum(z.values())
@@ -329,6 +331,52 @@ def resolver_milp(fin, kappa, f, c, inicio, limite, gap, log):
     info = dict(estado=int(m.Status), obj=float(m.ObjVal), cota=float(m.ObjBound), gap=float(m.MIPGap), seg=seg,
                 n_binarias=len(y) + len(r), n_variables=m.NumVars, n_restricciones=m.NumConstrs)
     return ys, es, info
+
+
+def cota_reservas(fin, kappa, f, c, limite=120):
+    """Minimo de buses de reserva que necesita CUALQUIER programa de carga con estas ventanas y puestos: relajacion donde los
+    puestos se miden en energia (sum_b e_bt <= q (kappa - f_t)) y solo r_b es binaria. Es una cota inferior valida de las
+    reservas del MILP (misma logica que la cota LP de la Etapa 3, pero contando buses)."""
+    import gurobipy as gp
+    from gurobipy import GRB
+    m = gp.Model("cota_reservas")
+    m.Params.OutputFlag = 0
+    m.Params.TimeLimit = limite
+    r = m.addVars(len(fin), vtype=GRB.BINARY)
+    e = {}
+    cap = [[] for _ in range(NB)]
+    for i, b in enumerate(fin):
+        for t in range(b["a"], b["a"] + NB):
+            e[i, t] = m.addVar(lb=0.0, ub=c.q)
+            cap[t % NB].append(e[i, t])
+        m.addConstr(gp.quicksum(e[i, t] for t in range(b["a"], b["a"] + NB)) == b["kwh"])
+        if b["we"] < b["a"] + NB:
+            m.addConstr(gp.quicksum(e[i, t] for t in range(b["we"], b["a"] + NB)) <= b["kwh"] * r[i])
+    for k in range(NB):
+        m.addConstr(gp.quicksum(cap[k]) <= c.q * (kappa - int(f[k])))
+    m.setObjective(r.sum(), GRB.MINIMIZE)
+    m.optimize()
+    return int(math.ceil(m.ObjBound - 1e-6))
+
+
+def verificar_minuto(fin, y, e, kappa, f, c):
+    """Ejecuta el programa del MILP minuto a minuto: cada bus carga a 180 kW desde el inicio de sus bloques (el ultimo bloque
+    de cada tramo solo los minutos que necesita). Comprueba los puestos por minuto y recalcula las reservas reales (el bus
+    termina despues de su salida). Devuelve (reservas_al_minuto, ocupacion_por_minuto)."""
+    kmin = c.costos.charge_power_kw / 60.0
+    occ = np.zeros(DIA_MIN, dtype=int)
+    reservas = 0
+    for i, b in enumerate(fin):
+        fin_carga = 0.0
+        for t, kw in e[i].items():
+            assert t * B >= b["llegada"] - 1e-6, f"El bus {b['jid']} empieza a cargar antes de llegar."
+            dur = int(math.ceil(kw / kmin - 1e-9))
+            for mnt in range(t * B, t * B + dur):
+                occ[mnt % DIA_MIN] += 1
+            fin_carga = max(fin_carga, t * B + kw / kmin)
+        reservas += int(fin_carga > b["salida"] + 1e-9)
+    assert (occ + np.repeat(f, B) <= kappa).all(), "El programa del MILP excede los puestos al ejecutarlo minuto a minuto."
+    return reservas, occ
 
 
 # --------------------------------------------------------------------------- #
@@ -466,7 +514,7 @@ def estilo(ax):
 def ahorro_vs_simulador(comp, n):
     """% que el MILP (en bloques de 15 min, conservador) baja el costo de la carga frente al simulador real al minuto."""
     d = comp[comp["N_objetivo"] == n].set_index("variante")["costo_carga_total_usd"]
-    return (1 - d["milp"] / d["reactiva_minuto"]) * 100
+    return (1 - d["milp_al_minuto"] / d["reactiva_minuto"]) * 100
 
 
 def graficar_ocupacion(n_obj, kappa, ocup_r, ocup_m, c, path_png, mensaje):
@@ -519,7 +567,7 @@ def graficar_costos(comp, path_png):
     x = np.arange(len(ns))
     comp_cols = (("costo_energia_usd", "Energia", "#4a8f6e"), ("costo_eventos_usd", "Eventos de carga", "#e6ab02"),
                  ("costo_reservas_usd", "Buses de reserva", "#b22222"))
-    for k, (var, nombre) in enumerate((("reactiva_minuto", "Reactiva"), ("milp", "MILP"))):
+    for k, (var, nombre) in enumerate((("reactiva_minuto", "Reactiva"), ("milp_al_minuto", "MILP"))):
         base = np.zeros(len(ns))
         for col, lab, color in comp_cols:
             v = np.array([(lambda d: d[col].iloc[0] / d["buses"].iloc[0])(comp[(comp.N_objetivo == n) & (comp.variante == var)]) for n in ns])
@@ -545,7 +593,7 @@ def graficar_brecha(tiempos, path_png):
     ax.bar([f"N = {n}" for n in tiempos["N_objetivo"]], tiempos["brecha_pct"], color=COLOR_MILP)
     ax.axhline(parametros.GAP_MILP * 100, color="#b22222", linestyle="--", linewidth=1, label=f"Brecha pedida ({parametros.GAP_MILP:.0%})")
     for i, r in enumerate(tiempos.itertuples()):
-        ax.text(i, r.brecha_pct, f"{r.brecha_pct:.1f}%\n({r.segundos:.0f} s, {r.estado})", ha="center", va="bottom", fontsize=7)
+        ax.text(i, r.brecha_pct, f"{r.brecha_pct:.1f}%\n({r.segundos:.0f} s)\n{'OPTIMO' if r.resuelta_optimo else 'factible'}", ha="center", va="bottom", fontsize=7)
     ax.set_ylabel("Brecha de optimalidad alcanzada (%)")
     ax.set_title("Brecha que alcanza el MILP en el limite de tiempo, segun el tamano", fontsize=11, loc="left")
     ax.set_ylim(0, ax.get_ylim()[1] * 1.15)
@@ -607,8 +655,16 @@ def correr_instancia(mod, c, n_obj, orden, args):
           f"({(c_mi / c_rb - 1) * 100:+.2f}%) | reservas {m_rb['reservas']} -> {m_mi['reservas']}")
     print("  [OK] solucion del MILP verificada: energia exacta por bus, <= potencia por bloque, puestos, costo recalculado coherente con Gurobi, <= reactiva.")
 
+    res_cota = cota_reservas(fin, kappa, f, c)
+    res_min, occ_min = verificar_minuto(fin, ym, em, kappa, f, c)
+    assert res_min <= m_mi["reservas"], "Al ejecutarlo al minuto el MILP tiene mas reservas que en bloques: error."
+    assert res_cota <= res_min, f"La cota de reservas ({res_cota}) supera las reservas del programa ({res_min}): error."
+    m_mm = dict(m_mi, reservas=res_min)
+    resuelta = info["estado"] == 2
+    print(f"  Cota de reservas: ningun programa tiene menos de {res_cota} | MILP en bloques {m_mi['reservas']}, ejecutado al minuto {res_min} "
+          f"| {'RESUELTA AL OPTIMO (brecha <= 1%)' if resuelta else 'factible verificada (brecha > 1%)'}")
     filas = []
-    for var, m in (("reactiva_minuto", m_min), ("reactiva_bloques", m_rb), ("milp", m_mi)):
+    for var, m in (("reactiva_minuto", m_min), ("reactiva_bloques", m_rb), ("milp", m_mi), ("milp_al_minuto", m_mm)):
         fila = fila_comparacion(n_obj, var, m, inter_m, c)
         fila["buses"] = n_fin
         filas.append(fila)
@@ -620,9 +676,11 @@ def correr_instancia(mod, c, n_obj, orden, args):
                 carga_pct_capacidad=round(kwh_inst / (kappa * 24 * c.costos.charge_power_kw) * 100, 1),
                 saturacion_reactiva_pct=round(m_rb["saturacion_pct"], 1), saturacion_milp_pct=round(m_mi["saturacion_pct"], 1),
                 cota_lp_pct=round(cota_pct, 1), no_trivial=int(no_trivial), n_binarias=info["n_binarias"],
-                n_variables=info["n_variables"], n_restricciones=info["n_restricciones"])
+                n_variables=info["n_variables"], n_restricciones=info["n_restricciones"],
+                reservas_cota=res_cota, reservas_milp_bloques=m_mi["reservas"], reservas_milp_al_minuto=res_min)
     tiempo = dict(N_objetivo=n_obj, buses=n_fin, segundos=round(info["seg"], 1), estado="optimo" if info["estado"] == 2 else "limite de tiempo",
-                  brecha_pct=round(info["gap"] * 100, 3), cota_inferior_usd=round(info["cota"], 2), objetivo_usd=round(info["obj"], 2))
+                  brecha_pct=round(info["gap"] * 100, 3), cota_inferior_usd=round(info["cota"], 2), objetivo_usd=round(info["obj"], 2),
+                  brecha_usd=round(info["obj"] - info["cota"], 2), resuelta_optimo=int(resuelta))
     estad = estadisticas_fin(fin, kappa, inter_m, m_min["reservas"], c)
     por_p = []
     for var, m in (("reactiva_minuto", m_min), ("milp", m_mi)):
@@ -694,18 +752,19 @@ def escribir_reporte(ns, comp, inst, tiempos, rep, c, semilla):
     L.append("")
     L.append("### Valor de la carga inteligente (MILP frente a las dos reactivas)")
     L.append("")
-    L.append("El MILP trabaja en bloques de 15 min, que restringen sus opciones: su costo es una **cota superior** del optimo al minuto, "
-             "asi que la ganancia frente al simulador real es **al menos** la indicada.")
+    L.append("El MILP trabaja en bloques de 15 min (restringen sus opciones) y su programa se **ejecuta al minuto** (`milp_al_minuto`): se "
+             "verifica que respeta los puestos minuto a minuto y se recalculan sus reservas reales. Esa es la ganancia frente al simulador real; es una "
+             "**cota inferior** del valor de optimizar, porque el optimo al minuto seria igual o mejor y la brecha deja margen.")
     L.append("")
     val = []
     for n in ns:
         d = comp[comp.N_objetivo == n].set_index("variante")
         val.append(dict(N_objetivo=n, costo_reactiva_minuto_usd=d.loc["reactiva_minuto", "costo_carga_total_usd"],
-                        costo_reactiva_bloques_usd=d.loc["reactiva_bloques", "costo_carga_total_usd"], costo_milp_usd=d.loc["milp", "costo_carga_total_usd"],
+                        costo_reactiva_bloques_usd=d.loc["reactiva_bloques", "costo_carga_total_usd"], costo_milp_bloques_usd=d.loc["milp", "costo_carga_total_usd"], costo_milp_al_minuto_usd=d.loc["milp_al_minuto", "costo_carga_total_usd"],
                         ganancia_vs_simulador_pct=round(ahorro_vs_simulador(comp, n), 1),
                         ganancia_vs_reactiva_bloques_pct=round((1 - d.loc["milp", "costo_carga_total_usd"] / d.loc["reactiva_bloques", "costo_carga_total_usd"]) * 100, 1),
                         reservas_simulador=int(d.loc["reactiva_minuto", "buses_reserva"]), reservas_reactiva_bloques=int(d.loc["reactiva_bloques", "buses_reserva"]),
-                        reservas_milp=int(d.loc["milp", "buses_reserva"])))
+                        reservas_milp_bloques=int(d.loc["milp", "buses_reserva"]), reservas_milp_al_minuto=int(d.loc["milp_al_minuto", "buses_reserva"])))
     L.append(pd.DataFrame(val).to_markdown(index=False))
     L.append("")
     L.append("### Variacion del MILP respecto de la reactiva en bloques")
@@ -726,11 +785,15 @@ def escribir_reporte(ns, comp, inst, tiempos, rep, c, semilla):
     L.append("")
     L.append(tiempos.to_markdown(index=False))
     L.append("")
-    sin_gap = tiempos[tiempos["brecha_pct"] > parametros.GAP_MILP * 100 + 1e-9]["N_objetivo"].tolist()
+    sin_gap = tiempos[tiempos["resuelta_optimo"] == 0]["N_objetivo"].tolist()
+    con_gap = tiempos[tiempos["resuelta_optimo"] == 1]["N_objetivo"].tolist()
     L.append("")
     L.append(f"- Instancias que **no** alcanzaron la brecha pedida ({parametros.GAP_MILP:.0%}) en {parametros.TIEMPO_LIMITE_MILP_S} s: "
-             f"{sin_gap if sin_gap else 'ninguna'}. La brecha es la distancia entre la mejor solucion y la cota de Gurobi: la solucion "
+             f"{sin_gap if sin_gap else 'ninguna'}. **Resueltas al optimo (brecha <= 1%): {con_gap if con_gap else 'ninguna'}.** La brecha es la distancia entre la mejor solucion y la cota de Gurobi: la solucion "
              "es factible y verificada, pero su optimalidad solo esta certificada hasta esa brecha (la ganancia real es al menos la medida).")
+    L.append("- **Regla declarada antes de correr:** solo se llama 'resuelta al optimo' a una instancia con brecha <= 1% certificada por Gurobi; "
+             "las demas son soluciones factibles verificadas, con su brecha en % y en USD y la cota de reservas (`reservas_cota`: ningun programa de carga "
+             "puede tener menos reservas, calculada con una relajacion en segundos).")
     L.append("")
     L.append("## Representatividad de la instancia")
     L.append("")
@@ -740,6 +803,7 @@ def escribir_reporte(ns, comp, inst, tiempos, rep, c, semilla):
     L.append("")
     L.append("- Las jornadas reconstruidas sin cargas calzan con el VSP (kWh por jornada).")
     L.append("- Cobertura y balance de energia del simulador sobre la instancia (los de `10-carga_reactiva.py`).")
+    L.append("- El programa del MILP se ejecuta minuto a minuto: respeta los puestos y sus reservas reales son menores o iguales a las de bloques; la cota de reservas es menor o igual a las del MILP.")
     L.append("- La reactiva en bloques es factible para el MILP y se evalua con la misma funcion que la solucion del MILP.")
     L.append("- Solucion del MILP: energia exacta por bus, no mas de 45 kWh por bloque, bloques dentro de las 24 h desde la llegada, "
              "fuera de la ventana solo con reserva, puestos respetados en cada bloque, costo recalculado coherente con el objetivo y la cota de Gurobi.")

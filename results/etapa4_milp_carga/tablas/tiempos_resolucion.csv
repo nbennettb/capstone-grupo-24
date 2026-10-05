@@ -1,6 +1,7 @@
-N_objetivo;buses;segundos;estado;brecha_pct;cota_inferior_usd;objetivo_usd
-30;34;600.1;limite de tiempo;3.043;1562.27;1611.29
-50;55;600.1;limite de tiempo;3.767;4040.14;4198.28
-100;106;600.1;limite de tiempo;4.833;8134.06;8547.16
-200;210;600.3;limite de tiempo;5.328;16657.89;17595.42
-400;404;600.4;limite de tiempo;14.591;33351.56;39049.33
+N_objetivo;buses;segundos;estado;brecha_pct;cota_inferior_usd;objetivo_usd;brecha_usd;resuelta_optimo
+10;9;2.6;optimo;0.262;252.18;252.84;0.66;1
+30;34;600.1;limite de tiempo;1.377;1589.92;1612.12;22.2;0
+50;55;600.1;limite de tiempo;2.023;4113.57;4198.51;84.94;0
+100;106;600.2;limite de tiempo;2.707;8277.06;8507.35;230.29;0
+200;210;600.3;limite de tiempo;1.935;16931.27;17265.44;334.17;0
+400;404;601.9;limite de tiempo;8.606;32517.14;35579.25;3062.11;0

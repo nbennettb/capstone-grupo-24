@@ -318,7 +318,7 @@ interesante, lo que no probaría el modelo.
    | 400 | ~15.000 | 38 |
    | 800 | ~30.000 | 75 |
 
-> **Nota (04/10):** con la razón medida (0,0584 puestos por bus) los puestos son 3 / 12 / 23 para N = 50 / 200 / 400 (no 5 / 19 / 38), y se agregaron N = 30 y 100 a la escalera; ver `02`, B12.
+> **Nota (04/10):** con la razón medida (0,0584 puestos por bus) los puestos son 3 / 12 / 23 para N = 50 / 200 / 400 (no 5 / 19 / 38), y se agregaron N = 10, 30 y 100 a la escalera (N = 20 es inválida); ver `02`, B12.
 
    Se corre una **escalera de tres tamaños (50 / 200 / 400)**. El profesor habló de "instancias
    pequeñas", en plural; y mostrar cómo escala el tiempo es un resultado en sí mismo y la
@@ -445,7 +445,7 @@ sostiene con "no pagaríamos ~93% de la energía".
 - [x] Etapa 1 regenerada bajo ciclo diario; C2 con la carga corregida (C7) validada contra la energía real de las jornadas; mapas y tablas actualizados.
 - [x] Escenarios E0 y E1 (C1b, terminales unidos), LB, las evidencias de terminales separados (E0_sep, E1_sep) y las variantes C2 (E1_C2, E1_C2_sep) corridos, con retorno verificado y cobertura exacta.
 - [x] Simulador reactivo corrido sobre los escenarios, con energía, colas, jornadas partidas, buses de reserva (condición cíclica como restricción) y cota LP. **Caso base factible: E0 (3.958.063 USD/día) y E1 (3.751.250).**
-- [x] MILP resuelto en la escalera de instancias (N = 30 a 400), no trivial, con costo ≤ reactivo en todas. **Salvedad:** la brecha quedó en 3,0-14,6%, no en el 1% pedido (`02`, C10); la ganancia se reporta como cota inferior.
+- [x] MILP resuelto en la escalera de instancias (N = 10 a 400), no trivial, con costo ≤ reactivo en todas. **Salvedad:** la brecha quedó en 1,4-8,6% salvo N = 10 (óptimo); solo N = 10 certifica el 1% (`02`, C10); la ganancia se reporta como cota inferior.
 - [x] Calibración del deadhead (Bloque B) y sensibilidad de la flota al factor y al layover (Bloque C).
 - [x] Análisis de recargas según el nivel: barrido de niveles con la regla de B6 (`13-barrido_niveles.py`); nivel base 100%.
 - [ ] Tabla de KPIs de todos los escenarios, con CSV y gráficos.

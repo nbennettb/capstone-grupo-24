@@ -5,7 +5,8 @@
 > [`04_bitacora.md`](04_bitacora.md)). Si te sumas al proyecto: lee primero
 > [`00_contexto_entrega1.md`](00_contexto_entrega1.md) (qué se entregó en el Informe 1), luego este
 > documento, luego [`02_supuestos_y_decisiones.md`](02_supuestos_y_decisiones.md) (por qué cada
-> supuesto) y [`05_plan_entrega2.md`](05_plan_entrega2.md) (qué falta hacer).
+> supuesto), [`05_plan_entrega2.md`](05_plan_entrega2.md) (qué falta hacer) y
+> [`06_formulacion_matematica.md`](06_formulacion_matematica.md) (todos los modelos, con cada restricción explicada).
 >
 > Cada afirmación lleva su origen: **[Profesor]** lo dijo el profesor, **[Dato]** viene de los datos
 > del curso, **[Medido]** lo calculamos con los datos, **[Decisión]** lo decidimos nosotros.

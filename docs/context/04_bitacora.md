@@ -11,6 +11,14 @@
 
 ---
 
+### 05/10/2026 (tarde) — Radio de interlining: de "decisión de tamaño" a sensibilidad medida
+
+1. Un compañero observó que el radio de 3 km no estaba justificado. Era cierto: en `02` figuraba como [Propio] y su sensibilidad (1 / 5 km) estaba planificada pero nunca se corrió.
+2. **Mi primera lectura fue incorrecta:** de las conexiones usadas en E1 (mediana 0,1 km, 0,7% sobre 2,9 km) deduje que el radio "casi no se notaba". Esas conexiones están acotadas por el propio radio, así que no prueban nada.
+3. **Regla declarada antes de correr:** si pasar de 3 a 5 km baja la flota de E1 menos de 1%, se mantiene 3 km; si no, se reporta como limitación sin tocar el caso base.
+4. **Resultado:** 1 km → 8.198 buses (+11,3%); 2 → 7.577; **3 → 7.366**; 4 → 7.201; 5 → 7.118 (−3,4%). Tiempo de cómputo de ~20 s a ~120 s. La regla no se cumple: el radio condiciona la flota, con retornos decrecientes.
+5. **Decisión:** se mantiene 3 km (rehacer la carga con jornadas más largas no cabe antes de la presentación); queda como limitación y mejora para la entrega final (`02`, C12). El ahorro del interlining medido es un piso: con 5 km sería −17,7% de flota frente a E0 (contra −14,9%).
+
 ### 05/10/2026 — Bloque F: KPIs, justificaciones e índice de figuras
 
 1. **`scripts/12-kpis_comparacion.py`:** tabla de KPIs de E0, E1 y LB, desglose del costo (espera separada en entre viajes y por puesto), precio de la descomposición y valor del MILP por instancia. Todos los chequeos pasan

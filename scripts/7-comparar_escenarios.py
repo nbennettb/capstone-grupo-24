@@ -24,7 +24,7 @@ Sensibilidad (sobre E1): factor de desvio del deadhead y layover.
 
 Requiere haber corrido antes (ver docstring de 6-):
     E0, E1, LB, E0_sep, E1_sep, E1_C2, E1_C2_sep -> tablas/resumen_escenarios.csv
-    E1_f1.2, E1_f1.35, E1_f1.5, E1_l0, E1_l10 (con --sin-jornadas y --unir-electroterminales)
+    E1_f1.2, E1_f1.35, E1_f1.5, E1_l0, E1_l10, E1_r1, E1_r2, E1_r4, E1_r5 (con --sin-jornadas y --unir-electroterminales)
                                                   -> tablas/resumen_sensibilidad.csv
 
 Input:  results/etapa2_vsp/tablas/{resumen_escenarios,resumen_sensibilidad}.csv,
@@ -81,6 +81,11 @@ SENSIBILIDAD = [  # (etiqueta, parametro, valor)
     ("E1_l0", "layover (min)", 0),
     ("E1", "layover (min)", 3),
     ("E1_l10", "layover (min)", 10),
+    ("E1_r1", "radio de interlining (km)", 1),
+    ("E1_r2", "radio de interlining (km)", 2),
+    ("E1", "radio de interlining (km)", 3),
+    ("E1_r4", "radio de interlining (km)", 4),
+    ("E1_r5", "radio de interlining (km)", 5),
 ]
 
 
@@ -136,7 +141,8 @@ def construir_sensibilidad(esc, sens):
                       "delta_buses_vs_base_pct": round((r["buses"] / base["buses"] - 1) * 100, 2),
                       "cost_operacion_usd": r["cost_operacion_usd"],
                       "delta_costo_vs_base_pct": round((r["cost_operacion_usd"] / base["cost_operacion_usd"] - 1) * 100, 2),
-                      "km_vacios_total": r["km_vacios_total"], "pct_km_vacios": r["pct_km_vacios"]})
+                      "km_vacios_total": r["km_vacios_total"], "pct_km_vacios": r["pct_km_vacios"],
+                      "tiempo_computo_s": round(float(r["tiempo_computo_s"]), 1)})
     return pd.DataFrame(filas)
 
 
@@ -204,9 +210,9 @@ def graficar_escalera_costo(t, path_png):
 
 
 def graficar_sensibilidad(s, path_png):
-    fig, axs = plt.subplots(1, 2, figsize=(11, 4.8))
-    for ax, param, xlab in zip(axs, ("factor de desvio", "layover (min)"),
-                               ("Factor de desvio del deadhead", "Layover minimo (min)")):
+    fig, axs = plt.subplots(1, 3, figsize=(15, 4.8))
+    for ax, param, xlab in zip(axs, ("factor de desvio", "layover (min)", "radio de interlining (km)"),
+                               ("Factor de desvio del deadhead", "Layover minimo (min)", "Radio maximo de interlining (km)")):
         d = s[s["parametro"] == param].sort_values("valor")
         ax.plot(d["valor"], d["buses"], "o-", color="#2c6e8f", linewidth=1.8, markersize=6)
         base = d[d["delta_buses_vs_base"] == 0].iloc[0]
@@ -221,8 +227,8 @@ def graficar_sensibilidad(s, path_png):
         ax.set_ylim(ymin - (ymax - ymin) * 0.15, ymax + (ymax - ymin) * 0.2)
         estilo(ax)
     axs[0].legend(frameon=False, loc="lower right")
-    fig.suptitle("Sensibilidad de la flota (E1) al deadhead: el factor mueve poco, el layover mucho mas\n"
-                 "(mismo eje vertical en ambos paneles)")
+    fig.suptitle("Sensibilidad de la flota (E1): el factor de desvio mueve poco; el layover y el radio de interlining, mucho mas\n"
+                 "(mismo eje vertical en los tres paneles)")
     fig.tight_layout()
     fig.savefig(path_png, dpi=150)
     plt.close(fig)
@@ -282,6 +288,7 @@ def escribir_reporte(t, s, esc):
                                           esc.loc["E1_C2_sep", "cost_operacion_usd"] - esc.loc["E1_sep", "cost_operacion_usd"]]
     base_f = s[s["parametro"] == "factor de desvio"]
     base_l = s[s["parametro"] == "layover (min)"]
+    base_r = s[s["parametro"] == "radio de interlining (km)"].set_index("valor")
     lineas = [
         "# Reporte Etapa 2 - Asignacion de buses (VSP, sin bateria)",
         "",
@@ -344,8 +351,14 @@ def escribir_reporte(t, s, esc):
         "cambiarlo tambien cambia que encadenamientos se permiten. 1,35 es el valor medido a la escala de pullout/pullin "
         "(Bloque B).",
         f"- **Layover** (0 a 10 min): la flota varia {base_l['delta_buses_vs_base_pct'].min():+.1f}% a "
-        f"{base_l['delta_buses_vs_base_pct'].max():+.1f}%: el supuesto mas sensible de la Etapa 2. Esta sin calibrar "
+        f"{base_l['delta_buses_vs_base_pct'].max():+.1f}%: uno de los dos supuestos mas sensibles de la Etapa 2 (con el radio de interlining). Esta sin calibrar "
         "(3 min, decision nuestra); es la mejor candidata a declarar como limitacion y a calibrar despues.",
+        f"- **Radio de interlining** (1 a 5 km): la flota va de {mi(base_r.loc[1, 'buses'])} ({base_r.loc[1, 'delta_buses_vs_base_pct']:+.1f}%) con 1 km a "
+        f"{mi(base_r.loc[5, 'buses'])} ({base_r.loc[5, 'delta_buses_vs_base_pct']:+.1f}%) con 5 km, frente a {mi(base_r.loc[3, 'buses'])} con el 3 km del modelo; el costo de operacion "
+        f"{base_r.loc[1, 'delta_costo_vs_base_pct']:+.1f}% a {base_r.loc[5, 'delta_costo_vs_base_pct']:+.1f}%, y el tiempo de computo pasa de {base_r.loc[1, 'tiempo_computo_s']:.0f} s a "
+        f"{base_r.loc[5, 'tiempo_computo_s']:.0f} s. Los retornos son decrecientes (cada km extra ahorra menos buses que el anterior). **No es un supuesto inocuo:** "
+        "el 3 km es una decision de tamano del modelo (acota los arcos y el tiempo), no una medicion; ampliarlo mejora el VSP y queda como mejora para la entrega final "
+        "(habria que rehacer la carga con jornadas mas largas).",
         "",
         "## Energia por jornada (descriptivo)",
         "",
@@ -369,7 +382,7 @@ def escribir_reporte(t, s, esc):
         "Graficos (`graficos/`):",
         "- `escalera_buses.png`: buses por escenario, con el efecto de cada escalon y la cota teorica.",
         "- `escalera_costo.png`: costo de operacion apilado (flota / km vacios / espera) y de donde viene el ahorro.",
-        "- `sensibilidad_deadhead.png`: flota vs factor de desvio y vs layover.",
+        "- `sensibilidad_deadhead.png`: flota vs factor de desvio, vs layover y vs radio de interlining.",
         "- `energia_por_jornada_E0_E1.png`: energia por jornada contra la bateria util de cada nivel.",
         "- `jornadas_<escenario>.png`: histogramas de energia y duracion de cada escenario.",
         "",

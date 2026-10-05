@@ -43,18 +43,24 @@ C2 mueve 5 rutas respecto de C1b para respetar la capacidad de carga de Los Espi
 
 ## Sensibilidad del deadhead (sobre E1)
 
-| parametro        |   valor |   buses |   delta_buses_vs_base |   delta_buses_vs_base_pct |   cost_operacion_usd |   delta_costo_vs_base_pct |   km_vacios_total |   pct_km_vacios |
-|:-----------------|--------:|--------:|----------------------:|--------------------------:|---------------------:|--------------------------:|------------------:|----------------:|
-| factor de desvio |    1.2  |    7294 |                   -72 |                     -0.98 |          1.94436e+06 |                     -1.32 |            167926 |           11.1  |
-| factor de desvio |    1.3  |    7366 |                     0 |                      0    |          1.97026e+06 |                      0    |            182834 |           11.96 |
-| factor de desvio |    1.35 |    7401 |                    35 |                      0.48 |          1.98272e+06 |                      0.63 |            190362 |           12.4  |
-| factor de desvio |    1.5  |    7441 |                    75 |                      1.02 |          2.00413e+06 |                      1.72 |            212121 |           13.62 |
-| layover (min)    |    0    |    7161 |                  -205 |                     -2.78 |          1.91707e+06 |                     -2.7  |            178706 |           11.73 |
-| layover (min)    |    3    |    7366 |                     0 |                      0    |          1.97026e+06 |                      0    |            182834 |           11.96 |
-| layover (min)    |   10    |    7810 |                   444 |                      6.03 |          2.08694e+06 |                      5.92 |            191992 |           12.49 |
+| parametro                 |   valor |   buses |   delta_buses_vs_base |   delta_buses_vs_base_pct |   cost_operacion_usd |   delta_costo_vs_base_pct |   km_vacios_total |   pct_km_vacios |   tiempo_computo_s |
+|:--------------------------|--------:|--------:|----------------------:|--------------------------:|---------------------:|--------------------------:|------------------:|----------------:|-------------------:|
+| factor de desvio          |    1.2  |    7294 |                   -72 |                     -0.98 |          1.94436e+06 |                     -1.32 |            167926 |           11.1  |               54.7 |
+| factor de desvio          |    1.3  |    7366 |                     0 |                      0    |          1.97026e+06 |                      0    |            182834 |           11.96 |               23.7 |
+| factor de desvio          |    1.35 |    7401 |                    35 |                      0.48 |          1.98272e+06 |                      0.63 |            190362 |           12.4  |               19.7 |
+| factor de desvio          |    1.5  |    7441 |                    75 |                      1.02 |          2.00413e+06 |                      1.72 |            212121 |           13.62 |               16.2 |
+| layover (min)             |    0    |    7161 |                  -205 |                     -2.78 |          1.91707e+06 |                     -2.7  |            178706 |           11.73 |               17.2 |
+| layover (min)             |    3    |    7366 |                     0 |                      0    |          1.97026e+06 |                      0    |            182834 |           11.96 |               23.7 |
+| layover (min)             |   10    |    7810 |                   444 |                      6.03 |          2.08694e+06 |                      5.92 |            191992 |           12.49 |               16.1 |
+| radio de interlining (km) |    1    |    8198 |                   832 |                     11.3  |          2.18778e+06 |                     11.04 |            198414 |           12.85 |               20.2 |
+| radio de interlining (km) |    2    |    7577 |                   211 |                      2.86 |          2.02555e+06 |                      2.81 |            186212 |           12.16 |               38.8 |
+| radio de interlining (km) |    3    |    7366 |                     0 |                      0    |          1.97026e+06 |                      0    |            182834 |           11.96 |               23.7 |
+| radio de interlining (km) |    4    |    7201 |                  -165 |                     -2.24 |          1.92744e+06 |                     -2.17 |            180457 |           11.83 |               79.3 |
+| radio de interlining (km) |    5    |    7118 |                  -248 |                     -3.37 |          1.906e+06   |                     -3.26 |            179198 |           11.75 |              119.5 |
 
 - **Factor de desvio** (1,2 a 1,5): la flota varia -1.0% a +1.0% y el costo -1.3% a +1.7%. El 1,3 importa poco para el tamano de la flota. Ojo: el radio de interlining (3 km) se compara contra la distancia ya multiplicada por el factor, asi que cambiarlo tambien cambia que encadenamientos se permiten. 1,35 es el valor medido a la escala de pullout/pullin (Bloque B).
-- **Layover** (0 a 10 min): la flota varia -2.8% a +6.0%: el supuesto mas sensible de la Etapa 2. Esta sin calibrar (3 min, decision nuestra); es la mejor candidata a declarar como limitacion y a calibrar despues.
+- **Layover** (0 a 10 min): la flota varia -2.8% a +6.0%: uno de los dos supuestos mas sensibles de la Etapa 2 (con el radio de interlining). Esta sin calibrar (3 min, decision nuestra); es la mejor candidata a declarar como limitacion y a calibrar despues.
+- **Radio de interlining** (1 a 5 km): la flota va de 8.198 (+11.3%) con 1 km a 7.118 (-3.4%) con 5 km, frente a 7.366 con el 3 km del modelo; el costo de operacion +11.0% a -3.3%, y el tiempo de computo pasa de 20 s a 120 s. Los retornos son decrecientes (cada km extra ahorra menos buses que el anterior). **No es un supuesto inocuo:** el 3 km es una decision de tamano del modelo (acota los arcos y el tiempo), no una medicion; ampliarlo mejora el VSP y queda como mejora para la entrega final (habria que rehacer la carga con jornadas mas largas).
 
 ## Energia por jornada (descriptivo)
 
@@ -79,7 +85,7 @@ Tablas (`tablas/`):
 Graficos (`graficos/`):
 - `escalera_buses.png`: buses por escenario, con el efecto de cada escalon y la cota teorica.
 - `escalera_costo.png`: costo de operacion apilado (flota / km vacios / espera) y de donde viene el ahorro.
-- `sensibilidad_deadhead.png`: flota vs factor de desvio y vs layover.
+- `sensibilidad_deadhead.png`: flota vs factor de desvio, vs layover y vs radio de interlining.
 - `energia_por_jornada_E0_E1.png`: energia por jornada contra la bateria util de cada nivel.
 - `jornadas_<escenario>.png`: histogramas de energia y duracion de cada escenario.
 

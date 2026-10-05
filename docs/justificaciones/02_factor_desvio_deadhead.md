@@ -51,6 +51,16 @@ buses estimados), así que corresponde a 5-15 km.
    factibilidad del interlining, que ocurre a distancias cortas donde el 1,3 es holgado.
 4. No usamos OSM por ahora: agregaría una caja negra y no cambia la conclusión de orden de magnitud.
 
+## Sobre el radio de interlining (3 km)
+
+- **[Propio]** El radio máximo para encadenar viajes de rutas distintas (3 km) se eligió para acotar el tamaño del problema: sin un límite habría que considerar casi todos los pares de viajes (miles de millones de arcos).
+  No es una medición. Se compara contra la distancia ya multiplicada por 1,3, así que equivale a ~2,3 km en línea recta (~9 min a 20 km/h).
+- **[Medido]** Sensibilidad sobre E1: 1 km → 8.198 buses (+11,3%), 2 km → 7.577 (+2,9%), **3 km → 7.366**, 4 km → 7.201 (−2,2%), 5 km → 7.118 (−3,4%); el tiempo de cómputo pasa de ~20 s a ~120 s.
+  Los retornos son decrecientes: cada km extra ahorra menos buses que el anterior.
+- **Cómo lo interpretamos [Propio]:** el radio **no es inocuo**; es una decisión de tamaño del modelo y su efecto es del mismo orden que el del layover. Lo mantenemos porque ampliarlo exigiría rehacer la carga con jornadas más largas, y lo
+  declaramos como limitación y mejora para la entrega final. Sirve en una dirección: el ahorro del interlining que reportamos es un piso (con 5 km, E1 usaría 17,7% menos flota que E0, contra 14,9% con 3 km).
+  LB usa el mismo radio, así que el +4,4% de E1 sobre LB es a igual radio.
+
 ## Limitaciones
 
 - Los buses circulan por avenidas principales: el factor podría subestimar el de un par

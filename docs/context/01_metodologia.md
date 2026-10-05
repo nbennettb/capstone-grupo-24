@@ -253,7 +253,7 @@ entera**, exacta y rápida (~40 s sobre toda la red).
   solo 5 rutas respecto de C1b, así que el VSP casi no cambia: el VSP no ve la capacidad.
 - **Sensibilidad del deadhead (sobre E1) [Medido]:** el factor de desvío (1,2 a 1,5) mueve la flota entre
   −1,0% y +1,0%; el layover (0 a 10 min) entre −2,8% y +6,0%. El 1,3 importa poco para el tamaño de la
-  flota; el layover (3 min, sin calibrar) es el supuesto más sensible de la Etapa 2.
+  flota; el layover (3 min, sin calibrar) es uno de los dos supuestos más sensibles de la Etapa 2. El **radio de interlining** (3 km, elegido para acotar el modelo) también condiciona la flota: 1 km → +11,3%, 5 km → −3,4% (7.118 buses), con retornos decrecientes y un tiempo de cómputo de ~20 s a ~120 s; se mantiene 3 km y se declara como limitación (`02`, C12).
 - **Script:** `scripts/6-vsp_asignacion_buses.py` (+ `7-comparar_escenarios.py`) · **Salida:**
   `data-processed/jornadas_{E0,E1,LB,E0_sep,E1_sep,E1_C2,E1_C2_sep}.csv`, `results/etapa2_vsp/`.
 

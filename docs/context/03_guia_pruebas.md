@@ -179,13 +179,14 @@ python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-proces
 python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --sin-jornadas --factor-desvio 1.5  --etiqueta E1_f1.5
 python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --sin-jornadas --layover 0  --etiqueta E1_l0
 python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --sin-jornadas --layover 10 --etiqueta E1_l10
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --sin-jornadas --radio 1 --etiqueta E1_r1   # y --radio 2, 4, 5 (E1_r2, E1_r4, E1_r5)
 
 python scripts/7-comparar_escenarios.py
 ```
 
 Cifras de referencia (04/10): **E0 8.654 · E1 7.366 · LB 7.055** buses; costo de operación 2,31 / 1,97 / 1,87 millones de
 USD/día. Separados: E0_sep 8.654 · E1_sep 7.460. Variantes C2: E1_C2 7.366 · E1_C2_sep 7.462. Sensibilidad de E1: factor
-1,2 / 1,35 / 1,5 → 7.294 / 7.401 / 7.441; layover 0 / 10 min → 7.161 / 7.810. Cada corrida verifica cobertura exacta
+1,2 / 1,35 / 1,5 → 7.294 / 7.401 / 7.441; layover 0 / 10 min → 7.161 / 7.810; radio de interlining 1 / 2 / 4 / 5 km → 8.198 / 7.577 / 7.201 / 7.118 (3 km: 7.366). Cada corrida verifica cobertura exacta
 (cada `expedicion_id` en una sola jornada) y retorno al electroterminal (en LB solo lo cuenta: 4.192 de 7.055 jornadas
 no vuelven, por eso es cota inferior). `7-` falla si no se cumple `E0 >= E1 >= LB >= 6.539`, si E0 y E1 no se corrieron
 con C1b y los electroterminales 3 y 5 unidos, o si unir cambia E0 (en modo `ruta` no debe cambiar el VSP).

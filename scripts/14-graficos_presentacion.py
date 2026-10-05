@@ -7,14 +7,14 @@ el mensaje en el titulo, leyenda y coma decimal), cada una con su CSV.
 
   G1  Demanda de buses por hora y periodos tarifarios        (lamina 1)
   G2  Cierre ida-vuelta de las rutas                          (lamina 2)
-  G3  Mapa simple de los 5 electroterminales                  (lamina 2)
+  G3  Mapa de los 5 electroterminales sobre la red de buses    (lamina 2)
   G4  Diagrama de la metodologia por etapas                   (lamina 3)
   G5  Buses en el patio vs puestos ocupados, por hora         (lamina 8)
   G6  Barrido de niveles de bateria en un panel               (lamina 9)
   G7  Reservas por tamano de instancia: simulador, MILP, piso (lamina 10)
 
 Input:  results/etapa0_preprocesamiento/concurrencia_por_minuto.csv, data-processed/rutas_ida_vuelta.csv,
-        data-filtrado/{depots,electricity_prices}.csv, results/etapa3_carga_reactiva/tablas/{jornadas,ocupacion}_E1_soc100.csv,
+        data-filtrado/{depots,electricity_prices,shapes_bus,trips_dia_L}.csv, data-alumnos/chile.gpkg (fondo; opcional), results/etapa3_carga_reactiva/tablas/{jornadas,ocupacion}_E1_soc100.csv,
         results/etapa3_carga_reactiva/barrido/tablas/barrido_niveles.csv,
         results/etapa4_milp_carga/tablas/{comparacion_reactiva_milp,instancias,tiempos_resolucion}.csv
 Output: results/presentacion/graficos/G<k>_<nombre>.png y results/presentacion/tablas/G<k>_<nombre>.csv, reporte.md
@@ -136,41 +136,141 @@ def g2_ida_vuelta():
 
 
 # --------------------------------------------------------------------------- #
+def _cargar_modulo_mapas():
+    """Importa scripts/8-clustering_comparacion.py (nombre con numero) para reutilizar el fondo de comunas y los trazados."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("clustering_comparacion", Path(__file__).resolve().parent / "8-clustering_comparacion.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _red_minima(dist):
+    """Arbol de expansion minima (Kruskal) sobre la matriz de distancias: devuelve los pares (i, j) de la red."""
+    n = len(dist)
+    padre = list(range(n))
+
+    def raiz(a):
+        while padre[a] != a:
+            padre[a] = padre[padre[a]]
+            a = padre[a]
+        return a
+    aristas = sorted((dist[i, j], i, j) for i in range(n) for j in range(i + 1, n))
+    red = []
+    for d, i, j in aristas:
+        ri, rj = raiz(i), raiz(j)
+        if ri != rj:
+            padre[ri] = rj
+            red.append((i, j))
+    return red
+
+
 def g3_mapa_electroterminales():
     dep = pd.read_csv(DATA_FILTRADO / "depots.csv", sep=CSV_SEP)
     n = len(dep)
     dist = np.array([[geo.haversine_km(dep.lat[i], dep.lon[i], dep.lat[j], dep.lon[j]) for j in range(n)] for i in range(n)])
-    pares = [(dist[i, j], dep.nombre[i], dep.nombre[j]) for i in range(n) for j in range(i + 1, n)]
-    pares.sort()
-    pd.DataFrame(pares, columns=["distancia_km", "electroterminal_a", "electroterminal_b"]).round(2).to_csv(
+    red = _red_minima(dist)
+    en_red = {(min(i, j), max(i, j)) for i, j in red}
+    pares = sorted((dist[i, j], dep.nombre[i], dep.nombre[j], int((min(i, j), max(i, j)) in en_red)) for i in range(n) for j in range(i + 1, n))
+    pd.DataFrame(pares, columns=["distancia_km", "electroterminal_a", "electroterminal_b", "en_red_minima"]).round(2).to_csv(
         TABLAS / "G3_distancias_electroterminales.csv", index=False, sep=CSV_SEP)
-    d1, a1, b1 = pares[0]
+    d1, a1, b1, _ = pares[0]
     d2 = pares[1][0]
     assert {a1, b1} == {"Los Espinos", "Santa Rosa"}, "El par mas cercano no es Los Espinos - Santa Rosa."
-    fig, ax = plt.subplots(figsize=(8.5, 7))
-    lat0 = dep.lat.mean()
-    X = (dep.lon - dep.lon.mean()) * 111.32 * np.cos(np.radians(lat0))
-    Y = (dep.lat - lat0) * 110.57
+    assert len(red) == n - 1, "La red minima de los electroterminales no tiene n - 1 tramos."
+    resto = [d for d, _, _, _ in pares[2:]]
+
+    m8 = _cargar_modulo_mapas()
+    rutas = m8.cargar_geometria_rutas()
+    try:
+        comunas = m8.cargar_fondo_comunas()
+    except Exception as e:                                         # sin chile.gpkg el mapa se dibuja solo con la red de buses
+        print(f"  [aviso] sin fondo de comunas ({type(e).__name__}); se dibuja solo la red de buses.")
+        comunas = None
+    x0, y0, x1, y1 = m8.BBOX_MAPA
+    lat0 = float(dep.lat.mean())
+    k = np.cos(np.radians(lat0))                                    # km por grado de lon = 111,32 k ; por grado de lat = 110,57
+    fig, ax = plt.subplots(figsize=(9, 9.6))
+    if comunas is not None:
+        comunas.boundary.plot(ax=ax, color="#d5d5d5", linewidth=0.5, zorder=0)
+    rutas.plot(ax=ax, color="#aebac3", linewidth=0.35, alpha=0.6, zorder=1)
+
     i_le, i_sr = dep.index[dep.nombre == "Los Espinos"][0], dep.index[dep.nombre == "Santa Rosa"][0]
+    # red minima: distancias entre los demas terminales (linea recta)
+    for i, j in red:
+        par_cercano = {i, j} == {i_le, i_sr}
+        ax.plot([dep.lon[i], dep.lon[j]], [dep.lat[i], dep.lat[j]], color=ROJO if par_cercano else "#444444",
+                linewidth=3.5 if par_cercano else 1.8, linestyle="-" if par_cercano else (0, (4, 3)), zorder=3)
+        if not par_cercano:
+            mx, my = (dep.lon[i] + dep.lon[j]) / 2, (dep.lat[i] + dep.lat[j]) / 2
+            ax.text(mx, my, f"{coma(dist[i, j], 1)} km", fontsize=11.5, fontweight="bold", color="#222222", ha="center", va="center", zorder=5,
+                    bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="#444444", lw=0.8, alpha=0.95))
     for i in range(n):
         unido = i in (i_le, i_sr)
-        ax.scatter(X[i], Y[i], s=dep.capacity[i] * (3.5 if unido else 6), color=ROJO if unido else AZUL, alpha=0.85, zorder=2, edgecolor="white", linewidth=1.5)
-        dx = {"Los Espinos": (-1.0, 0.9), "Santa Rosa": (-1.0, -1.3)}.get(dep.nombre[i], (1.2, 0.4))
-        ax.text(X[i] + dx[0], Y[i] + dx[1], f"{dep.nombre[i]}\n{dep.capacity[i]} puestos", fontsize=11,
-                ha="right" if dep.nombre[i] in ("Los Espinos", "Santa Rosa") else "left", va="center")
-    ax.text((X[i_le] + X[i_sr]) / 2 + 1.0, (Y[i_le] + Y[i_sr]) / 2, f"{coma(d1, 1)} km", color=ROJO, fontsize=13, fontweight="bold", va="center")
-    ax.set_aspect("equal")
-    ax.set_xlim(X.min() - 9, X.max() + 9)
-    ax.set_ylim(Y.min() - 4, Y.max() + 4)
-    ax.set_xlabel("km (oeste - este)")
-    ax.set_ylabel("km (sur - norte)")
+        ax.scatter(dep.lon[i], dep.lat[i], s=dep.capacity[i] * (2.2 if unido else 4.5), color=ROJO if unido else AZUL, alpha=0.95, zorder=4,
+                   edgecolor="white", linewidth=1.5)
+    desplaz = {"Vespucio Norte": (0.012, 0.012, "left"), "El Conquistador": (-0.012, -0.018, "right"), "La Reina": (0.012, 0.010, "left")}
+    for i in range(n):
+        nom = dep.nombre[i]
+        if nom in desplaz:
+            dx, dy, ha = desplaz[nom]
+            ax.text(dep.lon[i] + dx, dep.lat[i] + dy, f"{nom}\n{dep.capacity[i]} puestos", fontsize=11, ha=ha, va="center", zorder=6,
+                    bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="none", alpha=0.85))
+    cx, cy = (dep.lon[i_le] + dep.lon[i_sr]) / 2, (dep.lat[i_le] + dep.lat[i_sr]) / 2
+    ax.text(cx - 0.014, cy - 0.003, f"Los Espinos + Santa Rosa\n{dep.capacity[i_le] + dep.capacity[i_sr]} puestos (unidos)", fontsize=11, ha="right", va="center", zorder=6,
+            color=ROJO, fontweight="bold", bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="none", alpha=0.9))
+    # referencia de ubicacion: centro de Santiago
+    ax.plot(-70.6506, -33.4378, marker="+", color="black", markersize=11, markeredgewidth=2, zorder=5)
+    ax.text(-70.6506 + 0.008, -33.4378 + 0.011, "Centro de Santiago", fontsize=9.5, ha="left", va="bottom", zorder=6,
+            bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="none", alpha=0.8))
+    ax.set_xlim(x0, x1)
+    ax.set_ylim(y0, y1)
+    ax.set_aspect(1 / k)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for lado in ax.spines.values():
+        lado.set_color("#999999")
+    # escala de 5 km y norte
+    largo = 5 / (111.32 * k)
+    bx, by = x1 - 0.03 - largo, y0 + 0.04
+    ax.plot([bx, bx + largo], [by, by], color="black", linewidth=3, zorder=6)
+    ax.text(bx + largo / 2, by + 0.008, "5 km", ha="center", va="bottom", fontsize=11, zorder=6)
+    ax.annotate("N", xy=(x0 + 0.04, y1 - 0.125), xytext=(x0 + 0.04, y1 - 0.185), ha="center", va="center", fontsize=13, fontweight="bold",
+                arrowprops=dict(arrowstyle="-|>", color="black", lw=1.8), zorder=6)
+    # recuadro resumen de distancias
+    ax.text(x0 + 0.012, y1 - 0.012,
+            "Distancia en linea recta\nentre electroterminales:\n"
+            f"  par mas cercano: {coma(d1, 1)} km (rojo)\n  siguiente: {coma(d2, 1)} km\n  resto: {coma(min(resto), 0)} a {coma(max(resto), 0)} km",
+            fontsize=10.5, ha="left", va="top", zorder=6, bbox=dict(boxstyle="round,pad=0.4", fc="white", ec="#999999", lw=0.8, alpha=0.95))
+    # zoom de los dos patios unidos
+    ins = ax.inset_axes([0.02, 0.03, 0.30, 0.27])
+    h = 0.014
+    ins.set_xlim(cx - h, cx + h)
+    ins.set_ylim(cy - h * 0.95, cy + h * 0.95)
+    ins.set_aspect(1 / k)
+    rutas.plot(ax=ins, color="#aebac3", linewidth=0.5, alpha=0.6)
+    ins.plot([dep.lon[i_le], dep.lon[i_sr]], [dep.lat[i_le], dep.lat[i_sr]], color=ROJO, linewidth=3.5, zorder=3)
+    for i in (i_le, i_sr):
+        ins.scatter(dep.lon[i], dep.lat[i], s=dep.capacity[i] * 3.2, color=ROJO, edgecolor="white", linewidth=1.5, zorder=4)
+        ins.text(dep.lon[i] + 0.0045, dep.lat[i], f"{dep.nombre[i]}\n{dep.capacity[i]} puestos", fontsize=9.5, va="center", ha="left", zorder=5,
+                 bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.85))
+    ins.text(cx - 0.0015, cy, f"{coma(d1, 1)} km", color=ROJO, fontsize=12, fontweight="bold", ha="right", va="center", zorder=5,
+             bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.9))
+    ins.set_xticks([])
+    ins.set_yticks([])
+    ins.set_title("Zoom: los dos patios unidos", fontsize=10, loc="left")
+    ax.indicate_inset_zoom(ins, edgecolor="#666666", linewidth=1)
     ax.set_title(f"Los Espinos y Santa Rosa estan a {coma(d1, 1)} km (el siguiente par, a {coma(d2, 1)} km):\n"
-                 f"se tratan como un solo electroterminal de {dep.capacity[i_le] + dep.capacity[i_sr]} puestos", loc="left")
-    ax.scatter([], [], s=80, color=AZUL, label="Electroterminal (tamano = puestos)")
-    ax.scatter([], [], s=80, color=ROJO, label="Unidos en el modelo")
-    ax.legend(frameon=False, loc="upper right", fontsize=10)
-    estilo(ax, None)
-    guardar(fig, "G3_mapa_electroterminales")
+                 f"se tratan como un solo electroterminal de {dep.capacity[i_le] + dep.capacity[i_sr]} puestos", loc="left", fontsize=13)
+    from matplotlib.lines import Line2D
+    ax.legend(handles=[Line2D([0], [0], marker="o", color="w", markerfacecolor=AZUL, markersize=10, label="Electroterminal (tamano = puestos)"),
+                       Line2D([0], [0], marker="o", color="w", markerfacecolor=ROJO, markersize=10, label="Unidos en el modelo"),
+                       Line2D([0], [0], color="#aebac3", linewidth=2, label="Red de buses (trazados)"),
+                       Line2D([0], [0], color="#444444", linewidth=1.8, linestyle=(0, (4, 3)), label="Distancia en linea recta")],
+              loc="upper right", fontsize=9.5, frameon=True, framealpha=0.95, edgecolor="#cccccc")
+    fig.tight_layout()
+    fig.savefig(GRAFICOS / "G3_mapa_electroterminales.png", dpi=200)
+    plt.close(fig)
 
 
 # --------------------------------------------------------------------------- #

@@ -1,8 +1,13 @@
-parametro;valor;etiqueta;buses;delta_buses_vs_base;delta_buses_vs_base_pct;cost_operacion_usd;delta_costo_vs_base_pct;km_vacios_total;pct_km_vacios
-factor de desvio;1.2;E1_f1.2;7294;-72;-0.98;1944356.0;-1.32;167926.4;11.1
-factor de desvio;1.3;E1;7366;0;0.0;1970265.0;0.0;182834.2;11.96
-factor de desvio;1.35;E1_f1.35;7401;35;0.48;1982715.0;0.63;190361.6;12.4
-factor de desvio;1.5;E1_f1.5;7441;75;1.02;2004134.0;1.72;212120.7;13.62
-layover (min);0.0;E1_l0;7161;-205;-2.78;1917068.0;-2.7;178705.5;11.73
-layover (min);3.0;E1;7366;0;0.0;1970265.0;0.0;182834.2;11.96
-layover (min);10.0;E1_l10;7810;444;6.03;2086943.0;5.92;191991.6;12.49
+parametro;valor;etiqueta;buses;delta_buses_vs_base;delta_buses_vs_base_pct;cost_operacion_usd;delta_costo_vs_base_pct;km_vacios_total;pct_km_vacios;tiempo_computo_s
+factor de desvio;1.2;E1_f1.2;7294;-72;-0.98;1944356.0;-1.32;167926.4;11.1;54.7
+factor de desvio;1.3;E1;7366;0;0.0;1970265.0;0.0;182834.2;11.96;23.7
+factor de desvio;1.35;E1_f1.35;7401;35;0.48;1982715.0;0.63;190361.6;12.4;19.7
+factor de desvio;1.5;E1_f1.5;7441;75;1.02;2004134.0;1.72;212120.7;13.62;16.2
+layover (min);0.0;E1_l0;7161;-205;-2.78;1917068.0;-2.7;178705.5;11.73;17.2
+layover (min);3.0;E1;7366;0;0.0;1970265.0;0.0;182834.2;11.96;23.7
+layover (min);10.0;E1_l10;7810;444;6.03;2086943.0;5.92;191991.6;12.49;16.1
+radio de interlining (km);1.0;E1_r1;8198;832;11.3;2187783.0;11.04;198414.1;12.85;20.2
+radio de interlining (km);2.0;E1_r2;7577;211;2.86;2025553.0;2.81;186211.9;12.16;38.8
+radio de interlining (km);3.0;E1;7366;0;0.0;1970265.0;0.0;182834.2;11.96;23.7
+radio de interlining (km);4.0;E1_r4;7201;-165;-2.24;1927437.0;-2.17;180456.6;11.83;79.3
+radio de interlining (km);5.0;E1_r5;7118;-248;-3.37;1906000.0;-3.26;179198.5;11.75;119.5

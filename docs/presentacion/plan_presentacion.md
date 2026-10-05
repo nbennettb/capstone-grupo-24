@@ -108,7 +108,7 @@ Fíjense en el gráfico: los buses se necesitan de día, así que solo pueden ca
 
 **Figuras:**
 - **G2:** `results/presentacion/graficos/G2_ida_vuelta.png` cierre ida-vuelta (eje cortado en 1.500 m, con "94,7% < 500 m" anotado).
-- **G3:** `results/presentacion/graficos/G3_mapa_electroterminales.png` mapa simple de los 5 electroterminales con sus puestos y la distancia de 1,1 km.
+- **G3:** `results/presentacion/graficos/G3_mapa_electroterminales.png` mapa de los 5 electroterminales sobre la red de buses de Santiago (fondo gris), con sus puestos, las distancias en línea recta de la red mínima (5,9 / 12,0 / 13,5 km), el par cercano de 1,1 km en rojo, un zoom de los dos patios, escala de 5 km, norte y el centro de Santiago como referencia.
 - El dato 3 va como recuadro con la cifra; la figura `results/etapa0_calibracion_deadhead/graficos/factor_por_escala.png` queda en respaldo.
 
 **Frase:** "Tres datos decidieron cómo dividir el problema. Primero, casi todas las rutas terminan la ida donde empieza la vuelta: por eso
@@ -316,7 +316,7 @@ el óptimo. A medida que crece, la brecha llega a 8,6%, y por eso no lo corremos
 |---|---|---|
 | 1 | VSP que vea la batería (jornadas con pausas de carga) | Ataca los +5.136 buses |
 | 2 | MILP de carga a mayor escala (por terminal, romper simetría) | Hoy solo hay óptimo certificado en N = 10 |
-| 3 | Calibrar el layover y validar el deadhead con la red vial | Es el supuesto más sensible (−2,8% a +6,0% de flota) |
+| 3 | Calibrar el layover, elegir el radio de interlining por costo total y validar el deadhead con la red vial | Son los supuestos más sensibles (layover −2,8% a +6,0% de flota; radio +11,3% a −3,4%) |
 | 4 | Informe final y KPIs de E3 (carga programada) | Cierre |
 
 **Frase:** "En resumen: el caso base es factible y lo medimos completo. El cuello de botella no es asignar los viajes sino la batería, que
@@ -342,6 +342,7 @@ importante es que la asignación de buses considere la batería. Gracias."
 | 12,7 min / ~63 min | Hueco mediano entre viajes / ir y volver de cargar |
 | ~70% / 8% | Participación de la flota / la energía en el costo |
 | −2,8% a +6,0% | Sensibilidad de la flota al layover (0 a 10 min) |
+| +11,3% a −3,4% | Sensibilidad de la flota de E1 al radio de interlining (1 a 5 km; modelo: 3 km) |
 | ≥ 10-24% | Ganancia del MILP en las instancias reducidas |
 | N = 10 óptimo; brecha ≤ 8,6% | Certificación del MILP |
 
@@ -376,6 +377,8 @@ importante es que la asignación de buses considere la batería. Gracias."
 - **¿Por qué es válido unir terminales?**
   Están a 1,1 km y el profesor lo validó como decisión de modelación. Separados, Los Espinos no alcanza a reponer 44-48 MWh por día;
   unidos, el déficit es 0.
+- **¿Por qué el radio de interlining es 3 km y no 5?**
+  Lo fijamos para acotar el tamaño del modelo, no por una medición, y después lo probamos: con 5 km la flota de E1 baja 3,4% (7.366 → 7.118) y el tiempo de cómputo pasa de ~24 s a ~120 s; con 1 km sube 11%. Los retornos son decrecientes. Mantuvimos 3 km porque ampliarlo exige rehacer la carga con jornadas más largas; es una mejora para la entrega final, y significa que el ahorro del interlining que mostramos es un piso.
 - **¿La flota tiene límite?**
   No: el profesor confirmó que es irrestricta. El valor de 1.200 de los datos está obsoleto.
 - **¿Por qué las jornadas se parten en vez de recargar a mitad del día?**
@@ -389,7 +392,7 @@ importante es que la asignación de buses considere la batería. Gracias."
 | Tema | Figura |
 |---|---|
 | Calibración del deadhead | `results/etapa0_calibracion_deadhead/graficos/factor_por_escala.png` |
-| Sensibilidad de la flota (factor y layover) | `results/etapa2_vsp/graficos/sensibilidad_deadhead.png` |
+| Sensibilidad de la flota (factor, layover y radio de interlining) | `results/etapa2_vsp/graficos/sensibilidad_deadhead.png` (ahora con tres paneles) |
 | C2: formulación y resultado | Ecuación de `docs/context/01_metodologia.md` (Etapa 1) + `results/etapa1_clustering/mapas/mapa_diferencias.png` |
 | Terminales separados: infactibles | Tabla de `results/etapa3_carga_reactiva/barrido/tablas/evidencia_terminales_separados.csv` |
 | Por qué no "100% sin recuperar la batería" (2% vs 70% de uso de los puestos) | `results/etapa1_clustering/graficos/capacidad_sin_vs_con_recuperacion.png` |
@@ -410,7 +413,7 @@ Generados el 05/10 en `results/presentacion/graficos/` con su CSV en `results/pr
 |---|---|---|---|
 | G1 | 1 | Expediciones en curso por hora, con los 6 períodos tarifarios como franjas rotuladas | `results/etapa0_preprocesamiento/concurrencia_por_minuto.csv`, `data-filtrado/electricity_prices.csv` |
 | G2 | 2 | Cierre ida-vuelta: eje hasta 1.500 m y "94,7% < 500 m (mediana 85 m)" anotado | `data-processed/rutas_ida_vuelta.csv` |
-| G3 | 2 | Mapa simple: los 5 electroterminales con sus puestos y la línea de 1,1 km | `data-filtrado/depots.csv` |
+| G3 | 2 | Mapa sobre la red de buses: 5 electroterminales, distancias entre ellos (red mínima), zoom de los dos unidos, escala y norte | `data-filtrado/{depots,shapes_bus,trips_dia_L}.csv`, `data-alumnos/chile.gpkg` |
 | G4 | 3 | Diagrama de 4 etapas (mejor en la herramienta de slides; el contenido está en la lámina 3) | — |
 | G5 | 8 | % de buses estacionados en su patio por hora vs % de los 700 puestos ocupados, con la tarifa punta sombreada | `results/etapa3_carga_reactiva/tablas/{jornadas,ocupacion}_E1_soc100.csv` |
 | G6 | 9 | Barrido en un panel: costo total por nivel (operación + reservas), estrella en 100% y 50% infactible | `results/etapa3_carga_reactiva/barrido/tablas/barrido_niveles.csv` |

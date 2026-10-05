@@ -40,6 +40,6 @@ El **hallazgo inesperado (C9)** es la distancia entre el VSP y la operación rea
 ## Limitaciones
 
 - El caso base es una política miope por diseño: el valor del MILP se mide contra ella, pero una política reactiva más inteligente reduciría esa brecha.
-- Deadhead euclidiano × 1,3 y layover de 3 min (el supuesto más sensible: −2,8% a +6,0% de flota con 0 a 10 min); ver `02_factor_desvio_deadhead.md`.
+- Deadhead euclidiano × 1,3 y layover de 3 min (−2,8% a +6,0% de flota con 0 a 10 min) y radio de interlining de 3 km (+11,3% a −3,4% con 1 a 5 km): los dos supuestos más sensibles; ver `02_factor_desvio_deadhead.md`.
 - Un día laboral; consumo constante; carga lineal a 180 kW.
 - La espera por puesto en el patio (~100.000 USD/día) se cobra en el total; sin ella, E1 = 3.644.536 y E0 = 3.857.135 y ninguna conclusión cambia.

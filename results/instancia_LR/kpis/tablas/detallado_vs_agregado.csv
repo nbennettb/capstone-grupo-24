@@ -1,0 +1,5 @@
+holgura_min;delta_min;modelo;estado;brecha;segundos;binarias;variables;energia_mas_reservas_usd;eventos;costo_eventos_usd;total_carga_usd;reservas_intermedias;reservas_nocturnas;costo_energia_usd;minutos_sobre_puestos;maximo_por_minuto
+0.0;15;agregado;optimo (brecha pedida);0.003176;29.12;1640;163962;100905.85;5894;29470.0;130375.85;0;218;46405.85;138;126.21
+0.0;15;detallado;limite de tiempo;0.222871;900.33;160720;482122;126926.86;1687;8435.0;135361.86;0;322;46426.86;23;110.47
+0.0;30;agregado;optimo (brecha pedida);0.004362;8.19;1640;85242;100674.02;3782;18910.0;119584.02;0;217;46424.02;155;150.93
+0.0;30;detallado;limite de tiempo;0.037598;900.37;82000;245962;101439.78;1653;8265.0;109704.78;0;220;46439.78;46;128.66

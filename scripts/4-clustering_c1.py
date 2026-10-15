@@ -1,7 +1,6 @@
 """
 Etapa 1 (C1) del pipeline de modelacion - ICS2122 Capstone Buses Electricos
-(ver docs/context/01_metodologia.md seccion 4 y
-docs/Propuesta_metodologia_reunion.md seccion 5).
+(ver docs/context/01_como_funciona.md y docs/context/02_decisiones.md).
 
 Dos variantes de la heuristica "electroterminal mas cercano", pensadas para
 aislar UN solo cambio entre ellas (no comparar dos cosas que difieren en

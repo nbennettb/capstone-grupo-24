@@ -1,17 +1,11 @@
-> **ESTADO DE ESTE DOCUMENTO (03/10/2026).** Esta propuesta sigue siendo válida como **diagnóstico
-> metodológico** (§3, D1-D8), **revisión de alternativas** (§4) y **referencias** (§9). Su
-> diagnóstico numérico y la justificación de la descomposición jerárquica siguen en pie.
+> **Documento histórico.** Es la propuesta con que se rediseñó la metodología después del Informe 1. Siguen
+> valiendo su diagnóstico (§3), la revisión de alternativas (§4) y las referencias (§9). Lo que se reemplazó:
+> - el supuesto de partir el día al 100% sin recuperar la batería: hoy rige el ciclo diario al 100% con buses de reserva;
+> - la Etapa 3 "inserción de recargas por jornada": hoy es cortes y re-encadenamiento con recarga;
+> - las cifras de energía de §2, que corresponden al supuesto anterior.
 >
-> **Superado por la reunión con el profesor (03/10):**
-> - El supuesto **SOC inicial 100%** (§2, §5 Etapa 3, §6, §7 caso base) fue **rechazado**. Vigente:
->   ciclo diario, 90% al inicio y al final del día (sensibilidad 80%).
-> - Las cifras de energía por jornada, de recargas y de capacidad holgada (§2, tabla de "Energía de las
->   jornadas") corresponden a ese supuesto anterior.
-> - La pregunta 3 del §11 ("¿vuelven al mismo electroterminal?") está respondida: **sí**.
-> - Las preguntas del §11 están todas respondidas en `docs/context/02_supuestos_y_decisiones.md`, sección A.
->
-> **Versión vigente de la metodología:** [`../docs/context/01_metodologia.md`](context/01_metodologia.md).
-> **Plan de lo que falta:** [`context/05_plan_entrega2.md`](context/05_plan_entrega2.md).
+> **Metodología vigente:** [`context/01_como_funciona.md`](context/01_como_funciona.md). **Decisiones:**
+> [`context/02_decisiones.md`](context/02_decisiones.md).
 
 ---
 

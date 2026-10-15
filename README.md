@@ -17,65 +17,63 @@ El detalle del problema, los datos y el feedback de la Entrega 1 está en
 
 ## Metodología
 
-Descomposición jerárquica por tipo de decisión, en 4 etapas. Formulación, supuestos y justificación
-completos en [`docs/context/01_metodologia.md`](docs/context/01_metodologia.md):
+Descomposición jerárquica por tipo de decisión: primero la flota, después la carga. Resumen en una página:
+[`docs/context/01_como_funciona.md`](docs/context/01_como_funciona.md). Cada decisión con su porqué:
+[`docs/context/02_decisiones.md`](docs/context/02_decisiones.md).
 
 ```
-Etapa 0            Etapa 1                 Etapa 2                    Etapa 3                 Etapa 4
-Preproceso   →   Clustering de      →   Asignación de buses   →   Inserción de       →   Programación de carga
-(expediciones,   RUTAS a electro-       por cluster (VSP en        recargas por           por electroterminal
-terminales,      terminales             red espacio-tiempo,        jornada (simulador     (MILP con índice temporal,
-tablas por ruta) (heurística + MILP)    LP entera, exacto)         reactivo)              tarifas horarias, capacidad)
+Etapa 0 Preproceso -> Etapa 1 Rutas -> electroterminal -> Etapa 2 VSP sin batería (jornadas)
+   -> Etapa 3 Cortes y re-encadenamiento con recarga -> Etapa 4 Programación de la carga en el patio
+Caso base (aparte, no es una etapa): jornadas de la Etapa 2 + carga reactiva + ciclo al 100% con buses de reserva
 ```
 
-**Supuestos centrales** (con su origen en
-[`docs/context/02_supuestos_y_decisiones.md`](docs/context/02_supuestos_y_decisiones.md)):
-- **Ciclo diario:** todo bus empieza y termina el día con el mismo nivel de batería. Nivel base 100%
-  (máximo de los datos del curso), con barrido 100-50%; el ciclo se cumple con buses de reserva. El supuesto
-  de partir al 100% sin recuperar la batería fue descartado.
-- Cada bus **vuelve a su propio electroterminal**. Los puestos limitan solo la carga simultánea;
-  estacionar no consume puesto y se puede cargar las 24 horas.
+**Supuestos centrales:**
+- **Ciclo diario:** todo bus empieza y termina el día al 100%. Lo que la carga no alcanza a reponer a tiempo se cubre con
+  buses de reserva.
+- Cada bus **vuelve a su propio electroterminal** y carga ahí. Los puestos limitan solo la carga simultánea.
 - Flota irrestricta.
-- Los Espinos y Santa Rosa (a 1,1 km) se tratan como un solo electroterminal en todos los escenarios.
-- Caso base: operación por línea (sin interlining) con carga reactiva.
+- Los Espinos y Santa Rosa (a 1,1 km) son un solo electroterminal.
+- Traslados sin pasajeros: línea recta × 1,3 a 20 km/h en todas las etapas.
+
+**Escenarios:**
+- caso base: E0 (por línea) y E1 (con interlining), con carga reactiva;
+- evaluación: E2-FIFO (Etapa 3 + carga por orden de llegada) y E2 (Etapas 3 + 4).
 
 ## Estado
 
 | Etapa | Estado |
 |---|---|
-| 0 — Preprocesamiento | ✅ Hecha y vigente |
-| 1 — Clustering de rutas a electroterminales | ✅ Hecha (C1, C2 como propuesta) |
-| 2 — Asignación de buses (VSP) | ✅ Hecha (escalera E0 / E1 / LB y evidencias) |
-| 3 — Inserción de recargas (simulador reactivo y barrido de niveles) | ✅ Hecha; nivel base 100% con buses de reserva |
-| 4 — Programación de carga (MILP, instancia chica) | ⏳ Pendiente |
+| 0 — Preprocesamiento | Hecha (red completa) |
+| 1 — Rutas a electroterminales | Hecha (C1; C2 como propuesta) |
+| 2 — VSP sin batería | Hecha (E0, E1, LB y evidencias) |
+| Caso base | Hecho en la red completa (E0 3.958.063 · E1 3.751.250 USD/día) y filtrable por terminal |
+| 3 — Cortes y re-encadenamiento | Implementada; instancia La Reina |
+| 4 — Programación de la carga | Modelo agregado y detallado implementados; instancia La Reina |
 
-Caso base factible (USD/día): E0 3.958.063 · E1 3.751.250.
+**Alcance de esta entrega:** las Etapas 3 y 4 se prueban con su caso base en el terminal La Reina completo (100 puestos).
+La red completa queda para la entrega final; se corre con el mismo código, terminal por terminal.
 
-Qué falta, en qué orden y por qué: [`docs/context/05_plan_entrega2.md`](docs/context/05_plan_entrega2.md).
-Historial de lo hecho y decidido: [`docs/context/04_bitacora.md`](docs/context/04_bitacora.md).
+## Cómo correr
 
-## Cómo correr lo que existe
+Requiere Python 3 con `pandas numpy scipy matplotlib tabulate gurobipy psutil geopandas shapely` y una licencia de Gurobi
+activa (académica, gratuita en [gurobi.com](https://www.gurobi.com)).
 
-Requiere Python 3 con `pandas numpy scipy matplotlib tabulate gurobipy geopandas shapely` y una
-licencia Gurobi activa (académica, gratuita en [gurobi.com](https://www.gurobi.com)). Detalle,
-checkpoints y troubleshooting: [`docs/context/03_guia_pruebas.md`](docs/context/03_guia_pruebas.md).
+- **Instancia La Reina (caso base, Etapas 3-4, KPIs):** comandos en orden, tiempos, qué debe imprimir cada uno y qué hacer
+  si falla en [`docs/context/03_como_correr.md`](docs/context/03_como_correr.md).
+- **Etapas 0-2** (ya corridas; sus archivos están en `data-processed/`):
 
 ```bash
-# Etapa 0 — preprocesamiento (expande el GTFS por frecuencia a expediciones reales)
-python scripts/3-preprocesamiento_expediciones.py
-
-# Etapa 1 — clustering de rutas a electroterminales
-python scripts/4-clustering_c1.py          # C1a (centroide) y C1b (terminales reales)
-python scripts/5-clustering_c2.py          # C2: MILP con capacidad
-python scripts/8-clustering_comparacion.py # comparación, tabla ancha y mapas
+python scripts/3-preprocesamiento_expediciones.py    # Etapa 0
+python scripts/4-clustering_c1.py                    # Etapa 1: C1a y C1 (c1b)
+python scripts/5-clustering_c2.py                    # Etapa 1: C2, MILP con capacidad (propuesta)
+python scripts/8-clustering_comparacion.py           # Etapa 1: comparación y mapas
+python scripts/6-vsp_asignacion_buses.py --modo ruta    --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --etiqueta E0
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --etiqueta E1
+python scripts/7-comparar_escenarios.py              # Etapa 2: escalera de escenarios
 ```
 
-Los `data-filtrado/*.csv` ya vienen en el repo (no hace falta `data-alumnos/` para correr desde la
-Etapa 0 en adelante). Los mapas necesitan `data-alumnos/chile.gpkg`, que no viaja en el repo por
-tamaño.
-
-> Nota: `5-clustering_c2.py` y `8-clustering_comparacion.py` todavía describen el supuesto anterior
-> (batería al 100%). Se actualizan al ejecutar el Bloque A del plan.
+Los `data-filtrado/*.csv` ya vienen en el repo. Los mapas necesitan `data-alumnos/chile.gpkg`, que no viaja en el repo
+por su tamaño.
 
 ## Estructura del repositorio
 
@@ -86,16 +84,17 @@ Mapa completo: [`docs/Estructura_carpeta_proyecto.md`](docs/Estructura_carpeta_p
 - **`data-processed/`** — expediciones, terminales, tablas por ruta y asignaciones de clustering.
 - **`scripts/`** — pipeline numerado por etapa, más `scripts/common/` (parámetros, geometría, tiempo,
   clustering: utilidades compartidas, no lógica de una etapa).
-- **`results/`** — reporte, tablas y gráficos por etapa corrida, en subcarpetas `etapaN_*/`.
-- **`docs/`** — Informe 1, lineamientos del curso, propuesta de metodología, y `docs/context/`
-  (documentación del proyecto, en orden de lectura 00 → 05).
+- **`results/`** — reporte, tablas y gráficos: `etapa0_*` a `etapa2_vsp` (red completa), `caso_base/` (red completa)
+  e `instancia_LR/` (caso base, Etapas 3-4, KPIs y `resumen_para_analisis.md` del terminal La Reina).
+- **`docs/`** — Informe 1, lineamientos del curso, plan de las Etapas 3-4, y `docs/context/` (documentación del
+  proyecto, en orden de lectura 00 → 03).
 
 ## Datos
 
 Tres fuentes: GTFS de RED (rutas, viajes, horarios, paraderos), un GeoPackage de OpenStreetMap
 (`chile.gpkg`, red vial de Chile) y CSVs de parámetros del curso (electroterminales, cargadores,
-tarifas, características del bus). Decisiones de filtrado en
-[`docs/decisiones_datos.md`](docs/decisiones_datos.md).
+tarifas, características del bus). Decisiones de datos en
+[`docs/context/02_decisiones.md`](docs/context/02_decisiones.md).
 
 Cifras clave del día laboral modelado: 417 rutas, 64.502 expediciones, 641 paraderos terminales,
 5 electroterminales (700 puestos de carga en total), flota BYD K9 (350 kWh, 315 kWh utilizables al

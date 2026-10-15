@@ -1,7 +1,7 @@
 """
 Etapa 0 del pipeline de modelacion - ICS2122 Capstone Buses Electricos
-(ver docs/context/01_metodologia.md seccion 4 para el lugar de
-esta etapa dentro de la metodologia de 4 etapas aprobada el 28/09/2026).
+(ver docs/context/01_como_funciona.md para el lugar de esta etapa en la
+metodologia).
 
 Expande frequencies_dia_L.csv a expediciones reales (una fila por salida
 individual de bus) y calcula, para cada una, duracion, distancia y energia
@@ -59,8 +59,8 @@ RESULTS = carpeta_resultados("etapa0_preprocesamiento")
 GRAFICOS = RESULTS / "graficos"
 GRAFICOS.mkdir(exist_ok=True)
 
-# Cifras de referencia de la red completa (Informe 1 / prototipo del
-# 28/09), usadas como chequeo de sanidad, no como valor forzado.
+# Cifras de referencia de la red completa (Informe 1 / prototipo
+# exploratorio), usadas como chequeo de sanidad, no como valor forzado.
 EXPEDICIONES_ESPERADAS = 64502
 RUTAS_ESPERADAS = 417
 CONCURRENCIA_ESPERADA = 6539
@@ -177,8 +177,7 @@ def concurrencia_por_minuto(expediciones, minutos_dia=30 * 60):
 
 # --------------------------------------------------------------------------- #
 # Tablas nuevas por ruta (insumo directo de la Etapa 1, sin pasar por la
-# Etapa 2: ver docs/context/01_metodologia.md, decision de esta
-# ronda de recalcular buses/energia por ruta desde la Etapa 0)
+# Etapa 2: buses y energia por ruta se calculan desde la Etapa 0)
 # --------------------------------------------------------------------------- #
 
 def construir_rutas_resumen(expediciones):
@@ -189,8 +188,7 @@ def construir_rutas_resumen(expediciones):
     n_buses_estimados = maximo de expediciones simultaneas DE ESA RUTA. Es
     una COTA INFERIOR del numero real de buses (ignora layover y que el bus
     tiene que volver fisicamente a completar el ciclo): sumada sobre las 417
-    rutas da 7.454, contra los 8.654 del VSP sin interlining de la ronda
-    anterior (docs/context/04_bitacora.md). Se usa
+    rutas da 7.454, contra los 8.654 del VSP sin interlining (E0). Se usa
     solo para PONDERAR el peso relativo de cada ruta en el costo de C2, no
     como cifra de flota final.
     """
@@ -365,7 +363,7 @@ def escribir_reporte(expediciones, terminales, rutas_resumen, ida_vuelta, viajes
         "",
         "## Concurrencia",
         f"- Maximo de expediciones simultaneas: {max_conc} a las {t_peak:.2f} h",
-        f"- (referencia red completa, prototipo 28/09: {CONCURRENCIA_ESPERADA} a las {HORA_PEAK_ESPERADA} h)",
+        f"- (referencia red completa, prototipo exploratorio: {CONCURRENCIA_ESPERADA} a las {HORA_PEAK_ESPERADA} h)",
         f"- Suma de la concurrencia maxima POR RUTA (rutas_resumen.csv): "
         f"{int(rutas_resumen['n_buses_estimados'].sum())} -- es una cota inferior de la flota real "
         f"(ignora layover y el viaje de vuelta al deposito); se usa solo para ponderar rutas en la Etapa 1.",

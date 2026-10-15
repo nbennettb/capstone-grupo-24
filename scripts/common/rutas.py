@@ -11,7 +11,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_ALUMNOS = PROJECT_ROOT / "data-alumnos"
 DATA_FILTRADO = PROJECT_ROOT / "data-filtrado"
 
-# Nuevas carpetas de esta ronda de trabajo (Etapas 0-2, ver plan del 28/09).
+# Carpetas de datos procesados y resultados.
 # Se crean automaticamente si no existen para que los scripts no fallen en
 # una maquina nueva del equipo.
 DATA_PROCESSED = PROJECT_ROOT / "data-processed"
@@ -21,7 +21,7 @@ for _dir in (DATA_PROCESSED, RESULTS_DIR):
     _dir.mkdir(exist_ok=True)
 
 # Separador usado para leer/escribir CSV en data-filtrado/ y data-processed/.
-# Ver docs/decisiones_datos.md seccion 3.5: Excel en configuracion regional
+# Ver docs/context/02_decisiones.md: Excel en configuracion regional
 # Chile/Latam usa ',' como separador decimal, por lo que espera ';' como
 # separador de columnas.
 CSV_SEP = ";"

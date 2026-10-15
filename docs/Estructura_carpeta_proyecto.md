@@ -86,11 +86,9 @@
     └── 📁docs
         └── 📁context
             ├── 00_contexto_entrega1.md       (foto congelada del Informe 1)
-            ├── 01_metodologia.md             (documento maestro, vigente)
-            ├── 02_supuestos_y_decisiones.md  (supuestos, respuestas del profesor)
-            ├── 03_guia_pruebas.md            (cómo correr lo que existe)
-            ├── 04_bitacora.md                (historial fechado)
-            ├── 05_plan_entrega2.md           (plan computacional para la presentación)
+            ├── 01_como_funciona.md           (el problema, el pipeline, caso base vs escenarios; una página)
+            ├── 02_decisiones.md              (cada decisión de la Etapa 0 a la 4, con su porqué y evidencia)
+            ├── 03_como_correr.md             (guía de ejecución de la instancia La Reina)
         └── 📁Informe 1
             └── 📁chapters
                 ├── anexo1_ia.tex
@@ -122,18 +120,16 @@
             ├── README.md
             ├── Thesis.bib
             ├── Thesis.tex
-        ├── decisiones_datos.md
         ├── Estructura_carpeta_proyecto.md
+        ├── feedback_presentacion_2.txt
         ├── Informe 1.docx
         ├── Lineamientos Entrega 1 2026-2.md
         ├── Lineamientos Entrega 2 2026-2.md
         ├── P7 Planificación de la operación de buses eléctricos en la Región Metropolitana-1.md
-        ├── PLANIFICACION_DE_LA_OPERACION_DE_LOS_BUSES_ELECTRICOS_EN_LA_RED_METROPOLITANA_DE_MOVILIDAD_DE_SANTIAGO_GRUPO_24.pdf
+        ├── plan_etapas_3_4.md                (plan de las Etapas 3-4 en la instancia La Reina)
         ├── Presentacion 1 capstone.pdf
-        ├── Presentacion_1_capstone.txt
-        ├── Propuesta_metodologia_reunion.md
-        ├── Propuesta_metodologia_reunion.pdf
-        ├── resumen_exploracion_inicial_incompleta_datos.txt
+        ├── Presentación 2 Capstone.pdf
+        ├── Propuesta_metodologia_reunion.md  (histórico: propuesta con que se rediseñó la metodología)
     └── 📁figures
         ├── LogoUC.pdf
         ├── LogoUC.ps
@@ -192,7 +188,23 @@
                 ├── validacion_carga_c2.csv
                 ├── rutas_que_cambian.csv
             ├── reporte.md
-        └── 📁etapa3_carga_reactiva
+        └── 📁etapa2_vsp
+            └── 📁graficos
+                ├── energia_por_jornada_E0_E1.png
+                ├── escalera_buses.png
+                ├── escalera_costo.png
+                ├── jornadas_<escenario>.png                (histogramas por escenario: E0, E1, LB, E0_sep, E1_sep, E1_C2, E1_C2_sep)
+                ├── sensibilidad_deadhead.png
+            └── 📁tablas
+                ├── escalera_escenarios.csv
+                ├── precio_del_clustering.csv
+                ├── resumen_escenarios.csv
+                ├── resumen_sensibilidad.csv
+                ├── variantes_c2.csv
+                ├── evidencia_union.csv
+                ├── sensibilidad_deadhead.csv
+            ├── reporte.md
+        └── 📁caso_base                              (caso base de la red completa: no se vuelve a correr)
             └── 📁barrido
                 └── 📁graficos
                     ├── barrido_costo_total.png
@@ -210,59 +222,38 @@
                 ├── eventos_<escenario>_soc100.csv          (cada carga: tipo, llegada, inicio, fin, espera, kWh, costo)
                 ├── jornadas_<escenario>_soc100.csv         (jornadas tras las particiones)
                 ├── ocupacion_<escenario>_soc100.csv        (buses cargando por minuto, módulo 24 h)
-                ├── ventanas_<escenario>_soc100.csv         (ventanas de carga; insumo del MILP)
+                ├── ventanas_<escenario>_soc100.csv         (ventanas en que cada bus puede cargar)
                 ├── resumen_carga.csv                       (una fila por escenario y nivel)
             ├── reporte_<escenario>_soc100.md
-        └── 📁etapa2_vsp
-            └── 📁graficos
-                ├── energia_por_jornada_E0_E1.png
-                ├── escalera_buses.png
-                ├── escalera_costo.png
-                ├── jornadas_<escenario>.png                (histogramas por escenario: E0, E1, LB, E0_sep, E1_sep, E1_C2, E1_C2_sep)
-                ├── sensibilidad_deadhead.png
-            └── 📁tablas
-                ├── escalera_escenarios.csv
-                ├── precio_del_clustering.csv
-                ├── resumen_escenarios.csv
-                ├── resumen_sensibilidad.csv
-                ├── variantes_c2.csv
-                ├── evidencia_union.csv
-                ├── sensibilidad_deadhead.csv
-            ├── reporte.md
-        └── 📁etapa4_milp_carga
-            └── 📁graficos
-                ├── ocupacion_reactiva_vs_milp_N<n>.png     (N = 10, 30, 50, 100, 200, 400)
-                ├── energia_por_tarifa.png
-                ├── costo_reactiva_vs_milp.png
-                ├── brecha_vs_N.png
-            └── 📁tablas
-                ├── instancias.csv
-                ├── comparacion_reactiva_milp.csv
-                ├── tiempos_resolucion.csv
-                ├── representatividad.csv
-                ├── energia_por_tarifa.csv
-                ├── ocupacion_N<n>.csv
-                ├── programa_reactiva_N<n>.csv
-                ├── programa_milp_N<n>.csv
-            ├── reporte.md
-        └── 📁etapa5_kpis_comparacion
-            └── 📁graficos
-                ├── costo_desglose_E0_E1.png
-                ├── flota_de_donde_viene.png
-                ├── uso_electroterminales.png
-            └── 📁tablas
-                ├── kpis_escenarios.csv
-                ├── desglose_costo.csv
-                ├── precio_descomposicion.csv
-                ├── uso_electroterminales.csv
-                ├── milp_instancia.csv
-            ├── reporte.md
-        ├── INDICE_FIGURAS.md                           (cada figura: mensaje, datos y sección sugerida)
+        └── 📁instancia_LR                           (terminal La Reina: caso base, Etapas 3-4 y KPIs)
+            └── 📁caso_base                          (E0 y E1 filtrados al terminal; mismas tablas que caso_base/)
+            └── 📁etapa3
+                └── 📁h<h>                           (h = 0, 30, 60)
+                    └── 📁graficos                   (gantt_cadenas, llegadas_patio_por_hora; cada uno con su .csv)
+                    └── 📁tablas                     (tramos, cadenas, ventanas, diagnostico_flota, resumen)
+                    ├── reporte.md
+            └── 📁etapa4
+                └── 📁h<h>_d<Δ>                      (h0_d15 base; h0_d5, h0_d30, h30_d15, h60_d15)
+                    └── 📁graficos                   (ocupacion_24h, energia_por_tarifa; cada uno con su .csv)
+                    └── 📁tablas                     (programa_FIFO, programa_E2, programa_E2_detallado, ocupacion_minutos, ocupacion_bloques,
+                                                      energia_por_tarifa, reservas, modelo, resumen)
+                    ├── reporte.md
+            └── 📁kpis
+                └── 📁graficos                       (escalera_buses, costo_apilado, ocupacion_24h, energia_por_tarifa,
+                                                      sensibilidad_holgura, sensibilidad_delta; cada uno con su .csv)
+                └── 📁tablas                         (kpis_escenarios, validaciones, energia_por_tarifa, ocupacion_por_hora,
+                                                      diagnostico_flota_por_holgura, sensibilidad_holgura,
+                                                      sensibilidad_delta, tiempos_y_brechas, detallado_vs_agregado)
+            ├── resumen_para_analisis.md             (el archivo que se entrega para el análisis)
+        └── 📁presentacion                           (gráficos de datos y del caso base de la red completa, script 16-)
     └── 📁scripts
         └── 📁common
             ├── __init__.py
             ├── clustering.py
             ├── geo.py
+            ├── graficos.py                         (estilo común de los gráficos de la instancia)
+            ├── instancia.py                        (patios, nombre, carpeta y filtros de un electroterminal)
+            ├── medicion.py                         (pico de memoria)
             ├── parametros.py
             ├── rutas.py
             ├── tiempo.py
@@ -275,16 +266,12 @@
         ├── 7-comparar_escenarios.py                    (Etapa 2: escalera de escenarios y sensibilidad)
         ├── 8-clustering_comparacion.py                 (cierre Etapa 1: comparación y mapas)
         ├── 9-calibracion_deadhead.py                   (calibración del factor de desvío con trazados GTFS)
-        ├── 10-carga_reactiva.py                        (Etapa 3: simulador de carga reactiva sobre las jornadas del VSP)
-        ├── 11-milp_carga.py                            (Etapa 4: MILP de programación de carga, instancia reducida)
-        ├── 12-kpis_comparacion.py                      (KPIs de E0, E1 y LB, desglose y precio de la descomposición)
-        ├── 13-barrido_niveles.py                       (Etapa 3: barrido de niveles de bateria con la regla de B6)
+        ├── 10-caso_base_carga_reactiva.py              (caso base: carga reactiva; red completa o un terminal con --terminal)
+        ├── 11-caso_base_nivel_bateria.py               (caso base: barrido de niveles de batería, red completa)
+        ├── 12-etapa3_cortes_reencadenamiento.py        (Etapa 3: corte por DP + re-encadenamiento por flujo)
+        ├── 13-etapa4_programacion_carga.py             (Etapa 4: E2-FIFO, modelo agregado y detallado)
+        ├── 14-kpis_instancia.py                        (KPIs, figuras y resumen_para_analisis.md de la instancia)
+        ├── 16-graficos_informe.py                      (gráficos de datos y del caso base de la red completa)
     ├── .gitignore
     ├── README.md
 ```
-
-**Nota sobre `_ronda_anterior/`** (no aparece arriba, está en `.gitignore`): guarda los resultados de
-la Etapa 2 de la ronda del 28/09 (`jornadas_*.csv`, `rutas_cluster_c1.csv`/`c2.csv` viejos, los
-scripts `4-clustering_nearest.py`/`5-clustering_milp.py` que reemplazaron `4-clustering_c1.py` y
-`5-clustering_c2.py`, y sus `results/`). Se conserva en disco por si se retoma la Etapa 2, pero no
-viaja al repositorio.

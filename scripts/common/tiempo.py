@@ -3,7 +3,7 @@ en trips que cruzan medianoche) y expansion de frequencies.txt a expediciones
 reales (salidas individuales), vectorizado con pandas/numpy.
 
 Reimplementa, de forma reutilizable, lo que se probo en el prototipo
-exploratorio del 28/09 (an1.py) para el analisis de dimensionamiento.
+exploratorio para el analisis de dimensionamiento.
 """
 
 import numpy as np

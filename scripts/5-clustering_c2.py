@@ -1,6 +1,6 @@
 """
 Etapa 1 (C2) del pipeline de modelacion - ICS2122 Capstone Buses Electricos
-(ver docs/context/01_metodologia.md seccion 4).
+(ver docs/context/01_como_funciona.md).
 
 Asignacion de rutas a electroterminales con restriccion de CAPACIDAD:
 igual que C1b (scripts/4-clustering_c1.py) -- misma metrica de distancia,
@@ -9,8 +9,7 @@ generalizada (GAP), sujeto a que la carga diaria estimada de cada
 electroterminal no supere su capacidad. Asi, C1b -> C2 aisla el efecto de
 agregar la capacidad (el unico cambio respecto de C1b).
 
-CARGA DE UNA RUTA (condicion ciclica, docs/context/02_supuestos_y_decisiones.md
-B6 y C7). Con inicio = fin se recarga TODO lo consumido, y lo que un
+CARGA DE UNA RUTA (condicion ciclica, docs/context/02_decisiones.md). Con inicio = fin se recarga TODO lo consumido, y lo que un
 electroterminal recarga es la energia de la jornada COMPLETA: la de los viajes
 con pasajeros y tambien la de salir del electroterminal y volver (pullout y
 pullin). Por eso la carga depende del electroterminal d al que se asigna la
@@ -99,7 +98,7 @@ TABLAS.mkdir(exist_ok=True)
 GRAFICOS.mkdir(exist_ok=True)
 
 RUTAS_ESPERADAS = 417
-HORAS_DISPONIBLES = 24.0          # [Profesor] no hay restriccion de horario de carga
+HORAS_DISPONIBLES = 24.0          # no hay restriccion de horario de carga
 LIMITE_TIEMPO_S = 60.0            # limite por MILP (la asignacion con theta = 1 resuelve en segundos)
 THETA_BARRIDO = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
 NOMBRE_UNIDO = "Los Espinos + Santa Rosa"

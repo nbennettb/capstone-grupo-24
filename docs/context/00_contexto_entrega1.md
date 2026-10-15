@@ -1,8 +1,8 @@
 # Contexto — Informe 1 (congelado)
 
-> **Este documento no se vuelve a editar.** Es una fotografía de lo que el grupo entregó en el Informe 1 y de todo el feedback recibido hasta el 28/09/2026. Sirve para que cualquier persona que se sume al proyecto entienda el punto de partida sin tener que leer el `.tex` completo.
+> **Este documento no se vuelve a editar.** Es una fotografía de lo que el grupo entregó en el Informe 1 y del feedback recibido sobre él. Sirve para que cualquier persona que se sume al proyecto entienda el punto de partida sin tener que leer el `.tex` completo.
 >
-> Para el estado **actual** del proyecto (qué se ha hecho desde entonces), ver [`01_metodologia.md`](01_metodologia.md) (metodología vigente) y [`04_bitacora.md`](04_bitacora.md) (historial).
+> Para el estado **actual** del proyecto, ver [`01_como_funciona.md`](01_como_funciona.md) (metodología vigente), [`02_decisiones.md`](02_decisiones.md) (decisiones y su justificación) y [`03_como_correr.md`](03_como_correr.md) (cómo correrlo).
 
 ---
 

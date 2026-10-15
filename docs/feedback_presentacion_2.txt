@@ -1,0 +1,32 @@
+Hola como están! Espero que hayan aprovechado el fin de semana largo. Perdonenme la hora pero aprovecho de dejarles de una su feedback de la presentación 2. En general fue una buena presentación pero hay varias cosas que pueden aclarar para esta entrega o mejorar para la siguiente presentación, sobre todo el orden en que presentan las cosas y la prioridad que le dan a cada sección.
+
+Recomiendo que se fijen en cuanto pesa cada parte y que le dediquen tiempo acorde a cada una. Para la parte de metodología sobre todo es super importante para que se entienda de buena manera lo que están haciendo y como se obtienen los resultados y lo explicaron en una sola lamina sin demasiado detalle y sin explicar exactamente como la implementaron, los supuestos que hicieron y las simplificaciones que pueden haber realizado. Esto último es importante porque creo que nunca mencionan o no quedó claro que aún no implementaban su modelo MILP de carga al modelo completo, lo que genera un poco de confusión al llegar a los resultados y no se presentan lo que obtienen para E2. 
+
+También les sobró harto tiempo (1 minuto y medio) podrían haberlo utilizado para explicar de buena manera todo con calma.
+
+Descripción del problema:
+* Es importante que además de explicar con que están trabajando ustedes y el problema exacto que están atacando, también expliquen el contexto y de donde nace este problema y porque es importante resolverlo.
+* Como les mencionó uno de los profesores es clave explicar el tema de los tipos de jornada con los que trabajan, que a ustedes les asignan los recorridos y los horarios que se tienen que cumplir y que ustedes buscan determinar cuantos buses son necesarios para cumplir esta misión a costo mínimo. Si no se entiende este punto el resto de la presentación es muy dificil de seguir, sobre todo para alguien que no conoce su proyecto.
+
+Datos:
+* Porque generalizaron la distancia de deadhead? alguna razon en especifico? afecta o no los resultados que se obtienen finalmente? Esto es para todos los deadheads o solo los que están asignados a santa rosa y los espinos?
+* No solo presentaría el análisis de datos si no también los datos con los que trabajan brevemente, como los costos por viajes vacios, costo por activación de bus (mostrando cuanto cuesta cada uno) y a lo mejor algunos datos con los que no cuentan, para entender bien el alcance que tendrá su proyecto.
+
+KPI:
+* Si bien mencionan lo que será su función objetivo, esto no deja claro que estarán midiendo para verificar sus resultados. Es importante explicar lo que serán sus indicadores antes de llegar a sus resultados.
+
+Metodología:
+* Deciden dividir el día en bloques de 15 mins por alguna razón en especifica (porque no 10 o 20)? Afecta la división temporal sus resultados?
+* Importante justificar elección de la metodología, discutir ventajas y desventajas, y fundamentar porque es la adecuada para resolver su problema.
+
+Caso Base:
+* Queda un poco confuso la manera en que presentan las distintas etapas, separaría con un titulo los escenarios de evaluación ya que pareciera que hablan de como implementan el caso base cuando E1 y E2 son su modelo simplificado y su modelo completo. Puede confundir al oyente.
+
+Resultados:
+* Me imaginaría que la etapa 1 que muestran no la ejecutan cada vez que corren su modelo (pregunto porque deja un poco la duda la manera en que lo presentaron, pero sería más facil correrlo una pura vez y tener un archivo a parte con lo obtenido).
+* (lamina 14) Muestran resultados de caso base y E1 pero no E2? porque no? Tampoco hablan acerca de estos al mostrarlos...
+* No queda claro cuando prueban el problema con o sin batería, esto es para el caso base o para E1 o E2? (lamina 15). O esta es la implementación de E2 a partir de E1? 
+* Deben limpiar un poco para que quede más claro lo que son las fases, etapas y E1 E2, creo que está un poco confuso, (esto agregando lo que es la lamina 19 de la instancia reducida que habla de fase 4 y fase 3 del caso base). 
+* Aparte de eso; en la instancia reducida, que viajes eligen hacer? porque? a que se refieren con ganancia y reservas? estan viendo solo costos de energía o costos totales... faltá aclarar un poco.
+Cierre:
+* Para un buen cierre no solo les recomiendo poner los siguientes pasos si no que una conclusión incluyendo todo lo que es su problema, lo que lograron para esta entrega y a lo que buscan llegar ahora que obtuvieron estos resultados.

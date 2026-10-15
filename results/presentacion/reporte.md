@@ -7,6 +7,7 @@ Versiones simplificadas para las laminas (ver `docs/presentacion/plan_presentaci
 | `graficos/G1_demanda_y_tarifa.png` | 1 | Los buses se necesitan de dia; solo pueden cargar de noche, cuando la tarifa es mas baja |
 | `graficos/G2_ida_vuelta.png` | 2 | 94,7% de las rutas cierra su ida y vuelta a < 500 m: se agrupan rutas |
 | `graficos/G3_mapa_electroterminales.png` | 2 | Los Espinos y Santa Rosa a 1,1 km: un solo electroterminal de 270 puestos |
+| `graficos/G3b_mapa_electroterminales_sin_zoom.png` | 2 | Variante de G3 sin el zoom |
 | `graficos/G4_diagrama_metodologia.png` | 3 | Cuatro etapas por tipo de decision, cada una con su validacion |
 | `graficos/G5_patio_vs_puestos.png` | 8 | De noche los buses estan en el patio y los puestos se llenan |
 | `graficos/G6_barrido.png` | 9 | 100% con reservas es el menor costo factible |

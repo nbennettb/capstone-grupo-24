@@ -1,6 +1,6 @@
 """
 Etapa 2 del pipeline de modelacion - ICS2122 Capstone Buses Electricos
-(ver docs/context/01_metodologia.md seccion 4).
+(ver docs/context/01_como_funciona.md).
 
 Asignacion de expediciones a buses (Electric Vehicle Scheduling Problem SIN
 la restriccion de bateria) como un flujo de costo minimo en una red
@@ -34,7 +34,7 @@ Tres modos (--modo):
            cada pullout/pullin. VIOLA el retorno al propio electroterminal:
            no es un escenario operacional.
 
-Retorno [Profesor]: en 'ruta' y 'cluster' toda jornada empieza y termina en
+Retorno: en 'ruta' y 'cluster' toda jornada empieza y termina en
 el mismo electroterminal (o en el mismo terminal unido); el script falla si
 no se cumple. En 'libre' solo se cuenta cuantas jornadas lo violan.
 
@@ -490,7 +490,7 @@ def main():
     print(f"  [OK] Cobertura verificada: las {len(ex)} expediciones quedan cubiertas exactamente una vez "
           f"en {len(jornadas)} jornadas.")
 
-    # --- Chequeo de retorno [Profesor]: cada bus termina en su electroterminal ---
+    # --- Chequeo de retorno: cada bus termina en su electroterminal ---
     distinto = jornadas["depot_salida"] != jornadas["depot_llegada"]
     en_unidos = jornadas["depot_salida"].isin(ids_unidos) & jornadas["depot_llegada"].isin(ids_unidos)
     cruzan_patio = int((distinto & en_unidos).sum())            # sale de un patio y vuelve al otro del terminal unido
@@ -498,7 +498,7 @@ def main():
     if args.modo in ("ruta", "cluster"):
         assert sin_retorno == 0, (
             f"{sin_retorno} jornadas no terminan en el electroterminal donde empezaron (y no pertenecen al "
-            f"mismo terminal unido): se viola el retorno [Profesor]. Revisar la asignacion.")
+            f"mismo terminal unido): se viola el retorno al electroterminal. Revisar la asignacion.")
         print(f"  [OK] Retorno verificado: toda jornada vuelve a su electroterminal"
               + (f" ({cruzan_patio} cruzan de un patio al otro del terminal unido)." if ids_unidos else "."))
     else:

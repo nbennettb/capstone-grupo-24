@@ -1,0 +1,2 @@
+terminal;escenario_vsp;holgura_min;prueba;jornadas_vsp;buses_vsp;buses_reuso_sin_bateria;tramos;jornadas_cortadas;buses_etapa3;ventanas_intermedias;ventanas_nocturnas;nocturnas_sin_tiempo_carga;cadenas_mas_24h;km_extra_cortes;km_vacios;km_comerciales;kwh_vsp;kwh_tramos;espera_entre_viajes_h;espera_vsp_h;horas_con_pasajeros;segundos_corte;segundos_flujo;segundos_total;memoria_mb
+La Reina;E1;60.0;0;1203;1203;1130;1640;434;1219;421;1219;50;34;5227.34;34929.75;210274.61;335967.82;343286.1;2801.83;2920.58;13418.13;0.6;0.16;2.2;161

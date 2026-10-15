@@ -1,5 +1,5 @@
 """
-Cierre de la Etapa 2 (ver docs/context/01_metodologia.md, seccion 5): compara la escalera de escenarios
+Cierre de la Etapa 2 (ver docs/context/01_como_funciona.md): compara la escalera de escenarios
 E0 -> E1 -> LB y la sensibilidad del deadhead, y calcula el "precio del clustering" (cuanto paga cada configuracion
 frente a la cota inferior LB).
 
@@ -338,7 +338,7 @@ def escribir_reporte(t, s, esc):
         f"cambia nada ({mi(var.loc['E1_C2', 'delta_buses_vs_escalera'])} buses en E1_C2 frente a E1; "
         f"{mi(var.loc['E1_C2_sep', 'delta_buses_vs_escalera'])} en E1_C2_sep frente a E1_sep): el VSP no ve la capacidad. Su "
         "efecto aparece en la carga (Etapa 3). Se mantiene como propuesta y no como base (ver "
-        "`docs/justificaciones/05_unir_terminales.md`).",
+        "`docs/context/02_decisiones.md`).",
         "",
         "## Sensibilidad del deadhead (sobre E1)",
         "",

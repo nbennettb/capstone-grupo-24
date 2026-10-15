@@ -1,0 +1,73 @@
+bus;fila;tramo_id;actividad;inicio_min;fin_min
+11;0;2560.1;tramo;-43.75;246.9
+11;0;2560.1;recarga minima + holgura;246.9;348.86
+11;0;2560.1;en el patio;348.86;348.88
+11;0;1237.1;tramo;348.88;588.85
+11;0;1237.1;recarga minima + holgura;588.85;676.84
+11;0;1237.1;en el patio;676.84;873.86
+11;0;1491.2;tramo;873.86;1573.82
+11;0;1491.2;recarga minima + holgura;1573.82;1725.7
+27;1;4459.1;tramo;-23.78;111.9
+27;1;4459.1;recarga minima + holgura;111.9;192.04
+27;1;4459.1;en el patio;192.04;203.56
+27;1;1985.1;tramo;203.56;533.09
+27;1;1985.1;recarga minima + holgura;533.09;637.52
+27;1;1985.1;en el patio;637.52;665.35
+27;1;3803.2;tramo;665.35;1479.06
+27;1;3803.2;recarga minima + holgura;1479.06;1624.39
+37;2;2070.1;tramo;-13.34;117.47
+37;2;2070.1;recarga minima + holgura;117.47;196.78
+37;2;2070.1;en el patio;196.78;206.41
+37;2;3845.1;tramo;206.41;994.62
+37;2;3845.1;recarga minima + holgura;994.62;1142.94
+37;2;3845.1;en el patio;1142.94;1276.91
+37;2;4786.2;tramo;1276.91;1486.64
+37;2;4786.2;recarga minima + holgura;1486.64;1577.38
+39;3;2024.1;tramo;-10.35;214.3
+39;3;2024.1;recarga minima + holgura;214.3;311.35
+39;3;2024.1;en el patio;311.35;312.02
+39;3;4443.1;tramo;312.02;618.74
+39;3;4443.1;recarga minima + holgura;618.74;717.16
+39;3;4443.1;en el patio;717.16;957.69
+39;3;4950.2;tramo;957.69;1496.81
+39;3;4950.2;recarga minima + holgura;1496.81;1624.63
+1;4;1981.1;tramo;-103.75;371.69
+1;4;1981.1;recarga minima + holgura;371.69;500.75
+1;4;1981.1;en el patio;500.75;503.35
+1;4;4908.2;tramo;503.35;1519.36
+1;4;4908.2;recarga minima + holgura;1519.36;1683.22
+2;5;3836.1;tramo;-75.72;349.35
+2;5;3836.1;recarga minima + holgura;349.35;484.63
+2;5;3836.1;en el patio;484.63;485.71
+2;5;2567.2;tramo;485.71;1472.48
+2;5;2567.2;recarga minima + holgura;1472.48;1619.82
+3;6;1982.1;tramo;-73.75;631.8
+3;6;1982.1;recarga minima + holgura;631.8;785.27
+3;6;1982.1;en el patio;785.27;983.75
+3;6;3416.1;tramo;983.75;1453.18
+3;6;3416.1;recarga minima + holgura;1453.18;1566.9
+4;7;67.1;tramo;-67.07;461.18
+4;7;67.1;recarga minima + holgura;461.18;576.8
+4;7;67.1;en el patio;576.8;579.25
+4;7;4740.2;tramo;579.25;1454.0
+4;7;4740.2;recarga minima + holgura;1454.0;1617.89
+5;8;4804.1;tramo;-55.23;594.53
+5;8;4804.1;recarga minima + holgura;594.53;738.35
+5;8;4804.1;en el patio;738.35;893.86
+5;8;1497.2;tramo;893.86;1388.03
+5;8;1497.2;recarga minima + holgura;1388.03;1505.6
+6;9;4666.1;tramo;-52.04;534.54
+6;9;4666.1;recarga minima + holgura;534.54;644.36
+6;9;4666.1;en el patio;644.36;668.35
+6;9;3423.2;tramo;668.35;1472.21
+6;9;3423.2;recarga minima + holgura;1472.21;1621.16
+7;10;2057.1;tramo;-46.54;528.12
+7;10;2057.1;recarga minima + holgura;528.12;649.41
+7;10;2057.1;en el patio;649.41;650.28
+7;10;199.2;tramo;650.28;1556.17
+7;10;199.2;recarga minima + holgura;1556.17;1713.36
+8;11;3837.1;tramo;-45.72;401.82
+8;11;3837.1;recarga minima + holgura;401.82;540.38
+8;11;3837.1;en el patio;540.38;541.44
+8;11;4798.2;tramo;541.44;1356.36
+8;11;4798.2;recarga minima + holgura;1356.36;1498.39

@@ -1,6 +1,6 @@
 """
 Calibracion empirica del factor de desvio del deadhead - ICS2122 Capstone
-Buses Electricos (ver docs/context/02_supuestos_y_decisiones.md, B2).
+Buses Electricos (ver docs/context/02_decisiones.md).
 
 El modelo calcula todo desplazamiento sin pasajeros (pullout, pullin,
 interlining) como distancia en linea recta x FACTOR_DESVIO (1,3). Este script

@@ -33,7 +33,7 @@ FILTRADO_DIR = PROJECT_ROOT / "data-filtrado"
 # usando "," estandar -> NO se le aplica este separador.
 CSV_SEP = ";"
 
-DIA_TIPO = "L"  # laboral, lunes-viernes - decision registrada en docs/decisiones_datos.md
+DIA_TIPO = "L"  # laboral, lunes-viernes - decision registrada en docs/context/02_decisiones.md
 
 
 def guardar(df, nombre):

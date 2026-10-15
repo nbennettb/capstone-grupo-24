@@ -1,6 +1,6 @@
 """
 Etapa 1 (cierre) del pipeline de modelacion - ICS2122 Capstone Buses Electricos
-(ver docs/context/01_metodologia.md seccion 4).
+(ver docs/context/01_como_funciona.md).
 
 Junta las tres asignaciones ya generadas por scripts/4-clustering_c1.py
 (C1a, C1b) y scripts/5-clustering_c2.py (C2, bajo ciclo diario):
@@ -375,7 +375,7 @@ def escribir_reporte(comparacion, resumen_terminal, capacidad, validacion, evide
         "- Con recuperacion, la energia a recargar y la asignacion de C2 no dependen del nivel: el nivel "
         "solo cambia cuantas jornadas recargan a mitad del dia, y eso se mide en el barrido de niveles "
         "con el simulador de carga reactiva (el nivel base lo elige el costo total, ver "
-        "docs/context/02_supuestos_y_decisiones.md, B6).",
+        "docs/context/02_decisiones.md).",
         "- Estas cifras son un PROXY POR RUTA (kWh comerciales, sin pullout/pullin). La medicion por "
         "jornada se produce en la Etapa 2, con las jornadas regeneradas.",
         "",
@@ -411,7 +411,7 @@ def escribir_reporte(comparacion, resumen_terminal, capacidad, validacion, evide
         "",
         "Tabla ancha por ruta: `data-processed/rutas_clustering_completo.csv`.",
         "",
-        "*(Ver docs/context/01_metodologia.md para la interpretacion completa y las "
+        "*(Ver docs/context/02_decisiones.md para la interpretacion completa y las "
         "decisiones que este resultado habilita o deja pendientes.)*",
     ]
     (RESULTS / "reporte.md").write_text("\n".join(lineas), encoding="utf-8")

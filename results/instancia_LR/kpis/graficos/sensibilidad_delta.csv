@@ -1,0 +1,4 @@
+delta_min;objetivo_usd;cota_lp_usd;reservas;costo_energia;eventos;minutos_sobre_puestos;variables;segundos_lp;segundos_milp;brecha;estado
+5;100899.66;100351.16;218;46399.66;14586;121;478841;9.06;157.79;0.001118;optimo (brecha pedida)
+15;100905.85;100128.94;218;46405.85;5894;138;163962;4.04;29.12;0.003176;optimo (brecha pedida)
+30;100674.02;99854.56;217;46424.02;3782;155;85242;1.65;8.19;0.004362;optimo (brecha pedida)

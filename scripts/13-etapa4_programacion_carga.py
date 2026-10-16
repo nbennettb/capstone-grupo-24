@@ -66,7 +66,7 @@ import scipy.sparse as sps
 from scipy.optimize import linprog
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import brechas, graficos as gr, instancia, medicion, parametros   # noqa: E402
+from common import brechas, graficos as gr, instancia, medicion, nombres, parametros  # noqa: E402
 from common.rutas import DATA_FILTRADO, DATA_PROCESSED, CSV_SEP                # noqa: E402
 
 _spec = importlib.util.spec_from_file_location(
@@ -413,10 +413,12 @@ def graficar_ocupacion(occ_fifo, occ_e2, occ_det, kappa, tarifa, path_png, titul
     ax.fill_between(horas, 0, techo, where=caro, color=gr.PUNTA, alpha=0.08, step="post", linewidth=0,
                     label="tarifa punta")
     ax.plot(horas, occ_fifo, color=gr.ESCENARIO["E2-FIFO"], linewidth=1.2, drawstyle="steps-post",
-            label="E2-FIFO (orden de llegada)")
-    ax.plot(horas, occ_e2, color=gr.ESCENARIO["E2"], linewidth=1.6, drawstyle="steps-post", label="E2 (programada)")
+            label="Propuesta con carga por orden de llegada")
+    ax.plot(horas, occ_e2, color=gr.ESCENARIO["E2"], linewidth=1.6, drawstyle="steps-post",
+            label="Propuesta completa (modelo agregado)")
     if occ_det is not None:
-        ax.plot(horas, occ_det, color=gr.CATEGORICOS[6], linewidth=1.2, drawstyle="steps-post", label="E2 detallado")
+        ax.plot(horas, occ_det, color=gr.CATEGORICOS[6], linewidth=1.2, drawstyle="steps-post",
+                label="Propuesta completa (modelo detallado)")
     ax.axhline(kappa, color=gr.PUESTOS, linestyle="--", linewidth=1, label=f"{kappa} puestos")
     ax.set_xlim(0, 24)
     ax.set_xticks(range(0, 25, 2))
@@ -436,8 +438,10 @@ def graficar_ocupacion(occ_fifo, occ_e2, occ_det, kappa, tarifa, path_png, titul
 def graficar_tarifa(tabla, path_png, titulo):
     x = np.arange(len(tabla))
     fig, ax = plt.subplots(figsize=(9, 3.6))
-    ax.bar(x - 0.2, tabla["kwh_fifo"] / 1000, 0.38, color=gr.ESCENARIO["E2-FIFO"], label="E2-FIFO")
-    ax.bar(x + 0.2, tabla["kwh_e2"] / 1000, 0.38, color=gr.ESCENARIO["E2"], label="E2")
+    ax.bar(x - 0.2, tabla["kwh_fifo"] / 1000, 0.38, color=gr.ESCENARIO["E2-FIFO"],
+           label="Propuesta con carga por orden de llegada")
+    ax.bar(x + 0.2, tabla["kwh_e2"] / 1000, 0.38, color=gr.ESCENARIO["E2"],
+           label="Propuesta completa (modelo agregado)")
     ax.set_xticks(x)
     ax.set_xticklabels([f"{p}\n{h} h\n{pr:.2f} USD/kWh" for p, h, pr in
                         zip(tabla["periodo"], tabla["horas"], tabla["precio_usd_kwh"])], fontsize=8)
@@ -615,9 +619,11 @@ def modo_detallado(args, salida, nombre, h_txt, delta, prueba, v, seg, costos, p
         .round(4).to_csv(det / "ocupacion_bloques.csv", index=False, sep=CSV_SEP)
     td.round(3).to_csv(det / "energia_por_tarifa.csv", index=False, sep=CSV_SEP)
     graficar_ocupacion(occ_f, occ_agr, occ_d, kappa, tarifa, det / "ocupacion_24h.png",
-                       f"Buses cargando en {nombre}: FIFO, agregado y detallado (holgura {h_txt} min, Delta {delta} min)")
+                       f"Buses cargando en {nombre}: orden de llegada, modelo agregado y modelo detallado (holgura de recarga "
+                       f"{h_txt} min, largo del bloque {delta} min)")
     lineas = [
-        f"# Etapa 4 - Modelo detallado, {nombre} (holgura {h_txt} min, Delta {delta} min, {kappa} puestos)",
+        f"# Etapa 4 - Modelo detallado, {nombre} (holgura de recarga {h_txt} min, largo del bloque {delta} min, "
+        f"{kappa} puestos)",
         "" if not prueba else "\n**PRUEBA: no es la instancia real.**\n",
         f"- Detallado: {obj_d:,.2f} USD = energia + reservas {obj_d_er:,.2f} + eventos {info_d['eventos_usd']:,.2f}; "
         f"{int(r_d.sum())} reservas; {info_d['estado']}; brecha {brecha_d:.3%} ({fuente_d}); {t1 + t2:,.0f} s.",
@@ -635,7 +641,7 @@ def modo_detallado(args, salida, nombre, h_txt, delta, prueba, v, seg, costos, p
         "- `programa_E2_detallado.csv`, `resumen.csv`, `modelo.csv`, `ocupacion_minutos.csv`, `ocupacion_bloques.csv`, "
         "`energia_por_tarifa.csv`, `ocupacion_24h.png` (+ .csv), `gurobi_fase1.log`, `gurobi_fase2.log`.",
     ]
-    (det / "reporte.md").write_text("\n".join(lineas), encoding="utf-8")
+    (det / "reporte.md").write_text(nombres.renombrar_texto("\n".join(lineas)), encoding="utf-8")
     print(f"\n  -> {det}")
     print(f"\n  Tiempo: {time.perf_counter() - t_inicio:,.1f} s | pico de memoria: {mem:,.0f} MB")
     print("\n=== FIN ETAPA 4 (detallado) ===")
@@ -829,16 +835,19 @@ def main():
     modelo.to_csv(tablas / "modelo.csv", index=False, sep=CSV_SEP)
     resumen.to_csv(tablas / "resumen.csv", index=False, sep=CSV_SEP)
     graficar_ocupacion(occ_f, occ_2, None, kappa, tarifa, graficos / "ocupacion_24h.png",
-                       f"Buses cargando en {nombre}: por orden de llegada vs programada (holgura {h_txt} min, Delta {delta} min)")
+                       f"Buses cargando en {nombre}: por orden de llegada vs programada (holgura de recarga {h_txt} min, "
+                       f"largo del bloque {delta} min)")
     graficar_tarifa(tarifa_tab, graficos / "energia_por_tarifa.png",
-                    f"Energia cargada por periodo tarifario en {nombre} (holgura {h_txt} min, Delta {delta} min)")
+                    f"Energia cargada por tramo horario en {nombre} (holgura de recarga {h_txt} min, "
+                    f"largo del bloque {delta} min)")
 
     tabla_md = resumen.set_index("politica")[["reservas_intermedias", "reservas_nocturnas", "costo_energia_usd",
                                               "costo_medio_energia_usd_kwh", "pct_energia_valle", "eventos",
                                               "kwh_deficit", "uso_maximo_pct", "minutos_saturados",
                                               "minutos_sobre_puestos"]].T
     lineas = [
-        f"# Etapa 4 - Programacion de la carga, {nombre} (holgura {h_txt} min, Delta {delta} min, {kappa} puestos)",
+        f"# Etapa 4 - Programacion de la carga, {nombre} (holgura de recarga {h_txt} min, largo del bloque {delta} min, "
+        f"{kappa} puestos)",
         "" if not prueba else "\n**PRUEBA: no es la instancia real.**\n",
         f"- Ventanas: {len(v):,}; energia a reponer {v['kwh'].sum() / 1000:,.1f} MWh = {carga:.1%} de la capacidad de 24 h.",
         "",
@@ -874,7 +883,7 @@ def main():
         "- `tablas/energia_por_tarifa.csv`, `tablas/reservas.csv`, `tablas/modelo.csv`, `tablas/resumen.csv`.",
         "- `graficos/ocupacion_24h.png` (+ .csv), `graficos/energia_por_tarifa.png` (+ .csv).",
     ]
-    (salida / "reporte.md").write_text("\n".join(lineas), encoding="utf-8")
+    (salida / "reporte.md").write_text(nombres.renombrar_reporte_etapa4("\n".join(lineas)), encoding="utf-8")
 
     print("\n=== Resultado ===")
     print(resumen.set_index("politica").T.to_string())

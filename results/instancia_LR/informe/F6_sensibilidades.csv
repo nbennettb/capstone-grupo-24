@@ -1,0 +1,7 @@
+sensibilidad;modelo;valor;buses_operativos;reservas;buses_totales;energia_mas_reservas_usd;segundos_lp_mas_milp
+holgura de recarga (min);agregado;0.0;1166.0;218.0;1384.0;;
+holgura de recarga (min);agregado;30.0;1196.0;203.0;1399.0;;
+holgura de recarga (min);agregado;60.0;1219.0;190.0;1409.0;;
+largo del bloque (min);agregado;5.0;;;;101148.24;102.32
+largo del bloque (min);agregado;15.0;;;;100905.49;97.68
+largo del bloque (min);agregado;30.0;;;;100680.53;14.85

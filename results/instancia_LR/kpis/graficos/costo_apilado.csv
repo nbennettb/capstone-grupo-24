@@ -1,5 +1,0 @@
-escenario;costo_flota;costo_reservas_intermedias;costo_reservas_nocturnas;costo_km_vacios;costo_espera_comparable;costo_energia;costo_eventos;costo_total_comparable;costo_total_original
-E0;431500.0;0.0;79750.0;20240.0;6285.74;48151.0;8675.0;594601.74;610052.0
-E1;409500.0;0.0;78750.0;18699.0;5145.93;47482.0;8230.0;567806.93;583741.0
-E2-FIFO;291500.0;7500.0;110500.0;17464.88;6294.45;47004.72;8200.0;488464.04;497774.1
-E2;291500.0;0.0;54500.0;17464.88;6294.45;46405.49;29330.0;445494.82;449667.72

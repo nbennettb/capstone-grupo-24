@@ -1,5 +1,0 @@
-escenario;buses_vsp;buses_operativos;reservas_intermedias;reservas_nocturnas;buses_totales
-E0;1333;1726;0;319;2045
-E1;1203;1638;0;315;1953
-E2-FIFO;1203;1166;30;442;1638
-E2;1203;1166;0;218;1384

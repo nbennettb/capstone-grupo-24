@@ -24,7 +24,7 @@ Etapa 0 Preproceso         64.502 expediciones, distancias de traslado (euclidia
    |
 Etapa 1 Rutas -> electroterminal    cada ruta sale, vuelve y carga en uno (el mas cercano a sus paraderos)
    |
-Etapa 2 VSP sin bateria    flujo de costo minimo en red espacio-tiempo: las jornadas (que bus hace que viajes)
+Etapa 2 VSP sin batería    flujo de costo minimo en red espacio-tiempo: las jornadas (que bus hace que viajes)
    |          E0: cada ruta con sus buses      E1: interlining dentro del electroterminal
    |
    +--> CASO BASE (no es una etapa): jornadas + carga reactiva + ciclo al 100% con buses de reserva
@@ -43,8 +43,8 @@ Cada etapa se corre **una vez** y deja archivos. La siguiente los lee; no vuelve
 | 2 | `6-vsp_asignacion_buses.py` (`7-`: comparación) | `data-processed/jornadas_{E0,E1}.csv` |
 | Caso base | `10-caso_base_carga_reactiva.py` (`11-`: barrido de niveles) | `results/caso_base/`, `results/instancia_LR/caso_base/` |
 | 3 | `12-etapa3_cortes_reencadenamiento.py` | `results/instancia_LR/etapa3/h<h>/` (tramos, cadenas, ventanas) |
-| 4 | `13-etapa4_programacion_carga.py` | `results/instancia_LR/etapa4/h<h>_d<Δ>/` (programa de carga, FIFO vs E2) |
-| KPIs | `14-kpis_instancia.py` | `results/instancia_LR/kpis/`, `resumen_para_analisis.md` |
+| 4 | `13-etapa4_programacion_carga.py` | `results/instancia_LR/etapa4/h<h>_d<Δ>/` (programa de carga por orden de llegada y modelo agregado; con `--detallado`, el modelo detallado en `detallado/`) |
+| KPIs y figuras | `14-kpis_instancia.py` | `results/instancia_LR/kpis/`, `results/instancia_LR/informe/` (figuras F0-F6 del informe), `resumen_para_analisis.md` |
 
 Cómo correrlo: `docs/context/03_como_correr.md`. Por qué cada decisión: `docs/context/02_decisiones.md`.
 
@@ -52,20 +52,20 @@ Cómo correrlo: `docs/context/03_como_correr.md`. Por qué cada decisión: `docs
 
 **Caso base** (la línea base, bajo su propio título):
 
-| Código | Nombre | Qué es |
-|---|---|---|
-| E0 | Caso base | VSP por línea + carga reactiva: cada bus carga cuando lo necesita; si no alcanza, la jornada se parte; si no termina de cargar antes de salir al día siguiente, lo cubre un bus de reserva |
-| E1 | Segundo caso base | Lo mismo, con interlining en el VSP |
+| Nombre | Qué es |
+|---|---|
+| Caso base | Jornadas por línea + carga reactiva: cada bus carga cuando lo necesita; si no alcanza, la jornada se parte; si no termina de cargar antes de salir al día siguiente, lo cubre un bus de reserva |
+| Caso base con interlining | Lo mismo, con interlining en las jornadas. Aísla el efecto del interlining |
 
 **Escenarios de evaluación** (nuestra propuesta):
 
-| Código | Nombre | Qué cambia respecto del anterior | Qué aísla |
-|---|---|---|---|
-| E2-FIFO | Propuesta con carga por orden de llegada | La Etapa 3 en lugar de la carga reactiva | La Etapa 3 |
-| E2 | Propuesta completa | La Etapa 4 en lugar de la carga por orden de llegada | La Etapa 4 |
+| Nombre | Qué cambia respecto del anterior | Qué aísla |
+|---|---|---|
+| Propuesta con carga por orden de llegada | La Etapa 3 en lugar de la carga reactiva | La Etapa 3 |
+| Propuesta completa | La Etapa 4 en lugar de la carga por orden de llegada. En la tabla principal y las figuras es el modelo detallado con bloques de 15 min; el modelo agregado aparece en la validación y las sensibilidades | La Etapa 4 |
 
-Cada escalón cambia una sola cosa. Los KPIs usan las mismas definiciones en todos: costo total desglosado (original y
-comparable), N de buses, % km vacíos, costo medio de la energía, buses extra por batería, reservas por tipo, uso de los
+Cada escalón cambia una sola cosa. Los KPIs usan las mismas definiciones en todos: costo total desglosado (y el costo
+total con espera nocturna), N de buses, % km vacíos, costo medio de la energía, buses extra por batería, reservas por tipo, uso de los
 puestos y tiempo de cómputo.
 
 **Diferencia entre la Etapa 3 y el caso base:**
@@ -76,12 +76,35 @@ puestos y tiempo de cómputo.
 | Si la batería no alcanza | Parte la jornada y el bus queda parado el resto del día | Corta donde menos cuesta |
 | Después de cargar | El bus queda parado | El bus vuelve a servicio con otro tramo |
 
+## Equivalencias entre siglas internas y nombres
+
+Las siglas solo quedan en el código, las opciones de línea de comandos y los nombres de archivo. Todo lo que lee una
+persona (figuras, tablas, CSV de resultados, reportes y estos documentos) usa los nombres.
+
+| Sigla interna | Nombre |
+|---|---|
+| `E0` | Caso base |
+| `E1` | Caso base con interlining |
+| `E2-FIFO` | Propuesta con carga por orden de llegada |
+| `E2` | Propuesta completa (si hace falta: modelo agregado o modelo detallado) |
+| `LB` | Cota inferior de flota (no es operacional) |
+| `E0_sep`, `E1_sep` | ... con terminales separados (evidencia para unir Los Espinos y Santa Rosa) |
+| `C1` / `C1b`, `C2` | Asignación por cercanía; asignación con capacidad (Etapa 1) |
+| `VSP` (en etiquetas) | Jornadas sin batería (Etapa 2) |
+| `FIFO` | orden de llegada |
+| reservas intermedias / nocturnas | reservas diurnas / reservas nocturnas |
+| `h` | holgura de recarga (min), Etapa 3 |
+| `Δ`, `Delta` | largo del bloque (min), Etapa 4 |
+| `P1` ... `P6` | tramo horario con sus horas (por ejemplo, 00-08 h) |
+| costo total comparable / original | costo total / costo total con espera nocturna |
+| `LR` | La Reina |
+
 ## Por qué la instancia es el terminal La Reina
 
 Después de la Etapa 1, cada electroterminal es un **subproblema independiente**: sus rutas solo se encadenan entre sí,
 sus buses salen, vuelven y cargan ahí, y sus puestos no se comparten. Un terminal completo es entonces un problema real
 y completo: sus viajes, sus buses y sus 100 puestos, sin escalar puestos ni muestrear jornadas. El caso base filtrado a
-La Reina reproduce exactamente la corrida de la red completa filtrada (E0 1.333 → 1.726 buses y 319 reservas; E1 1.203 →
+La Reina reproduce exactamente la corrida de la red completa filtrada (Caso base 1.333 → 1.726 buses y 319 reservas; Caso base con interlining 1.203 →
 1.638 y 315), y esa igualdad lo prueba.
 
 La Reina es el **terminal congestionado más chico**: la energía que necesita es el 80% de su capacidad de 24 h y el caso

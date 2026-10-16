@@ -54,7 +54,7 @@ import pandas as pd
 import scipy.sparse as sps
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import graficos as gr, instancia, medicion, parametros            # noqa: E402
+from common import graficos as gr, instancia, medicion, nombres, parametros   # noqa: E402
 from common.rutas import DATA_FILTRADO, DATA_PROCESSED, CSV_SEP                # noqa: E402
 
 _spec = importlib.util.spec_from_file_location(
@@ -514,7 +514,7 @@ def main():
         "- `graficos/gantt_cadenas.png` (+ .csv): cadenas con mas tramos.",
         "- `graficos/llegadas_patio_por_hora.png` (+ .csv): llegadas al patio por hora.",
     ]
-    (salida / "reporte.md").write_text("\n".join(lineas), encoding="utf-8")
+    (salida / "reporte.md").write_text(nombres.renombrar_texto("\n".join(lineas)), encoding="utf-8")
     print(f"\n  -> {salida}")
     print(f"\n  Tiempo: {t_total:,.1f} s | pico de memoria: {mem:,.0f} MB")
     print("\n=== FIN ETAPA 3 ===")

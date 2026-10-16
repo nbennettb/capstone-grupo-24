@@ -75,7 +75,7 @@ Cómo se lee la evidencia:
   - C2 (MILP de asignación con capacidad de carga): queda como propuesta.
 - **Evidencia (medido):**
   - C1a y C1 difieren en 41 de 417 rutas, pero el costo de salida y vuelta cambia solo 0,7%.
-  - C2 mueve 5 de 417 rutas, cambia el VSP en 0 buses (E1) y mejora el costo total en 0,3%.
+  - C2 mueve 5 de 417 rutas, cambia el VSP en 0 buses (Caso base con interlining) y mejora el costo total en 0,3%.
   - Además, C2 respeta un promedio diario y no la concentración nocturna: sin unir terminales sigue dejando 21 MWh sin reponer.
 - **Dónde:** `scripts/4-clustering_c1.py`, `scripts/5-clustering_c2.py`, `scripts/8-clustering_comparacion.py`.
 
@@ -91,9 +91,9 @@ Cómo se lee la evidencia:
 - **Por qué:** están a 1,11 km (el siguiente par más cercano está a 5,86 km). Separados, Los Espinos no tiene puestos para reponer su energía.
 - **Alternativa:** tratarlos por separado. La solución resulta infactible.
 - **Evidencia (medido):**
-  - Separados, Los Espinos necesita 104,0% (E0) y 102,6% (E1) de su capacidad de 24 h y queda un déficit de 44-48 MWh/día.
+  - Separados, Los Espinos necesita 104,0% (Caso base) y 102,6% (Caso base con interlining) de su capacidad de 24 h y queda un déficit de 44-48 MWh/día.
   - Unidos, la carga baja a 82,5% de la capacidad combinada y el déficit es 0.
-  - En E1 la flota del VSP baja en 94 buses.
+  - En Caso base con interlining la flota del VSP baja en 94 buses.
 - **Dónde:** `parametros.ELECTROTERMINALES_UNIDOS`, `scripts/6-` (`--unir-electroterminales`), `scripts/7-comparar_escenarios.py`.
 
 ## C. Asignación de buses (Etapa 2)
@@ -105,20 +105,20 @@ Cómo se lee la evidencia:
 - **Evidencia (medido):** solución entera en todas las corridas (el script avisa si hay valores fraccionales).
 - **Dónde:** `scripts/6-vsp_asignacion_buses.py`.
 
-### C2. Escenarios E0 (por línea) y E1 (con interlining)
+### C2. Escenarios Caso base (por línea) y Caso base con interlining (con interlining)
 - **Qué:**
-  - E0: cada ruta solo con sus propios buses;
-  - E1: se permite encadenar viajes de distintas rutas del mismo electroterminal;
-  - LB: interlining libre entre terminales; es una cota inferior, no un escenario operacional.
-- **Por qué:** E0 representa la operación actual (caso base); E1 aísla el efecto del interlining.
-- **Evidencia (medido):** en toda la red, E1 usa 14,9% menos flota que E0 y queda a 4,4% de LB.
+  - Caso base: cada ruta solo con sus propios buses;
+  - Caso base con interlining: se permite encadenar viajes de distintas rutas del mismo electroterminal;
+  - cota inferior de flota: interlining libre entre terminales; es una cota inferior, no un escenario operacional.
+- **Por qué:** Caso base representa la operación actual (caso base); Caso base con interlining aísla el efecto del interlining.
+- **Evidencia (medido):** en toda la red, Caso base con interlining usa 14,9% menos flota que Caso base y queda a 4,4% de cota inferior de flota.
 - **Dónde:** `scripts/6-` (`--modo ruta | cluster | libre`), `scripts/7-`.
 
 ### C3. Radio de interlining de 3 km
 - **Qué:** dos viajes de distinta ruta se pueden encadenar si el fin de uno está a ≤ 3 km del inicio del otro, medido ya con el factor de desvío.
 - **Por qué:** acota el tamaño del modelo. Sin límite habría miles de millones de arcos.
 - **Alternativa:** un radio mayor. Ahorra flota con rendimientos decrecientes y alarga el cómputo.
-- **Evidencia (medido), sobre E1:** 1 km da +11,3% de buses, 2 km +2,9%, 4 km −2,2% y 5 km −3,4%. El cómputo pasa de ~20 s a ~120 s. El ahorro del interlining que se reporta es un piso.
+- **Evidencia (medido), sobre Caso base con interlining:** 1 km da +11,3% de buses, 2 km +2,9%, 4 km −2,2% y 5 km −3,4%. El cómputo pasa de ~20 s a ~120 s. El ahorro del interlining que se reporta es un piso.
 - **Dónde:** `parametros.RADIO_INTERLINING_KM`.
 
 ### C4. Cada etapa se corre una vez y deja archivos
@@ -128,31 +128,31 @@ Cómo se lee la evidencia:
 
 ## D. Caso base
 
-### D1. El caso base es E0 + carga reactiva + ciclo diario al 100% con buses de reserva
-- **Qué:** sobre las jornadas del VSP, cada bus carga solo cuando lo necesita: sin mirar la tarifa ni el futuro, por orden de llegada a los puestos.
+### D1. El caso base es Caso base + carga reactiva + ciclo diario al 100% con buses de reserva
+- **Qué:** sobre las jornadas sin batería, cada bus carga solo cuando lo necesita: sin mirar la tarifa ni el futuro, por orden de llegada a los puestos.
   - Si no puede hacer el siguiente viaje y volver al patio, va a cargar.
   - Si ni así alcanza, la jornada se parte y un bus nuevo cubre el resto.
   - Al final del día carga hasta el 100%.
   - Si no termina antes de su primera salida del día siguiente, esa salida la cubre un bus de reserva (250 USD).
 - **Por qué:** representa la operación sin planificación de la carga, con reglas simples de explicar. La reserva convierte lo que la carga no alcanza a reponer en flota, una cota superior honesta.
 - **Alternativa:** partir al 100% sin exigir que el bus termine el día cargado. Es miope: esconde el costo de reponer la batería.
-- **Evidencia (medido):** en la red completa, E0 cuesta 3.958.063 USD/día y E1 3.751.250 USD/día. Además, ningún programa de carga cierra el ciclo al 100% con esas jornadas: con una carga perfecta solo cabe el 84% de la energía nocturna en E1.
+- **Evidencia (medido):** en la red completa, Caso base cuesta 3.958.063 USD/día y Caso base con interlining 3.751.250 USD/día. Además, ningún programa de carga cierra el ciclo al 100% con esas jornadas: con una carga perfecta solo cabe el 84% de la energía nocturna en Caso base con interlining.
 - **Dónde:** `scripts/10-caso_base_carga_reactiva.py`.
 
 ### D2. Nivel de carga cíclico 100%
 - **Qué:** todo bus parte y termina el día al mismo nivel, y ese nivel es el 100%.
 - **Por qué:** es el máximo de los datos (`max_soc = 1,0`). Se eligió por costo total entre todas las soluciones factibles de un barrido de 100% a 50%.
 - **Alternativa:** niveles menores. Bajar el nivel no cierra el ciclo; lo paga con flota.
-- **Evidencia (medido), E1 en la red completa:**
+- **Evidencia (medido), Caso base con interlining en la red completa:**
   - 100% + reservas: 3,75 M USD/día;
   - 90%: +5,9%; 80%: +8,5%; 70%: +17,9%;
   - 55% deja 13 reservas pero cuesta +52,8%;
   - 50% es infactible.
-  E0 elige lo mismo. Ante una diferencia < 0,5% se prefiere el nivel más alto, porque 0,5% es el orden del efecto del parámetro menos seguro (el factor de desvío).
+  Caso base elige lo mismo. Ante una diferencia < 0,5% se prefiere el nivel más alto, porque 0,5% es el orden del efecto del parámetro menos seguro (el factor de desvío).
 - **Dónde:** `scripts/11-caso_base_nivel_bateria.py`, `parametros.SOC_BARRIDO_EXTENDIDO`.
 
 ### D3. Carga parcial en el caso base
-- **Qué:** en una carga intermedia, el bus carga hasta el 100% o hasta que se acabe el hueco, lo que ocurra primero.
+- **Qué:** en una carga diurna, el bus carga hasta el 100% o hasta que se acabe el hueco, lo que ocurra primero.
 - **Por qué:** un operador no partiría una jornada que puede seguir con una carga parcial.
 - **Alternativa:** carga completa obligatoria. Favorecería artificialmente los niveles bajos en el barrido.
 - **Dónde:** `scripts/10-` (regla 3 del docstring).
@@ -165,22 +165,22 @@ Cómo se lee la evidencia:
 ## E. Instancia reducida de esta entrega
 
 ### E1. Un electroterminal completo: La Reina
-- **Qué:** las Etapas 3 y 4 y su caso base se prueban en el terminal La Reina completo: 100 puestos, 10.327 expediciones de 67 rutas, 1.333 jornadas E0 y 1.203 jornadas E1. La red completa queda para la entrega final.
+- **Qué:** las Etapas 3 y 4 y su caso base se prueban en el terminal La Reina completo: 100 puestos, 10.327 expediciones de 67 rutas, 1.333 jornadas Caso base y 1.203 jornadas Caso base con interlining. La red completa queda para la entrega final.
 - **Por qué:**
   - Tras la Etapa 1 cada electroterminal es un subproblema independiente: sus rutas solo se encadenan entre sí, sus buses salen, vuelven y cargan ahí y sus puestos no se comparten. Por eso un terminal es un problema completo y real, sin escalar puestos ni muestrear jornadas.
-  - La Reina es el terminal congestionado más chico: la energía necesaria es el 80% de la capacidad de 24 h y el caso base E1 necesita 315 reservas. Así las dos etapas tienen algo que decidir.
+  - La Reina es el terminal congestionado más chico: la energía necesaria es el 80% de la capacidad de 24 h y el caso base Caso base con interlining necesita 315 reservas. Así las dos etapas tienen algo que decidir.
 - **Alternativas:**
   - Vespucio Norte: sin congestión (3 reservas), la Etapa 4 se reduciría a "cargar en la hora más barata";
   - una muestra de jornadas con puestos escalados: no responde una pregunta real.
-- **Evidencia (medido):** el caso base filtrado al terminal reproduce exactamente las corridas de la red completa filtradas: E0 1.333 → 1.726 buses y 319 reservas; E1 1.203 → 1.638 buses y 315 reservas. El script lo exige con un assert, y esa igualdad prueba la independencia.
+- **Evidencia (medido):** el caso base filtrado al terminal reproduce exactamente las corridas de la red completa filtradas: Caso base 1.333 → 1.726 buses y 319 reservas; Caso base con interlining 1.203 → 1.638 buses y 315 reservas. El script lo exige con un assert, y esa igualdad prueba la independencia.
 - **Dónde:** `parametros.TERMINAL_INSTANCIA`, `scripts/common/instancia.py`, opción `--terminal` de 10-, 12-, 13- y 14-.
 
 ### E2. Escalera de escenarios: cada escalón cambia una sola cosa
 - **Qué:** la escalera tiene cuatro escalones.
-  1. **E0, caso base:** VSP por línea + carga reactiva.
-  2. **E1, segundo caso base:** el VSP permite interlining.
-  3. **E2-FIFO, propuesta con carga por orden de llegada:** la Etapa 3 reemplaza a la carga reactiva.
-  4. **E2, propuesta completa:** la Etapa 4 reemplaza a la FIFO.
+  1. **Caso base:** VSP por línea + carga reactiva.
+  2. **Caso base con interlining:** el VSP permite interlining.
+  3. **Propuesta con carga por orden de llegada:** la Etapa 3 reemplaza a la carga reactiva.
+  4. **Propuesta completa:** la Etapa 4 reemplaza a la carga por orden de llegada.
 - **Por qué:** así cada diferencia se atribuye a una sola decisión. El caso base va bajo su propio título, separado de los escenarios de evaluación.
 - **Dónde:** `scripts/14-kpis_instancia.py`.
 
@@ -214,10 +214,10 @@ Cómo se lee la evidencia:
 - **Por qué:** le da la mayor ventana de carga y es determinista. No cambia la flota: cualquier bus listo da el mismo número.
 - **Dónde:** `armar_cadenas`.
 
-### F5. Holgura h = 0 min como base; sensibilidad 0 / 30 / 60
+### F5. Holgura de recarga 0 min como base; sensibilidad 0 / 30 / 60
 - **Qué:** después de recargar a plena potencia, el bus espera h minutos más antes de poder tomar otro tramo.
 - **Por qué:** la Etapa 3 no ve los puestos. La holgura anticipa las colas a cambio de flota: más holgura da más buses en la Etapa 3 y menos reservas en la Etapa 4. La base es 0 porque no hay un valor medido que justifique otro.
-- **Evidencia:** en la prueba chica, h = 0 / 30 / 60 da 26 / 28 / 29 buses y 3 / 3 / 1 reservas nocturnas. La cifra del terminal se mide en la corrida.
+- **Evidencia:** en la prueba chica, holgura de recarga 0 / 30 / 60 da 26 / 28 / 29 buses y 3 / 3 / 1 reservas nocturnas. La cifra del terminal se mide en la corrida.
 - **Dónde:** `parametros.HOLGURAS_RECARGA_MIN`, opción `--holgura`.
 
 ### F6. Ventanas de carga
@@ -231,13 +231,13 @@ Cómo se lee la evidencia:
 - **Qué:** como el VSP, el re-encadenamiento resuelve un día de servicio (00:00 a ~25:40). Una cadena puede durar más de 24 h (por ejemplo, un servicio que sale a las 00:00 y otro tramo que vuelve a la 01:30 del día siguiente). En ese caso la ventana nocturna termina antes de que el bus llegue y esa salida la cubre un bus de reserva en la Etapa 4: la misma regla del caso base.
 - **Por qué:** mantiene la comparabilidad con el VSP y con el caso base, que tampoco son cíclicos.
 - **Alternativa:** un flujo cíclico de 24 h (flota contada en una hora de referencia). Es más correcto en estado estacionario, pero cambia el modelo del plan y deja de ser comparable. Queda como mejora para la entrega final.
-- **Evidencia (medido):** las propias jornadas E1 de La Reina ya traen 24 jornadas de más de 24 h (máximo 27,3 h), y el caso base les asigna reservas (22 de sus 315). El script informa cuántas cadenas duran más de 24 h y cuántas nocturnas no alcanzan la recarga ni con puesto libre: son reservas que ninguna programación de carga puede evitar.
+- **Evidencia (medido):** las propias jornadas Caso base con interlining de La Reina ya traen 24 jornadas de más de 24 h (máximo 27,3 h), y el caso base les asigna reservas (22 de sus 315). El script informa cuántas cadenas duran más de 24 h y cuántas nocturnas no alcanzan la recarga ni con puesto libre: son reservas que ninguna programación de carga puede evitar.
 - **Dónde:** `main` de 12- (columnas `cadenas_mas_24h` y `nocturnas_sin_tiempo_carga` de `resumen.csv`).
 
 ### F8. Dónde carga y con qué jornadas
-- **Qué:** cada bus carga solo en su electroterminal. La entrada son las jornadas E1 del terminal.
-- **Por qué:** se respeta el retorno al electroterminal, se mantiene la comparación con el caso base, y E1 es la configuración propuesta.
-- **Alternativa:** las Etapas 3-4 sobre E0 (P3).
+- **Qué:** cada bus carga solo en su electroterminal. La entrada son las jornadas Caso base con interlining del terminal.
+- **Por qué:** se respeta el retorno al electroterminal, se mantiene la comparación con el caso base, y Caso base con interlining es la configuración propuesta.
+- **Alternativa:** las Etapas 3-4 sobre Caso base (P3).
 - **Dónde:** opción `--escenario` de 12-.
 
 ## G. Etapa 4: programación de la carga
@@ -249,35 +249,35 @@ Cómo se lee la evidencia:
   - Objetivo: energía a la tarifa del bloque + 250 USD por reserva.
 - **Por qué:** es exacto por bloque si un bus puede enchufarse y desenchufarse dentro de un bloque, salvo en los bloques de borde. El modelo es chico (una binaria por ventana) y es el candidato para escalar a la red completa.
 - **Alternativa:** un modelo detallado con enchufe por bloque y costo por evento (G10). Se corre en el mismo terminal para medir el error del agregado.
-- **Evidencia:** en la prueba con 3 puestos, la realización por minuto del agregado supera los puestos en 4 / 15 / 50 minutos con Δ = 5 / 15 / 30. Ese es el error de los bordes y se informa.
+- **Evidencia:** en la prueba con 3 puestos, la realización por minuto del agregado supera los puestos en 4 / 15 / 50 minutos con bloques de 5 / 15 / 30. Ese es el error de los bordes y se informa.
 - **Dónde:** `scripts/13-etapa4_programacion_carga.py` (`construir_segmentos`, `resolver_agregado`, `realizacion_por_minuto`).
 
 ### G2. Dos variables por bloque: dentro de la ventana y en la extensión
 - **Qué:** un bloque que contiene la hora límite d_w tiene una parte dentro de [a_w, d_w) y otra en la extensión [d_w, a_w + 24 h). Cada parte tiene su propia variable, y solo la de la extensión exige reserva.
-- **Por qué:** si la restricción de la extensión se aplicara al bloque entero, obligaría a pagar una reserva aunque la carga termine antes de d_w. La FIFO dejaría de ser una solución factible del modelo y no se podría garantizar E2 ≤ E2-FIFO.
-- **Evidencia:** la FIFO llevada a la grilla es factible y tiene el mismo costo de energía que al minuto. El script lo exige.
+- **Por qué:** si la restricción de la extensión se aplicara al bloque entero, obligaría a pagar una reserva aunque la carga termine antes de d_w. La carga por orden de llegada dejaría de ser una solución factible del modelo y no se podría garantizar Propuesta completa ≤ Propuesta con carga por orden de llegada.
+- **Evidencia:** la carga por orden de llegada llevada a la grilla es factible y tiene el mismo costo de energía que al minuto. El script lo exige.
 - **Dónde:** `construir_segmentos`, `fifo_en_grilla`.
 
-### G3. Reserva en ventanas intermedias
-- **Qué:** si la carga de una ventana no termina antes de la siguiente salida del bus, un bus ya cargado cubre la salida. En una ventana intermedia, la reserva toma el resto de la cadena.
-- **Por qué:** es la misma regla del caso base, aplicada a toda ventana. Es conservador, porque la reserva podría devolverse antes. Se informa por separado en intermedias y nocturnas.
+### G3. Reserva en ventanas diurnas
+- **Qué:** si la carga de una ventana no termina antes de la siguiente salida del bus, un bus ya cargado cubre la salida. En una ventana diurna, la reserva toma el resto de la cadena.
+- **Por qué:** es la misma regla del caso base, aplicada a toda ventana. Es conservador, porque la reserva podría devolverse antes. Se informa por separado en diurnas y nocturnas.
 - **Dónde:** restricción de la extensión en `resolver_agregado`; columna `reserva` de `programa_*.csv`.
 
-### G4. Línea de comparación E2-FIFO
+### G4. Línea de comparación Propuesta con carga por orden de llegada
 - **Qué:** las mismas ventanas de la Etapa 3, cargadas por orden de llegada, a plena potencia y al minuto, con la lógica de puestos del caso base (`buscar_slot`, `reservar` y `costo_energia` de 10-).
   - La carga debe caber en 24 h desde la llegada, el mismo horizonte del modelo.
   - Si no hay un tramo continuo libre, usa los minutos libres que encuentre.
-- **Por qué:** así E1 → E2-FIFO aísla la Etapa 3 y E2-FIFO → E2 aísla la Etapa 4.
+- **Por qué:** así Caso base con interlining → Propuesta con carga por orden de llegada aísla la Etapa 3 y Propuesta con carga por orden de llegada → Propuesta completa aísla la Etapa 4.
 - **Dónde:** `correr_fifo`.
 
-### G5. Bloques de Δ = 15 min; sensibilidad 5 / 15 / 30
-- **Qué:** la base es Δ = 15 min.
+### G5. Bloques de 15 min; sensibilidad 5 / 15 / 30
+- **Qué:** la base es bloques de 15 min.
 - **Por qué:**
   - las tarifas cambian en horas exactas, y Δ debe dividir la hora (el script lo exige);
   - un bloque de 15 min son 45 kWh, así que una carga completa ocupa ~7 bloques;
   - los bordes se tratan con su fracción exacta;
   - el tamaño del modelo es ∝ 1/Δ.
-- **Evidencia:** la sensibilidad Δ = 5 / 15 / 30 mide costo, reservas, minutos sobre los puestos y segundos.
+- **Evidencia:** la sensibilidad bloques de 5 / 15 / 30 mide costo, reservas, minutos sobre los puestos y segundos.
   - En la prueba: objetivo 1.685,8 / 1.685,7 / 1.683,9 USD.
   - Un Δ más grueso relaja la capacidad.
   - La cifra del terminal se mide en la corrida.
@@ -289,12 +289,12 @@ Cómo se lee la evidencia:
   - El desempate vale como máximo 96·10⁻⁶ USD/kWh, cien veces menos que la menor diferencia de tarifas (0,01 USD/kWh), así que nunca cambia en qué periodo se carga.
   - El objetivo reportado no incluye el desempate.
 - **Alternativa:** sin desempate. Se descartó por la evidencia de abajo.
-- **Evidencia (medido, prueba chica sin congestión):** sin desempate, E2 tiene 60 eventos contra 38 de la FIFO; con desempate, 38. La energía (849,81 USD) y las reservas son idénticas. Con congestión extrema (3 puestos) la fragmentación persiste: es real (los buses se reparten la capacidad de un bloque) y es parte del error del agregado que mide el modelo detallado.
+- **Evidencia (medido, prueba chica sin congestión):** sin desempate, Propuesta completa tiene 60 eventos contra 38 de la carga por orden de llegada; con desempate, 38. La energía (849,81 USD) y las reservas son idénticas. Con congestión extrema (3 puestos) la fragmentación persiste: es real (los buses se reparten la capacidad de un bloque) y es parte del error del agregado que mide el modelo detallado.
 - **Dónde:** `parametros.DESEMPATE_USD_KWH_BLOQUE`, función `desempate` de 13-.
 
 ### G7. Solver y criterio de parada
 - **Qué:** Gurobi.
-  - Primero el LP (cota inferior) y luego el MILP, con la FIFO como solución inicial.
+  - Primero el LP (cota inferior) y luego el MILP, con la carga por orden de llegada como solución inicial.
   - Brecha 0,5% del objetivo, límite 600 s (detallado: 3.600 s y brecha válida, ver G11 y G12).
   - El déficit se penaliza con 10.000 USD/kWh.
 - **Por qué:** la brecha de 0,5% es menor que cualquier diferencia que se quiera interpretar entre escenarios. Si no se alcanza, se reporta la brecha obtenida. La penalización hace que el déficit solo aparezca si la energía no cabe en los puestos en 24 h; debe salir 0.
@@ -302,11 +302,11 @@ Cómo se lee la evidencia:
 
 ### G8. Eventos de carga contados después de resolver
 - **Qué:** un evento es un tramo contiguo de bloques con carga de una misma ventana (5 USD).
-- **Por qué:** el agregado no modela eventos. Se cuentan sobre la solución con la misma definición para la FIFO (minutos contiguos) y para E2.
+- **Por qué:** el agregado no modela eventos. Se cuentan sobre la solución con la misma definición para la carga por orden de llegada (minutos contiguos) y para Propuesta completa.
 - **Dónde:** `programa_desde_segmentos`.
 
-### G9. Ocupación por minuto de E2: se informa, no se exige
-- **Qué:** el agregado se valida por bloque. Además, para cada bloque se calcula el mejor reparto por minuto (un LP chico) y se informan los minutos sobre los puestos y el máximo. La FIFO sí se exige por minuto.
+### G9. Ocupación por minuto de Propuesta completa: se informa, no se exige
+- **Qué:** el agregado se valida por bloque. Además, para cada bloque se calcula el mejor reparto por minuto (un LP chico) y se informan los minutos sobre los puestos y el máximo. La carga por orden de llegada sí se exige por minuto.
 - **Por qué:** el agregado es exacto por bloque salvo en los bordes. Exigirle la ocupación por minuto contradiría su definición; medirla dice cuánto se equivoca.
 - **Dónde:** `realizacion_por_minuto`.
 
@@ -315,12 +315,12 @@ Cómo se lee la evidencia:
   - una binaria y = "el bus de la ventana está enchufado en el bloque";
   - el inicio de cada evento (z, 5 USD) en el objetivo;
   - carga continua a plena potencia en los bloques interiores de cada evento.
-  Así la única diferencia con el agregado es la estructura de los eventos. Se corre con Δ = 15 y 30, con límite de 1 h.
+  Así la única diferencia con el agregado es la estructura de los eventos. Se corre con bloques de 15 y 30, con límite de 1 h.
 - **Por qué:** el error principal del agregado en La Reina es la fragmentación.
-  - Con los puestos saturados 17,2 h al día, reparte cada bloque entre muchos buses, porque no ve el costo por evento. Resultan 5.894 eventos contra 1.640 de la FIFO (29.470 contra 8.200 USD/día).
-  - La cifra depende de Δ: 8,9, 3,6 y 2,3 eventos por ventana con Δ = 5, 15 y 30, lo que muestra que es un artefacto.
+  - Con los puestos saturados 17,2 h al día, reparte cada bloque entre muchos buses, porque no ve el costo por evento. Resultan 5.894 eventos contra 1.640 de la carga por orden de llegada (29.470 contra 8.200 USD/día).
+  - La cifra depende de Δ: 8,9, 3,6 y 2,3 eventos por ventana con bloques de 5, 15 y 30, lo que muestra que es un artefacto.
   - El detallado mide cuánto cuesta una programación con eventos reales y cuánto tarda, lo que decide qué modelo llevar a la red completa.
-- **Alternativa descartada:** la capacidad como número de buses enchufados (Σ y ≤ puestos, "enchufado todo el bloque"). Cuenta dos veces un puesto que cambia de bus a mitad de bloque, así que mide su propio error de discretización. Evidencia (medido sobre la FIFO, que es factible minuto a minuto):
+- **Alternativa descartada:** la capacidad como número de buses enchufados (Σ y ≤ puestos, "enchufado todo el bloque"). Cuenta dos veces un puesto que cambia de bus a mitad de bloque, así que mide su propio error de discretización. Evidencia (medido sobre la carga por orden de llegada, que es factible minuto a minuto):
 
   | Δ | Máx. buses enchufados por bloque | Puesto-horas perdidas por cambios dentro del bloque |
   |---|---|---|
@@ -328,39 +328,39 @@ Cómo se lee la evidencia:
   | 15 | 137 | 394 h |
   | 30 | 167 | 804 h |
 
-  La carga necesita 1.907 de las 2.400 puesto-horas, así que con Δ = 30 la energía ni siquiera cabría.
+  La carga necesita 1.907 de las 2.400 puesto-horas, así que con bloques de 30 la energía ni siquiera cabría.
 - **Evidencia del tiempo:** en una prueba chica con congestión forzada (38 ventanas, 3 puestos, 3.724 binarias), el detallado bajó los eventos de 126 a 39, con las mismas reservas y +1,2 USD de energía.
 - **Dónde:** `resolver_detallado` y opción `--detallado` de 13-; sección 11 de `resumen_para_analisis.md` (`detallado_vs_agregado` de 14-).
 
 ### G11. Detallado en dos fases
 - **Qué:** el detallado se corre después del agregado y en dos fases, dentro de una hora en total.
   1. **Fase 1 (25 min, brecha 1%):** el mismo modelo con las reservas fijas en las del agregado, resuelto como modelo principal (todos los hilos, foco en encontrar soluciones). En las 1.422 ventanas sin reserva no se puede cargar después de la hora límite, así que el 65% de las variables de energía y de enchufe quedan fijas en 0.
-  2. **Fase 2 (el tiempo restante, brecha 0,5%):** el modelo completo, con las reservas libres, partiendo de la solución completa de la fase 1. Si la fase 1 no encuentra una solución sin déficit, parte de la FIFO, y se informa.
+  2. **Fase 2 (el tiempo restante, brecha 0,5%):** el modelo completo, con las reservas libres, partiendo de la solución completa de la fase 1. Si la fase 1 no encuentra una solución sin déficit, parte de la carga por orden de llegada, y se informa.
 
   El modelo que se reporta es el completo: la fase 1 solo construye el punto de partida.
-  - Lee las reservas y la cota LP del agregado de la misma carpeta, y no vuelve a resolver ni a escribir el agregado ni la FIFO.
+  - Lee las reservas y la cota LP del agregado de la misma carpeta, y no vuelve a resolver ni a escribir el agregado ni la carga por orden de llegada.
   - Sus salidas van a `etapa4/h<h>_d<Δ>/detallado/`, con un log por fase.
-  - Si el detallado no supera a la FIFO con eventos, queda como aviso y no como error.
+  - Si el detallado no supera a la carga por orden de llegada con eventos, queda como aviso y no como error.
 - **Por qué (lo observado en tres corridas):**
 
-  | Corrida | Soluciones iniciales aceptadas | Δ = 30 | Δ = 15 |
+  | Corrida | Soluciones iniciales aceptadas | bloques de 30 | bloques de 15 |
   |---|---|---|---|
-  | 1ª (900 s) | ninguna (la FIFO por un error de 0,02 kWh; el agregado porque viola la carga continua) | 109.705 USD, brecha 3,8% | 135.342 USD, 322 reservas, brecha 22% |
+  | 1ª (900 s) | ninguna (la carga por orden de llegada por un error de 0,02 kWh; el agregado porque viola la carga continua) | 109.705 USD, brecha 3,8% | 135.342 USD, 322 reservas, brecha 22% |
   | 2ª (1 h) | solo el inicio parcial con las reservas del agregado | 108.686 USD, brecha válida 0,58% | 109.421 USD (apareció a los ~46 min), brecha válida 1,0% |
-  | 3ª (1 h, FIFO corregida) | la FIFO y el inicio parcial | igual a la FIFO (173.205 USD) | igual a la FIFO (173.205 USD) |
+  | 3ª (1 h, carga por orden de llegada corregida) | la carga por orden de llegada y el inicio parcial | igual a la carga por orden de llegada (173.205 USD) | igual a la carga por orden de llegada (173.205 USD) |
 
   - En la 3ª corrida, los dos logs muestran la hora completa en `Processing user MIP start 2 … 0 nodes explored in subMIP`, sin soluciones nuevas, y terminan con `Thread count was 1 (of 8)`: la búsqueda principal nunca empezó.
-  - En la 2ª, el mismo paso entregó soluciones cada vez mejores, pero la buena de Δ = 15 llegó cerca del límite.
+  - En la 2ª, el mismo paso entregó soluciones cada vez mejores, pero la buena de bloques de 15 llegó cerca del límite.
   - Completar un inicio parcial depende de un paso que en estos logs se ve en un solo hilo y fuera de nuestro control. Resolver ese mismo problema (reservas fijas) como modelo principal usa todos los hilos, tiene su propio tiempo y entrega una solución completa, que la fase 2 carga al instante.
-- **Corrección de la FIFO en la grilla** (encontrada en los logs de la 2ª corrida): el minuto que cruza la hora límite se repartía en proporción al tiempo, pero en la simulación el bus carga desde el comienzo del minuto, así que quedaban 0,02 kWh después de la hora límite en una ventana sin reserva.
+- **Corrección de la carga por orden de llegada en la grilla** (encontrada en los logs de la 2ª corrida): el minuto que cruza la hora límite se repartía en proporción al tiempo, pero en la simulación el bus carga desde el comienzo del minuto, así que quedaban 0,02 kWh después de la hora límite en una ventana sin reserva.
   - Ahora lo cargado antes de la hora límite va dentro de la ventana y el resto a la extensión.
-  - Las cifras de E2-FIFO al minuto no cambian (verificado en La Reina con Δ = 15 y 30).
-  - La FIFO cumple todas las restricciones del detallado.
+  - Las cifras de Propuesta con carga por orden de llegada al minuto no cambian (verificado en La Reina con bloques de 15 y 30).
+  - La carga por orden de llegada cumple todas las restricciones del detallado.
 - **Alternativas descartadas:**
   - solo el inicio parcial (depende de que ese paso termine a tiempo);
   - más tiempo sin mejor inicio (mejora a saltos e incierta);
   - fijar las reservas del agregado como datos del modelo final (sería otro modelo, no el detallado).
-- **Escalabilidad:** el detallado con Δ = 15 (~160 mil binarias) necesita del orden de una hora por terminal en un computador de 4 núcleos, contra 25-90 s del agregado. Es un dato para decidir qué modelo llevar a la red completa.
+- **Escalabilidad:** el detallado con bloques de 15 (~160 mil binarias) necesita del orden de una hora por terminal en un computador de 4 núcleos, contra 25-90 s del agregado. Es un dato para decidir qué modelo llevar a la red completa.
 - **Dónde:** `modo_detallado` y `resolver_detallado` (parámetro `r_fijo`) de 13-, `fifo_en_grilla`, `parametros.TIEMPO_LIMITE_S` y `GAP_DETALLADO_FASE1`.
 
 ### G12. Brecha válida del detallado
@@ -370,11 +370,24 @@ Cómo se lee la evidencia:
   - Toda ventana carga en cualquier solución que valga la pena: dejarla sin cargar cuesta la penalización del déficit por su energía. Con 10.000 USD/kWh y la ventana más chica de 25,4 kWh son 254 mil USD, más que la solución completa (~109 mil).
   - La cota solo se usa si se cumple esa condición, y el código lo verifica.
   - Sirve de respaldo cuando Gurobi no alcanza a resolver el nodo raíz.
-- **Alternativa:** reportar solo la brecha de Gurobi, que con Δ = 15 no tenía sentido (1.412.718%).
-- **Evidencia (2ª corrida):** brecha válida 1,0% con Δ = 15 (109.421 contra la cota 108.329) y 0,58% con Δ = 30 (108.686 contra 108.055; la de Gurobi era 2,76%). Las dos son menores que la diferencia que se quiere medir entre agregado y detallado (9-16% del costo de carga).
+- **Alternativa:** reportar solo la brecha de Gurobi, que con bloques de 15 no tenía sentido (1.412.718%).
+- **Evidencia (2ª corrida):** brecha válida 1,0% con bloques de 15 (109.421 contra la cota 108.329) y 0,58% con bloques de 30 (108.686 contra 108.055; la de Gurobi era 2,76%). Las dos son menores que la diferencia que se quiere medir entre agregado y detallado (9-16% del costo de carga).
 - **Dónde:** `scripts/common/brechas.py` (`mejor_brecha`), usado por 13- (`modelo.csv`: `brecha`, `fuente_brecha`, `brecha_gurobi`, `cota_valida_usd`) y 14- (secciones 10 y 11 del resumen).
 
 ## H. KPIs y comparación
+
+### H0. Qué modelo es la Propuesta completa en los resultados
+- **Qué:** en la tabla principal de KPIs y en las figuras F3, F4 y F5, la Propuesta completa es el modelo detallado con bloques de 15 min. El modelo agregado aparece en la validación (detallado frente a agregado) y en las sensibilidades de holgura de recarga y largo del bloque (F6), rotulado "(modelo agregado)".
+- **Por qué:**
+  - es la formulación que se presenta en la metodología;
+  - sus eventos de carga son realistas (1.675 contra 5.866 del agregado);
+  - casi no supera los puestos en la ejecución minuto a minuto (32 min al día, máximo 115 buses, contra 124 min y 125 buses del agregado);
+  - su brecha es 0,66%.
+  - Las sensibilidades necesitan un mismo modelo en todas las variantes, y el agregado es el que se corrió en todas (89 s contra 1 h).
+- **Alternativa:** el agregado como resultado principal. Mismas reservas (218 contra 217) y misma energía, pero su costo con eventos contados después queda ~21 mil USD/día sobre el del detallado.
+- **El modelo detallado con bloques de 30 min no se reporta,** porque no se corrió con el código final. Sus restos están en `results/instancia_LR/descartado/`.
+- **Tiempo de cómputo en F6:** se grafica LP + MILP del agregado (102 / 98 / 15 s con bloques de 5 / 15 / 30 min), igual que el KPI de segundos. El MILP solo toma 94 / 89 / 13 s.
+- **Dónde:** `14-kpis_instancia.py` (`det_base`, `figuras_del_informe`), `scripts/common/figuras_informe.py`.
 
 ### H1. Mismas definiciones para todos los escenarios
 - **Qué:**
@@ -383,8 +396,8 @@ Cómo se lee la evidencia:
   - % km vacíos = km sin pasajeros / km totales.
   - USD/kWh cargado y % de la energía en valle (P1 y P6).
   - Uso máximo de los puestos y horas con todos los puestos ocupados.
-  - Buses extra por batería = N de buses − buses del VSP.
-  - Además: reservas intermedias y nocturnas, y segundos y brecha de cada modelo.
+  - Buses extra por batería = N de buses − buses de las jornadas sin batería.
+  - Además: reservas diurnas y nocturnas, y segundos y brecha de cada modelo.
 - **Por qué:** sin definiciones comunes, la escalera no compara lo mismo.
 - **Dónde:** `scripts/14-kpis_instancia.py` (docstring y `completar`).
 
@@ -395,11 +408,11 @@ Cómo se lee la evidencia:
   - De noche en el patio no se cobra en la versión comparable, porque es estacionamiento.
   - La versión original la cobra como el caso base: desde la llegada hasta el inicio de la primera carga.
   - Para el caso base, la comparable descuenta la cola de las cargas finales (`espera_cola_min`).
-- **Por qué:** E2 espera a propósito la tarifa barata. Cobrarle esa espera lo castigaría por algo que su modelo no ve como costo. Se reportan ambas versiones.
+- **Por qué:** Propuesta completa espera a propósito la tarifa barata. Cobrarle esa espera lo castigaría por algo que su modelo no ve como costo. Se reportan ambas versiones.
 - **Dónde:** `resumen_politica` de 13-, `fila_caso_base` y `fila_propuesta` de 14-.
 
 ### H3. En el caso base todas las reservas son nocturnas
-- **Qué:** si una carga intermedia del caso base no alcanza, la jornada se parte y el bus nuevo cuenta como operativo, no como reserva.
+- **Qué:** si una carga diurna del caso base no alcanza, la jornada se parte y el bus nuevo cuenta como operativo, no como reserva.
 - **Por qué:** es la regla original del caso base, que no cambia. En la comparación, lo relevante es el N de buses total.
 - **Dónde:** `fila_caso_base` de 14-.
 

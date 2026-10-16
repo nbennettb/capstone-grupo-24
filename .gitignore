@@ -30,7 +30,9 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# --- Resultados de la ronda de trabajo anterior (28/09), fuera de alcance ---
-# de la ronda actual (Etapa 0-1 rehechas paso a paso). Se conservan en disco
-# para consulta pero no viajan al repo desde ahora.
-_ronda_anterior/
+prompts_redaccion_informe2.md
+plan_redaccion_informe2.md
+prompt_sesion_implementacion.md
+
+
+

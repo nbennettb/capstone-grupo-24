@@ -44,7 +44,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import graficos as gr, instancia, parametros                       # noqa: E402
+from common import figuras_informe as fi, graficos as gr, instancia, nombres, parametros  # noqa: E402
 from common.rutas import DATA_FILTRADO, DATA_PROCESSED, CSV_SEP, RESULTS_DIR   # noqa: E402
 
 DIA_MIN = 1440
@@ -124,7 +124,8 @@ def fila_caso_base(cb, esc, costos, ex_info):
         eventos=int(r["eventos_total"]), km_vacios=float(r["km_vacios_total"]), km_comerciales=km_com,
         horas_con_pasajeros=h_pas, kwh_cargados=float(r["kwh_cargados"]), kwh_deficit=float(r["kwh_deficit"]),
         usd_kwh=float(r["costo_medio_energia_usd_kwh"]), pct_valle=float(r["pct_energia_valle"]),
-        puestos=kappa, uso_max_pct=occ.max() / kappa * 100, horas_saturadas=(occ >= kappa).sum() / 60,
+        puestos=kappa, uso_max_pct=occ.max() / kappa * 100, max_buses_minuto=float(occ.max()),
+        horas_saturadas=(occ >= kappa).sum() / 60,
         minutos_sobre_puestos=int((occ > kappa).sum()),
         segundos=float(r["tiempo_computo_s"]) if "tiempo_computo_s" in r and not pd.isna(r["tiempo_computo_s"]) else np.nan)
 
@@ -151,6 +152,7 @@ def fila_propuesta(t3, t4, politica, h, delta, costos):
         horas_con_pasajeros=float(r3["horas_con_pasajeros"]), kwh_cargados=float(r4["kwh_cargados"]),
         kwh_deficit=float(r4["kwh_deficit"]), usd_kwh=float(r4["costo_medio_energia_usd_kwh"]),
         pct_valle=float(r4["pct_energia_valle"]), puestos=kappa, uso_max_pct=occ.max() / kappa * 100,
+        max_buses_minuto=float(occ.max()),
         horas_saturadas=(occ >= kappa - 1e-6).sum() / 60, minutos_sobre_puestos=int((occ > kappa + 1e-6).sum()),
         segundos=seg3 + float(r4["segundos"]))
 
@@ -191,21 +193,21 @@ def validaciones(corr, nombre, patios, prueba, costos):
     for esc in ("E0", "E1"):
         j = leer(corr.cb / f"jornadas_{esc}_soc100.csv", dtype={"jornada_id": str})
         if j is None:
-            filas.append(dict(validacion=f"Caso base {esc}: igual a la red completa filtrada", resultado="NO CORRIDO",
+            filas.append(dict(validacion=f"{nombres.ESCENARIO[esc]}: igual a la red completa filtrada", resultado="NO CORRIDO",
                               detalle="falta correr 10-"))
             continue
         rj = leer(red / f"jornadas_{esc}_soc100.csv", dtype={"jornada_id": str})
         if prueba or rj is None:
-            filas.append(dict(validacion=f"Caso base {esc}: igual a la red completa filtrada", resultado="NO APLICA",
+            filas.append(dict(validacion=f"{nombres.ESCENARIO[esc]}: igual a la red completa filtrada", resultado="NO APLICA",
                               detalle="prueba chica" if prueba else "no existe la corrida de la red completa"))
         else:
             rj = rj[rj["terminal"] == nombre]
             ok = (len(rj) == len(j) and int((~rj["ciclo_cumplido"]).sum()) == int((~j["ciclo_cumplido"]).sum())
                   and set(rj["jornada_id"]) == set(j["jornada_id"]))
-            anotar(f"Caso base {esc}: igual a la red completa filtrada", ok,
+            anotar(f"{nombres.ESCENARIO[esc]}: igual a la red completa filtrada", ok,
                    f"{len(j):,} jornadas finales y {int((~j['ciclo_cumplido']).sum()):,} reservas "
                    f"(red completa filtrada: {len(rj):,} y {int((~rj['ciclo_cumplido']).sum()):,})")
-        anotar(f"Caso base {esc}: deficit de energia 0", float(j["kwh_deficit"].sum()) < 1e-3,
+        anotar(f"{nombres.ESCENARIO[esc]}: deficit de energia 0", float(j["kwh_deficit"].sum()) < 1e-3,
                f"{j['kwh_deficit'].sum():.3f} kWh")
 
     jv = pd.read_csv(DATA_PROCESSED / "jornadas_E1.csv", sep=CSV_SEP, dtype={"depot_salida": str, "depot_llegada": str})
@@ -231,13 +233,14 @@ def validaciones(corr, nombre, patios, prueba, costos):
         mo = leer(t4 / "modelo.csv").set_index("modelo")
         k = int(ob["puestos"].iloc[0])
         anotar(f"Etapa 4 (h={h:g}, Delta={d}): deficit 0", float(r4["kwh_deficit"].sum()) < 1e-3,
-               f"FIFO {r4.loc['E2-FIFO', 'kwh_deficit']:.3f} kWh, E2 {r4.loc['E2', 'kwh_deficit']:.3f} kWh")
-        anotar(f"Etapa 4 (h={h:g}, Delta={d}): ocupacion <= {k} por bloque (E2) y por minuto (FIFO)",
+               f"orden de llegada {r4.loc['E2-FIFO', 'kwh_deficit']:.3f} kWh, modelo agregado {r4.loc['E2', 'kwh_deficit']:.3f} kWh")
+        anotar(f"Etapa 4 (h={h:g}, Delta={d}): ocupacion <= {k} por bloque (modelo agregado) y por minuto (orden de llegada)",
                bool((ob["buses_equivalentes_e2"] <= k + 1e-6).all() and (om["fifo"] <= k).all()),
-               f"maximo E2 por bloque {ob['buses_equivalentes_e2'].max():.2f}; FIFO por minuto {om['fifo'].max():.0f}; "
-               f"realizacion por minuto de E2: {int((om['e2'] > k + 1e-6).sum())} min sobre {k} (informativo)")
+               f"maximo del modelo agregado por bloque {ob['buses_equivalentes_e2'].max():.2f}; orden de llegada por minuto "
+               f"{om['fifo'].max():.0f}; ejecucion minuto a minuto del modelo agregado: {int((om['e2'] > k + 1e-6).sum())} min "
+               f"sobre {k} (informativo)")
         o2, of = mo.loc["E2 agregado - MILP", "objetivo_usd"], mo.loc["E2-FIFO", "objetivo_usd"]
-        anotar(f"Etapa 4 (h={h:g}, Delta={d}): E2 <= E2-FIFO (energia + reservas)", o2 <= of + 0.01,
+        anotar(f"Etapa 4 (h={h:g}, Delta={d}): modelo agregado <= orden de llegada (energia + reservas)", o2 <= of + 0.01,
                f"{fmt(o2, 2)} <= {fmt(of, 2)} USD")
         det_dir = carpeta_detallado(t4)
         if det_dir is not None:
@@ -246,142 +249,18 @@ def validaciones(corr, nombre, patios, prueba, costos):
             obd, omd = leer(det_dir / "ocupacion_bloques.csv"), leer(det_dir / "ocupacion_minutos.csv")
             od = float(md["objetivo_usd"])
             of_ev = of + r4.loc["E2-FIFO", "costo_eventos_usd"]
-            anotar(f"Etapa 4 (h={h:g}, Delta={d}): detallado, deficit 0", float(rd["kwh_deficit"]) < 1e-3,
+            anotar(f"Etapa 4 (h={h:g}, Delta={d}): modelo detallado, deficit 0", float(rd["kwh_deficit"]) < 1e-3,
                    f"{rd['kwh_deficit']:.3f} kWh")
             supera = od <= of_ev + 0.01
-            filas.append(dict(validacion=f"Etapa 4 (h={h:g}, Delta={d}): detallado <= E2-FIFO (energia + reservas + eventos)",
+            filas.append(dict(validacion=f"Etapa 4 (h={h:g}, Delta={d}): modelo detallado <= orden de llegada (energia + reservas + eventos)",
                               resultado="OK" if supera else "AVISO",
                               detalle=f"{fmt(od, 2)} <= {fmt(of_ev, 2)} USD" if supera else
                               f"{fmt(od, 2)} > {fmt(of_ev, 2)} USD: el detallado no supero a la FIFO en el tiempo dado"))
-            anotar(f"Etapa 4 (h={h:g}, Delta={d}): detallado, ocupacion <= {k} por bloque",
+            anotar(f"Etapa 4 (h={h:g}, Delta={d}): modelo detallado, ocupacion <= {k} por bloque",
                    bool((obd["buses_equivalentes_e2_detallado"] <= k + 1e-6).all()),
-                   f"maximo por bloque {obd['buses_equivalentes_e2_detallado'].max():.2f}; realizacion por minuto: "
+                   f"maximo por bloque {obd['buses_equivalentes_e2_detallado'].max():.2f}; ejecucion minuto a minuto: "
                    f"{int((omd['e2_detallado'] > k + 1e-6).sum())} min sobre {k} (informativo)")
     return pd.DataFrame(filas)
-
-
-# --------------------------------------------------------------------------- #
-# Graficos
-# --------------------------------------------------------------------------- #
-
-def g_escalera(k, path):
-    fig, ax = plt.subplots(figsize=(8.5, 4))
-    x = np.arange(len(k))
-    op, ri, rn = k["buses_operativos"].values, k["reservas_intermedias"].values, k["reservas_nocturnas"].values
-    ax.bar(x, op, 0.6, color=[gr.ESCENARIO[e] for e in k["escenario"]], edgecolor=gr.FONDO, linewidth=2)
-    ax.bar(x, ri, 0.6, bottom=op, color="#8a8984", edgecolor=gr.FONDO, linewidth=2, label="reservas intermedias")
-    ax.bar(x, rn, 0.6, bottom=op + ri, color="#c3c2b7", edgecolor=gr.FONDO, linewidth=2, label="reservas nocturnas")
-    ax.scatter(x, k["buses_vsp"], marker="_", s=900, color=gr.TEXTO, zorder=3, label="buses del VSP")
-    for xi, tot in zip(x, op + ri + rn):
-        ax.text(xi, tot, f"{fmt(tot)}", ha="center", va="bottom", fontsize=9, color=gr.TEXTO)
-    ax.set_xticks(x)
-    ax.set_xticklabels([gr.NOMBRE_ESCENARIO[e].replace(" ", "\n", 1) for e in k["escenario"]], fontsize=8)
-    ax.set_ylabel("buses")
-    ax.set_title("Buses por escenario: operativos (color) + reservas (gris); raya = buses del VSP", fontsize=10, loc="left")
-    ax.legend(fontsize=8, frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=3)
-    gr.estilo(ax)
-    gr.guardar(fig, path, k[["escenario", "buses_vsp", "buses_operativos", "reservas_intermedias", "reservas_nocturnas",
-                             "buses_totales"]])
-
-
-def g_costo(k, path):
-    comps = [("costo_flota", "flota"), ("costo_reservas_intermedias", "reservas intermedias"),
-             ("costo_reservas_nocturnas", "reservas nocturnas"), ("costo_km_vacios", "km vacios"),
-             ("costo_espera_comparable", "espera (comparable)"), ("costo_energia", "energia"),
-             ("costo_eventos", "eventos de carga")]
-    fig, ax = plt.subplots(figsize=(9, 4.3))
-    x = np.arange(len(k))
-    base = np.zeros(len(k))
-    for i, (c, et) in enumerate(comps):
-        v = k[c].values / 1000
-        ax.bar(x, v, 0.6, bottom=base, color=gr.CATEGORICOS[i], edgecolor=gr.FONDO, linewidth=1.5, label=et)
-        base += v
-    ax.scatter(x, k["costo_total_original"] / 1000, marker="D", s=28, color=gr.TEXTO, zorder=3,
-               label="total original (con espera nocturna)")
-    for xi, tot in zip(x, k["costo_total_comparable"] / 1000):
-        ax.text(xi + 0.32, tot, fmt(tot, 1), ha="left", va="center", fontsize=8, color=gr.TEXTO)
-    ax.set_xticks(x)
-    ax.set_xticklabels([gr.NOMBRE_ESCENARIO[e].replace(" ", "\n", 1) for e in k["escenario"]], fontsize=8)
-    ax.set_ylabel("miles de USD por dia")
-    ax.set_title("Costo total comparable por componente (rombo = total original)", fontsize=10, loc="left")
-    ax.legend(fontsize=7.5, frameon=False, loc="center left", bbox_to_anchor=(1.0, 0.5))
-    gr.estilo(ax)
-    gr.guardar(fig, path, k[["escenario"] + [c for c, _ in comps] + ["costo_total_comparable", "costo_total_original"]].round(2))
-
-
-def g_ocupacion(series, kappa, tarifa, path):
-    horas = np.arange(DIA_MIN) / 60
-    techo = max([kappa] + [s.max() for s in series.values()]) * 1.15
-    fig, ax = plt.subplots(figsize=(11, 4))
-    ax.fill_between(horas, 0, techo, where=tarifa >= tarifa.max() - 1e-9, color=gr.PUNTA, alpha=0.08, step="post",
-                    linewidth=0, label="tarifa punta")
-    for esc, s in series.items():
-        ax.plot(horas, s, color=gr.ESCENARIO[esc], linewidth=1.4 if esc == "E2" else 1.1, drawstyle="steps-post",
-                label=gr.NOMBRE_ESCENARIO[esc])
-    ax.axhline(kappa, color=gr.PUESTOS, linestyle="--", linewidth=1, label=f"{kappa} puestos")
-    ax.set_xlim(0, 24)
-    ax.set_xticks(range(0, 25, 2))
-    ax.set_ylim(0, techo)
-    ax.set_xlabel("Hora del dia")
-    ax.set_ylabel("buses cargando")
-    ax.set_title("Uso de los puestos en 24 h (por minuto)", fontsize=10, loc="left")
-    ax.legend(fontsize=8, frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.17), ncol=3)
-    gr.estilo(ax)
-    datos = pd.DataFrame({"minuto": np.arange(DIA_MIN), "precio_usd_kwh": tarifa,
-                          **{esc: np.round(s, 4) for esc, s in series.items()}, "puestos": kappa})
-    gr.guardar(fig, path, datos)
-
-
-def g_tarifa(tab, path):
-    escs = [e for e in ESCENARIOS if f"kwh_{e}" in tab]
-    fig, ax = plt.subplots(figsize=(9.5, 3.8))
-    x = np.arange(len(tab))
-    ancho = 0.8 / len(escs)
-    for i, e in enumerate(escs):
-        ax.bar(x - 0.4 + ancho * (i + 0.5), tab[f"kwh_{e}"] / 1000, ancho * 0.92, color=gr.ESCENARIO[e],
-               label=gr.NOMBRE_ESCENARIO[e])
-    ax.set_xticks(x)
-    ax.set_xticklabels([f"{p}\n{h} h\n{pr:.2f} USD/kWh" for p, h, pr in zip(tab["periodo"], tab["horas"],
-                                                                         tab["precio_usd_kwh"])], fontsize=8)
-    ax.set_ylabel("MWh cargados")
-    ax.set_title("Energia cargada por periodo tarifario", fontsize=10, loc="left")
-    ax.legend(fontsize=8, frameon=False)
-    gr.estilo(ax)
-    gr.guardar(fig, path, tab.round(2))
-
-
-def g_holgura(t, path):
-    fig, ax = plt.subplots(figsize=(7, 3.8))
-    series = [("buses_etapa3", "buses de la Etapa 3", gr.CATEGORICOS[0]),
-              ("buses_totales_E2", "buses totales con E2 (Etapa 3 + reservas)", gr.ESCENARIO["E2"]),
-              ("reservas_E2", "reservas con E2", "#8a8984")]
-    for c, et, col in series:
-        ax.plot(t["holgura_min"], t[c], marker="o", markersize=6, linewidth=2, color=col, label=et)
-        ax.annotate(fmt(t[c].iloc[-1]), (t["holgura_min"].iloc[-1], t[c].iloc[-1]), xytext=(6, 0),
-                    textcoords="offset points", va="center", fontsize=8, color=gr.TEXTO)
-    ax.set_xticks(t["holgura_min"])
-    ax.set_xlabel("holgura h de la Etapa 3 (min)")
-    ax.set_ylabel("buses")
-    ax.set_title("Sensibilidad a la holgura h de la Etapa 3: buses y reservas", fontsize=10, loc="left")
-    ax.legend(fontsize=8, frameon=False)
-    gr.estilo(ax)
-    gr.guardar(fig, path, t)
-
-
-def g_delta(t, path):
-    fig, axs = plt.subplots(1, 2, figsize=(10, 3.6))
-    axs[0].plot(t["delta_min"], t["objetivo_usd"], marker="o", markersize=6, linewidth=2, color=gr.ESCENARIO["E2"])
-    axs[0].set_ylabel("USD por dia (energia + reservas)")
-    axs[0].set_title("Objetivo de E2", fontsize=10, loc="left")
-    axs[1].plot(t["delta_min"], t["segundos_lp"] + t["segundos_milp"], marker="o", markersize=6, linewidth=2,
-                color=gr.CATEGORICOS[0])
-    axs[1].set_ylabel("segundos (LP + MILP)")
-    axs[1].set_title("Tiempo de resolucion", fontsize=10, loc="left")
-    for ax in axs:
-        ax.set_xticks(t["delta_min"])
-        ax.set_xlabel("largo del bloque Delta (min)")
-        gr.estilo(ax)
-    gr.guardar(fig, path, t)
 
 
 # --------------------------------------------------------------------------- #
@@ -400,8 +279,8 @@ def main():
     patios = instancia.patios_terminal(depots, args.terminal)
     nombre = instancia.nombre_terminal(depots, patios)
     carpeta = instancia.carpeta_instancia(depots, args.terminal)
-    tablas, graficos = carpeta / f"kpis{sufijo}" / "tablas", carpeta / f"kpis{sufijo}" / "graficos"
-    for d in (tablas, graficos):
+    tablas = carpeta / f"kpis{sufijo}" / "tablas"
+    for d in (tablas,):
         d.mkdir(parents=True, exist_ok=True)
     corr = Corridas(carpeta, sufijo)
     h0, d0 = float(parametros.HOLGURAS_RECARGA_MIN[0]), parametros.DELTA_MIN
@@ -432,7 +311,7 @@ def main():
                 continue                      # la FIFO es al minuto: no depende de Delta
             f = fila_propuesta(corr.e3[h], det_dir if pol == "E2-detallado" else t4, pol, h, d, costos)
             if pol == "E2-detallado":
-                f["escenario"], f["variante"] = "E2", f"detallado h={h:g} Delta={d}"
+                f["escenario"], f["variante"] = "E2", f"modelo detallado, h={h:g}, Delta={d}"
             else:
                 f["variante"] = "base" if (h == h0 and d == d0) else (f"h={h:g}" if d == d0 else f"Delta={d}")
             f["modelo"] = MODELO[pol]
@@ -440,12 +319,21 @@ def main():
     assert filas, "No hay ninguna corrida que resumir en " + str(carpeta)
     k = completar(pd.DataFrame(filas))
     k["modelo"] = k["modelo"].fillna("-")
-    k.round(4).to_csv(tablas / "kpis_escenarios.csv", index=False, sep=CSV_SEP)
+    # La Propuesta completa de la tabla principal y de las figuras es el modelo detallado con el largo del bloque base;
+    # el agregado queda como variante (validacion y sensibilidades).
+    det_base = (k["escenario"] == "E2") & (k["modelo"] == "detallado") & (k["holgura_min"] == h0) & (k["delta_min"] == d0)
+    if det_base.any():
+        k.loc[(k["escenario"] == "E2") & (k["modelo"] == "agregado") & (k["variante"] == "base"), "variante"] = \
+            "modelo agregado"
+        k.loc[det_base, "variante"] = "base"
+    det_dir_base = carpeta_detallado(corr.e4[(h0, d0)]) if (h0, d0) in corr.e4 and det_base.any() else None
+    nombres.presentar(k.round(4)).to_csv(tablas / "kpis_escenarios.csv", index=False, sep=CSV_SEP)
     kb = k[k["variante"] == "base"].set_index("escenario").reindex([e for e in ESCENARIOS if e in set(k["escenario"])]) \
         .reset_index()
 
     # --- validaciones ---
     val = validaciones(corr, nombre, patios, args.prueba, costos)
+    val = nombres.presentar(val)
     val.to_csv(tablas / "validaciones.csv", index=False, sep=CSV_SEP)
 
     # --- tablas de detalle ---
@@ -454,20 +342,23 @@ def main():
     tarifa = np.zeros(DIA_MIN)
     for r in precios.itertuples():
         tarifa[int(r.start_hour) * 60:int(r.end_hour) * 60] = r.price_usd_kwh
-    tab_tarifa = precios.rename(columns={"period_id": "periodo", "price_usd_kwh": "precio_usd_kwh"})
-    tab_tarifa["horas"] = [f"{int(a):02d}-{int(b):02d}" for a, b in zip(precios["start_hour"], precios["end_hour"])]
-    tab_tarifa = tab_tarifa[["periodo", "horas", "precio_usd_kwh"]]
+    tab_tarifa = pd.DataFrame({"tramo horario": [nombres.tramo_horario(a, b) for a, b in
+                                                 zip(precios["start_hour"], precios["end_hour"])],
+                               "precio_usd_kwh": precios["price_usd_kwh"].values})
     for esc in ("E0", "E1"):
         em = leer(corr.cb / f"energia_minuto_{esc}_soc100.csv")
         if em is not None:
             e = em["kwh"].values
-            tab_tarifa[f"kwh_{esc}"] = [e[int(a) * 60:int(b) * 60].sum() for a, b in zip(precios["start_hour"], precios["end_hour"])]
+            tab_tarifa[f"kWh {nombres.ESCENARIO[esc]}"] = [e[int(a) * 60:int(b) * 60].sum()
+                                                          for a, b in zip(precios["start_hour"], precios["end_hour"])]
     base4 = corr.e4.get((h0, d0))
     if base4 is not None:
         et = leer(base4 / "energia_por_tarifa.csv")
-        tab_tarifa["kwh_E2-FIFO"], tab_tarifa["kwh_E2"] = et["kwh_fifo"].values, et["kwh_e2"].values
-    for c in [c for c in tab_tarifa if c.startswith("kwh_")]:
-        tab_tarifa[c.replace("kwh_", "usd_")] = tab_tarifa[c] * tab_tarifa["precio_usd_kwh"]
+        tab_tarifa[f"kWh {nombres.ESCENARIO['E2-FIFO']}"] = et["kwh_fifo"].values
+        tab_tarifa[f"kWh {nombres.ESCENARIO['E2']}"] = (leer(det_dir_base / "energia_por_tarifa.csv")["kwh"].values
+                                                        if det_dir_base is not None else et["kwh_e2"].values)
+    for c in [c for c in tab_tarifa if c.startswith("kWh ")]:
+        tab_tarifa[c.replace("kWh ", "USD ")] = tab_tarifa[c] * tab_tarifa["precio_usd_kwh"]
     tab_tarifa.round(2).to_csv(tablas / "energia_por_tarifa.csv", index=False, sep=CSV_SEP)
 
     series = {}
@@ -477,12 +368,14 @@ def main():
             series[esc] = o
     if base4 is not None:
         om = leer(base4 / "ocupacion_minutos.csv")
-        series["E2-FIFO"], series["E2"] = om["fifo"].values, om["e2"].values
+        series["E2-FIFO"] = om["fifo"].values
+        series["E2"] = (leer(det_dir_base / "ocupacion_minutos.csv")["e2_detallado"].values
+                        if det_dir_base is not None else om["e2"].values)
     kappa = int(kb["puestos"].iloc[0])
     ocup_h = pd.DataFrame({"hora": range(24)})
     for esc, s in series.items():
-        ocup_h[f"{esc}_promedio"] = s.reshape(24, 60).mean(axis=1).round(1)
-        ocup_h[f"{esc}_maximo"] = s.reshape(24, 60).max(axis=1).round(1)
+        ocup_h[f"{nombres.CORTO[esc]} (promedio)"] = s.reshape(24, 60).mean(axis=1).round(1)
+        ocup_h[f"{nombres.CORTO[esc]} (maximo)"] = s.reshape(24, 60).max(axis=1).round(1)
     ocup_h.to_csv(tablas / "ocupacion_por_hora.csv", index=False, sep=CSV_SEP)
 
     diag = None
@@ -491,6 +384,8 @@ def main():
         diag_h = pd.DataFrame([dict(holgura_min=h, **dict(zip(leer(t / "diagnostico_flota.csv")["paso"],
                                                                leer(t / "diagnostico_flota.csv")["buses"])))
                                for h, t in sorted(corr.e3.items())])
+        diag_h = nombres.presentar(diag_h)
+        diag_h.columns = [nombres.renombrar_texto(c) for c in diag_h.columns]
         diag_h.to_csv(tablas / "diagnostico_flota_por_holgura.csv", index=False, sep=CSV_SEP)
 
     sens_h = []
@@ -525,18 +420,18 @@ def main():
                            brecha=float(mo.loc["E2 agregado - MILP", "brecha"]),
                            estado=mo.loc["E2 agregado - MILP", "estado"]))
     sens_d = pd.DataFrame(sens_d)
-    sens_h.to_csv(tablas / "sensibilidad_holgura.csv", index=False, sep=CSV_SEP)
-    sens_d.to_csv(tablas / "sensibilidad_delta.csv", index=False, sep=CSV_SEP)
+    nombres.presentar(sens_h).to_csv(tablas / "sensibilidad_holgura.csv", index=False, sep=CSV_SEP)
+    nombres.presentar(sens_d).to_csv(tablas / "sensibilidad_delta.csv", index=False, sep=CSV_SEP)
 
     modelos = []
     for esc in ("E0", "E1"):
         f = k[k["escenario"] == esc]
         if len(f):
-            modelos.append(dict(corrida=f"Caso base {esc} (simulador reactivo)", estado="-", brecha="-",
+            modelos.append(dict(corrida=f"{nombres.ESCENARIO[esc]} (simulador reactivo)", estado="-", brecha="-",
                                 fuente_brecha="-", segundos=f["segundos"].iloc[0]))
     for h, t3 in sorted(corr.e3.items()):
         r3 = leer(t3 / "resumen.csv").iloc[0]
-        modelos.append(dict(corrida=f"Etapa 3 h={h:g} (DP + flujo)", estado="optimo (flujo entero)", brecha=0,
+        modelos.append(dict(corrida=f"Etapa 3 (h={h:g}) (DP + flujo)", estado="optimo (flujo entero)", brecha=0,
                             fuente_brecha="flujo entero", segundos=float(r3["segundos_total"])))
     for (h, d), t4 in sorted(corr.e4.items()):
         mo = leer(t4 / "modelo.csv").set_index("modelo")
@@ -547,38 +442,26 @@ def main():
         for nombre_mo, r in mo.iterrows():
             fuente = r["fuente_brecha"] if "fuente_brecha" in r and isinstance(r["fuente_brecha"], str) else (
                 "Gurobi" if r["brecha"] == r["brecha"] else "-")
-            modelos.append(dict(corrida=f"Etapa 4 h={h:g} Delta={d}: {nombre_mo}", estado=r["estado"],
+            modelos.append(dict(corrida=f"Etapa 4 (h={h:g}, Delta={d}): {nombre_mo}", estado=r["estado"],
                                 brecha=r["brecha"], fuente_brecha=fuente, segundos=r["segundos"]))
-    modelos = pd.DataFrame(modelos)
+    modelos = nombres.presentar(pd.DataFrame(modelos))
     modelos.to_csv(tablas / "tiempos_y_brechas.csv", index=False, sep=CSV_SEP)
     det = detallado_vs_agregado(corr)
     if det is not None:
-        det.to_csv(tablas / "detallado_vs_agregado.csv", index=False, sep=CSV_SEP)
+        nombres.presentar(det).to_csv(tablas / "detallado_vs_agregado.csv", index=False, sep=CSV_SEP)
 
-    # --- graficos ---
     figuras = []
-    g_escalera(kb, graficos / "escalera_buses.png")
-    figuras.append(("escalera_buses.png", "Buses VSP -> operativos -> + reservas en cada escenario de la escalera."))
-    g_costo(kb, graficos / "costo_apilado.png")
-    figuras.append(("costo_apilado.png", "Costo total comparable por componente; el rombo marca el total original."))
-    if series:
-        g_ocupacion({e: s for e, s in series.items() if e != "E0"}, kappa, tarifa, graficos / "ocupacion_24h.png")
-        figuras.append(("ocupacion_24h.png", "Buses cargando por minuto en E1, E2-FIFO y E2 frente a los puestos y la tarifa punta."))
-    if base4 is not None:
-        g_tarifa(tab_tarifa, graficos / "energia_por_tarifa.png")
-        figuras.append(("energia_por_tarifa.png", "MWh cargados en cada periodo tarifario por escenario."))
-    if len(sens_h) > 1:
-        g_holgura(sens_h, graficos / "sensibilidad_holgura.png")
-        figuras.append(("sensibilidad_holgura.png", "Efecto de la holgura h en los buses de la Etapa 3 y las reservas."))
-    if len(sens_d) > 1:
-        g_delta(sens_d, graficos / "sensibilidad_delta.png")
-        figuras.append(("sensibilidad_delta.png", "Efecto del largo del bloque Delta en el objetivo de E2 y en el tiempo."))
+    extras = []
+    if not args.prueba:
+        figuras = figuras_del_informe(carpeta / "informe", corr, kb, series, kappa, tarifa, sens_h, sens_d, h0,
+                                      det_dir_base)
+        extras = seccion_figuras(figuras) + seccion_herramientas()
 
     # --- resumen para el analisis ---
     md = resumen_md(nombre, kappa, args.prueba, costos, corr, k, kb, val, diag, tab_tarifa, ocup_h, sens_h, sens_d,
-                    modelos, det, figuras, carpeta, sufijo)
+                    modelos, det, figuras, carpeta, sufijo, extras)
     path_md = carpeta / f"resumen_para_analisis{sufijo}.md"
-    path_md.write_text(md, encoding="utf-8")
+    path_md.write_text(nombres.renombrar_texto(md), encoding="utf-8")
 
     print("\n--- Validaciones ---")
     for r in val.itertuples():
@@ -588,7 +471,7 @@ def main():
             "buses_totales", "buses_extra_bateria", "pct_km_vacios", "usd_kwh", "pct_valle", "uso_max_pct",
             "horas_saturadas"]
     print(kb.set_index("escenario")[cols].T.round(2).to_string())
-    print(f"\n  -> {tablas}\n  -> {graficos}\n  -> {path_md}")
+    print(f"\n  -> {tablas}\n  -> {carpeta / 'informe'}\n  -> {path_md}")
     fallas = (val["resultado"] == "FALLA").sum()
     print(f"\n  {'TODAS LAS VALIDACIONES OK' if fallas == 0 else f'{fallas} VALIDACIONES FALLAN: revisar antes de analizar'}")
     print("\n=== FIN KPIs ===")
@@ -634,7 +517,7 @@ def detallado_vs_agregado(corr):
 def tabla_detallado(det):
     """La comparacion en una sola tabla (USD/dia)."""
     t = pd.DataFrame({
-        "Delta (min)": det["delta_min"].astype(int), "modelo": det["modelo"],
+        "largo del bloque (min)": det["delta_min"].astype(int), "modelo": det["modelo"],
         "reservas": det["reservas_intermedias"] + det["reservas_nocturnas"], "eventos": det["eventos"],
         "energia + reservas (USD)": det["energia_mas_reservas_usd"].map(lambda x: fmt(x)),
         "total carga = + eventos (USD)": det["total_carga_usd"].map(lambda x: fmt(x)),
@@ -649,81 +532,154 @@ def conclusion_detallado(det):
     a = det[(det["delta_min"] == d0) & (det["modelo"] == "agregado")].iloc[0]
     b = det[(det["delta_min"] == d0) & (det["modelo"] == "detallado")].iloc[0]
     res = lambda f: int(f["reservas_intermedias"] + f["reservas_nocturnas"])
-    return (f"**Conclusion:** con Delta = {int(d0)} min, la programacion del detallado cuesta {fmt(b['total_carga_usd'])} "
-            f"USD/dia contra {fmt(a['total_carga_usd'])} del agregado con sus eventos contados despues "
+    return (f"**Conclusion:** con bloques de {int(d0)} min, la programacion del modelo detallado cuesta {fmt(b['total_carga_usd'])} "
+            f"USD/dia contra {fmt(a['total_carga_usd'])} del modelo agregado con sus eventos contados despues "
             f"({(b['total_carga_usd'] / a['total_carga_usd'] - 1) * 100:+.1f}%), con {res(b)} reservas contra {res(a)} y "
-            f"{fmt(b['eventos'])} eventos contra {fmt(a['eventos'])}; el agregado se resuelve en {fmt(a['segundos'])} s "
-            f"y el detallado en {fmt(b['segundos'])} s, con brecha {b['brecha']:.2%}.")
+            f"{fmt(b['eventos'])} eventos contra {fmt(a['eventos'])}; el modelo agregado se resuelve en {fmt(a['segundos'])} s "
+            f"y el modelo detallado en {fmt(b['segundos'])} s, con brecha {b['brecha']:.2%}.")
+
+
+def figuras_del_informe(destino, corr, kb, series, kappa, tarifa, sens_h, sens_d, h0, det_dir):
+    """Figuras finales del informe (F0-F6) en destino/: PDF, PNG y CSV. Devuelve (archivo, caption, cifra)."""
+    fi.estilo()
+    figuras = []
+    rc = leer(RESULTS_DIR / "caso_base" / "tablas" / "resumen_carga.csv")
+    if rc is not None:
+        figuras.append(fi.f0_caso_base_red(rc[(rc["soc_pct"] == 100) & rc["escenario"].isin(["E0", "E1"])], destino))
+    figuras.append(fi.f1_metodologia(destino))
+    if det_dir is not None and h0 in corr.e3:
+        cb_j = leer(corr.cb / "jornadas_E1_soc100.csv", dtype={"jornada_id": str, "bus_origen": str})
+        cb_ev = leer(corr.cb / "eventos_E1_soc100.csv", dtype={"jornada_id": str})
+        tramos = leer(corr.e3[h0] / "tramos.csv", dtype={"jornada_vsp": str, "tramo_id": str})
+        prog = leer(det_dir / "programa_E2_detallado.csv", dtype={"tramo_id": str})
+        figuras.append(fi.f2_gantt(cb_j, cb_ev, tramos, prog, destino))
+    figuras.append(fi.f3_escalera(kb, destino))
+    figuras.append(fi.f4_costo(kb, destino))
+    figuras.append(fi.f5_ocupacion(series, kappa, tarifa, destino))
+    if len(sens_h) > 1 and len(sens_d) > 1:
+        figuras.append(fi.f6_sensibilidades(sens_h, sens_d, destino))
+    return figuras
+
+
+def seccion_figuras(figuras):
+    lineas = ["## Figuras del informe", "",
+              "En `informe/`, cada una en PDF (vectorial, para LaTeX), PNG y CSV con sus datos. Ancho pensado para "
+              "0.8 del ancho de texto de LaTeX, letra de 9 pt, sin titulo en la imagen (va en el caption).", "",
+              "| Figura | Caption propuesto | Cifra principal que respalda |", "|---|---|---|"]
+    lineas += [f"| `{f}.pdf` | {c} | {n} |" for f, c, n in figuras]
+    return lineas + [""]
+
+
+def seccion_herramientas():
+    """Versiones de las herramientas y equipo, leidas del entorno en que se corre este script."""
+    import platform
+    import gurobipy
+    import scipy
+    import psutil
+    cpu = platform.processor()
+    try:
+        import winreg
+        clave = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"HARDWARE\DESCRIPTION\System\CentralProcessor\0")
+        cpu = winreg.QueryValueEx(clave, "ProcessorNameString")[0].strip()
+    except (ImportError, OSError):
+        pass
+    g = ".".join(str(x) for x in gurobipy.gurobi.version())
+    return ["## Herramientas y equipo", "",
+            f"- Python {platform.python_version()}; Gurobi {g} (gurobipy, licencia academica); scipy {scipy.__version__} "
+            f"(HiGHS); pandas {pd.__version__}; numpy {np.__version__}; matplotlib {matplotlib.__version__}.",
+            f"- Equipo: {cpu}, {psutil.cpu_count(logical=False)} nucleos y {psutil.cpu_count()} hilos; "
+            f"{sistema_operativo()}.", ""]
+
+
+def sistema_operativo():
+    """Nombre del sistema operativo. En Windows 11, platform.release() dice "10": se distingue por la compilacion."""
+    import platform
+    if platform.system() == "Windows":
+        compilacion = int(platform.version().split(".")[-1])
+        return f"Windows {11 if compilacion >= 22000 else platform.release()}"
+    return f"{platform.system()} {platform.release()}"
 
 
 def resumen_md(nombre, kappa, prueba, costos, corr, k, kb, val, diag, tab_tarifa, ocup_h, sens_h, sens_d, modelos,
-               det, figuras, carpeta, sufijo):
+               det, figuras, carpeta, sufijo, extras=()):
     h0, d0 = parametros.HOLGURAS_RECARGA_MIN[0], parametros.DELTA_MIN
+    N = nombres.ESCENARIO
     n_jor = {e: int(kb.loc[kb["escenario"] == e, "buses_vsp"].iloc[0]) for e in ("E0", "E1") if e in set(kb["escenario"])}
     t3b = corr.e3.get(float(h0))
     r3 = leer(t3b / "resumen.csv").iloc[0] if t3b is not None else None
     t4b = corr.e4.get((float(h0), d0))
     r4 = leer(t4b / "resumen.csv").iloc[0] if t4b is not None else None
+    modelo_e2 = kb.loc[kb["escenario"] == "E2", "modelo"].iloc[0] if (kb["escenario"] == "E2").any() else "-"
 
     # tabla principal: KPIs en filas, escenarios en columnas
     defs = [
-        ("1. Costo total original (USD/dia)", "costo_total_original", 0),
-        ("1. Costo total comparable (USD/dia)", "costo_total_comparable", 0),
-        ("· flota", "costo_flota", 0), ("· reservas intermedias", "costo_reservas_intermedias", 0),
+        ("1. Costo total (USD/dia)", "costo_total_comparable", 0),
+        ("1. Costo total con espera nocturna (USD/dia)", "costo_total_original", 0),
+        ("· flota", "costo_flota", 0), ("· reservas diurnas", "costo_reservas_intermedias", 0),
         ("· reservas nocturnas", "costo_reservas_nocturnas", 0), ("· km vacios", "costo_km_vacios", 0),
-        ("· espera original", "costo_espera_original", 0), ("· espera comparable", "costo_espera_comparable", 0),
+        ("· espera", "costo_espera_comparable", 0), ("· espera, con la espera nocturna", "costo_espera_original", 0),
         ("· energia", "costo_energia", 0), ("· eventos de carga", "costo_eventos", 0),
-        ("2. N de buses (operativos + reservas)", "buses_totales", 0), ("· buses del VSP", "buses_vsp", 0),
-        ("· buses operativos (tras la carga / Etapa 3)", "buses_operativos", 0),
+        ("2. N de buses (operativos + reservas)", "buses_totales", 0),
+        ("· buses de las jornadas sin bateria", "buses_vsp", 0),
+        ("· buses operativos (tras la carga en los casos base; de la Etapa 3 en las propuestas)", "buses_operativos", 0),
         ("3. % km de deadheading", "pct_km_vacios", 2), ("4. Costo medio de la energia (USD/kWh)", "usd_kwh", 4),
         ("4. % de la energia en valle", "pct_valle", 1), ("5. Buses extra por bateria", "buses_extra_bateria", 0),
-        ("6. Reservas intermedias", "reservas_intermedias", 0), ("6. Reservas nocturnas", "reservas_nocturnas", 0),
-        ("7. Uso maximo de los puestos (%)", "uso_max_pct", 1), ("7. Horas con todos los puestos ocupados", "horas_saturadas", 1),
+        ("6. Reservas diurnas", "reservas_intermedias", 0), ("6. Reservas nocturnas", "reservas_nocturnas", 0),
+        ("7. Uso maximo de los puestos (%)", "uso_max_pct", 1),
+        ("· maximo de buses cargando a la vez (minuto a minuto)", "max_buses_minuto", 1),
+        ("7. Horas con todos los puestos ocupados", "horas_saturadas", 1),
         ("· minutos sobre los puestos", "minutos_sobre_puestos", 0),
-        ("8. Segundos de computo (sin el VSP)", "segundos", 1),
+        ("8. Segundos de computo (sin la Etapa 2)", "segundos", 1),
         ("· energia cargada (MWh)", "kwh_cargados", 1), ("· deficit de energia (kWh)", "kwh_deficit", 2),
         ("· eventos de carga", "eventos", 0), ("· utilizacion del bus (% de 24 h con pasajeros)", "utilizacion_bus_pct", 1),
     ]
+    defs = [x for x in defs if x[1] in kb.columns]
     filas = []
     for et, c, d in defs:
         fila = {"KPI": et}
         for e in kb["escenario"]:
             v = kb.loc[kb["escenario"] == e, c].iloc[0]
-            fila[e] = fmt(v / 1000 if c == "kwh_cargados" else v, d)
+            fila[N[e]] = fmt(v / 1000 if c == "kwh_cargados" else v, d)
         filas.append(fila)
     tabla_kpi = pd.DataFrame(filas)
 
     variantes = k[k["variante"] != "base"][["escenario", "variante", "modelo", "buses_operativos", "reservas_intermedias",
                                             "reservas_nocturnas", "buses_totales", "costo_energia", "costo_eventos",
                                             "costo_total_comparable", "costo_total_original"]].round(0)
-
     reservas = kb[["escenario", "reservas_intermedias", "reservas_nocturnas", "reservas"]]
+    diag_p = None
+    if diag is not None:
+        diag_p = nombres.presentar(diag)
+    texto_e2 = {"detallado": "modelo detallado", "agregado": "modelo agregado"}.get(modelo_e2, modelo_e2)
     lineas = [
         f"# Resumen para analisis: instancia {nombre}" + (" (PRUEBA CHICA: no son resultados)" if prueba else ""),
         "",
         "Archivo generado por `scripts/14-kpis_instancia.py`. Todas las cifras salen de los CSV de "
-        f"`{carpeta.relative_to(RESULTS_DIR.parent).as_posix()}/`. Escenarios: **E0** caso base (VSP por linea + carga "
-        "reactiva); **E1** segundo caso base (con interlining); **E2-FIFO** propuesta con carga por orden de llegada "
-        "(Etapa 3 + FIFO); **E2** propuesta completa (Etapa 3 + Etapa 4). Cada escalon cambia una sola cosa.",
+        f"`{carpeta.relative_to(RESULTS_DIR.parent).as_posix()}/`. Escenarios: **{N['E0']}** (jornadas por linea + carga "
+        f"reactiva); **{N['E1']}** (lo mismo, con interlining en las jornadas); **{N['E2-FIFO']}** (Etapa 3 + carga por "
+        f"orden de llegada); **{N['E2']}** (Etapa 3 + Etapa 4, {texto_e2} con bloques de {d0} min). Cada escalon cambia "
+        "una sola cosa.",
         "",
         "## 1. Instancia y parametros",
         "",
-        f"- Electroterminal **{nombre}** completo: {kappa} puestos de carga, jornadas del VSP: "
-        + ", ".join(f"{e} {fmt(n)}" for e, n in n_jor.items())
-        + (f"; {fmt(r3['jornadas_vsp'])} jornadas E1 de entrada a la Etapa 3" if r3 is not None else "") + ".",
-        f"- Energia a reponer (E2) / capacidad de 24 h de los puestos: "
+        f"- Electroterminal **{nombre}** completo: {kappa} puestos de carga; jornadas sin bateria (Etapa 2): "
+        + ", ".join(f"{N[e]} {fmt(n)}" for e, n in n_jor.items())
+        + (f"; {fmt(r3['jornadas_vsp'])} jornadas del {N['E1']} de entrada a la Etapa 3" if r3 is not None else "") + ".",
+        f"- Energia a reponer en las propuestas / capacidad de 24 h de los puestos: "
         f"{fmt(r4['energia_sobre_capacidad_pct'], 1) if r4 is not None else '-'}%.",
         f"- Bateria util entre cargas {costos.bateria_util_ciclica_kwh(1.0):.0f} kWh (ciclo al 100%, minimo "
         f"{costos.min_soc:.0%}); carga a {costos.charge_power_kw:.0f} kW; consumo {parametros.CONSUMO_KWH_KM} kWh/km.",
         f"- Costos: bus {costos.vehicle_fixed_cost:.0f} USD/dia (igual para una reserva), km vacio {costos.cost_per_km} USD, "
         f"espera {costos.waiting_cost_per_min} USD/min, evento de carga {costos.fixed_charge_cost:.0f} USD.",
-        "- Tarifa (USD/kWh): " + ", ".join(f"{r.periodo} {r.horas} h = {r.precio_usd_kwh:.2f}" for r in tab_tarifa.itertuples()) + ".",
+        "- Tarifa (USD/kWh): " + ", ".join(f"{t} = {p:.2f}" for t, p in zip(tab_tarifa["tramo horario"],
+                                                                         tab_tarifa["precio_usd_kwh"])) + ".",
         f"- Deadhead: euclidiana x {parametros.FACTOR_DESVIO} a {parametros.VELOCIDAD_KMH:.0f} km/h; layover "
         f"{parametros.LAYOVER_MIN:.0f} min.",
-        f"- Etapa 3: regla de corte {parametros.REGLA_CORTE} (minimos tramos, luego minimos km extra); holgura base "
-        f"h = {h0} min; sensibilidad {parametros.HOLGURAS_RECARGA_MIN}.",
-        f"- Etapa 4: bloques de Delta = {d0} min (sensibilidad {parametros.DELTAS_SENSIBILIDAD}); Gurobi, brecha "
-        f"{parametros.GAP_MIP:.1%}, limite {parametros.TIEMPO_LIMITE_S['agregado']} s; deficit penalizado con "
+        f"- Etapa 3: regla de corte {parametros.REGLA_CORTE} (minimos tramos, luego minimos km extra); holgura de recarga "
+        f"base {h0} min; sensibilidad {parametros.HOLGURAS_RECARGA_MIN} min.",
+        f"- Etapa 4: largo del bloque base {d0} min (sensibilidad {parametros.DELTAS_SENSIBILIDAD} min); Gurobi, brecha "
+        f"{parametros.GAP_MIP:.1%}, limite {parametros.TIEMPO_LIMITE_S['agregado']} s el modelo agregado y "
+        f"{parametros.TIEMPO_LIMITE_S['detallado']} s el detallado; deficit penalizado con "
         f"{parametros.PENALIZACION_DEFICIT_USD_KWH:,.0f} USD/kWh; desempate {parametros.DESEMPATE_USD_KWH_BLOQUE} "
         "USD/kWh por bloque desde la llegada.",
         "",
@@ -731,91 +687,89 @@ def resumen_md(nombre, kappa, prueba, costos, corr, k, kb, val, diag, tab_tarifa
         "",
         tabla_md(val),
         "",
-        "## 3. KPIs por escenario (configuracion base)",
+        "## 3. KPIs por escenario",
         "",
-        "Original = espera como la cobra el caso base (incluye la espera nocturna hasta empezar a cargar). Comparable = "
-        "sin la espera nocturna en el patio. En el caso base todas las reservas son nocturnas (si una carga intermedia "
-        "no alcanza, la jornada se parte y el bus nuevo queda en 'operativos').",
+        f"Costo total = sin la espera nocturna en el patio (la metrica principal). Costo total con espera nocturna = la "
+        f"espera como la cobra el caso base (incluye la espera nocturna hasta empezar a cargar). En los casos base todas "
+        f"las reservas son nocturnas: si una carga diurna no alcanza, la jornada se parte y el bus nuevo queda en "
+        f"'operativos'. La {N['E2']} es el {texto_e2} con bloques de {d0} min.",
         "",
         tabla_md(tabla_kpi),
         "",
-        "### Variantes (sensibilidad)",
+        "### Variantes (sensibilidad y modelo agregado)",
         "",
-        tabla_md(variantes) if len(variantes) else "Sin variantes corridas.",
+        tabla_md(nombres.presentar(variantes)) if len(variantes) else "Sin variantes corridas.",
         "",
         "## 4. Diagnostico de flota de la Etapa 3",
         "",
-        tabla_md(diag) if diag is not None else "Etapa 3 no corrida.",
+        tabla_md(diag_p) if diag_p is not None else "Etapa 3 no corrida.",
         "",
     ]
     if r3 is not None:
         lineas += [
             f"- {fmt(r3['tramos'])} tramos desde {fmt(r3['jornadas_vsp'])} jornadas ({fmt(r3['jornadas_cortadas'])} cortadas; "
-            f"{fmt(r3['km_extra_cortes'], 1)} km extra). Ventanas: {fmt(r3['ventanas_intermedias'])} intermedias, "
-            f"{fmt(r3['ventanas_nocturnas'])} nocturnas.",
+            f"{fmt(r3['km_extra_cortes'], 1)} km extra). Ventanas de carga: {fmt(r3['ventanas_intermedias'])} diurnas "
+            f"(entre tramos), {fmt(r3['ventanas_nocturnas'])} nocturnas.",
             f"- Nocturnas que no alcanzan la recarga completa ni con puesto libre: {fmt(r3['nocturnas_sin_tiempo_carga'])} "
-            f"(de ellas {fmt(r3['cadenas_mas_24h'])} cadenas de mas de 24 h: el flujo, como el VSP, es de un dia y no "
-            "ciclico). Son reservas que ninguna programacion de carga puede evitar.",
+            f"(de ellas {fmt(r3['cadenas_mas_24h'])} cadenas de mas de 24 h: el flujo, como las jornadas sin bateria, es de "
+            "un dia y no ciclico). Son reservas que ninguna programacion de carga puede evitar.",
             "",
         ]
     lineas += [
         "## 5. Reservas por tipo",
         "",
-        tabla_md(reservas),
+        tabla_md(nombres.presentar(reservas)),
         "",
-        "## 6. Energia por periodo tarifario (kWh y USD)",
+        "## 6. Energia por tramo horario (kWh y USD)",
         "",
-        tabla_md(tab_tarifa.round({c: 0 for c in tab_tarifa if c.startswith(("kwh_", "usd_"))})),
+        tabla_md(tab_tarifa.round({c: 0 for c in tab_tarifa if c.startswith(("kWh ", "USD "))})),
         "",
         "## 7. Ocupacion de los puestos por hora (buses cargando: promedio y maximo de la hora)",
         "",
-        f"Puestos: {kappa}. E2 = realizacion por minuto del modelo agregado.",
+        f"Puestos: {kappa}. {N['E2']} = ejecucion minuto a minuto del {texto_e2}.",
         "",
         tabla_md(ocup_h),
         "",
-        "## 8. Sensibilidad a la holgura h de la Etapa 3 (Delta base)",
+        "## 8. Sensibilidad a la holgura de recarga de la Etapa 3 (modelo agregado, largo del bloque base)",
         "",
-        tabla_md(sens_h) if len(sens_h) else "No corrida.",
+        tabla_md(nombres.presentar(sens_h)) if len(sens_h) else "No corrida.",
         "",
-        "## 9. Sensibilidad al largo del bloque Delta (holgura base)",
+        "## 9. Sensibilidad al largo del bloque (modelo agregado, holgura de recarga base)",
         "",
-        tabla_md(sens_d) if len(sens_d) else "No corrida.",
+        tabla_md(nombres.presentar(sens_d)) if len(sens_d) else "No corrida.",
         "",
         "## 10. Segundos, estado y brecha de cada modelo",
         "",
-        "El VSP (Etapa 2) no se vuelve a correr: sus jornadas son un archivo.",
+        "La Etapa 2 (jornadas sin bateria) no se vuelve a correr: sus jornadas son un archivo.",
         "",
         tabla_md(modelos),
         "",
-        "## 11. Modelo detallado vs agregado",
+        "## 11. Modelo detallado frente al modelo agregado",
         "",
-        ("Pendiente (P2): correr 13- con --detallado." if det is None else tabla_detallado(det) + "\n\n"
+        ("Pendiente: correr 13- con --detallado." if det is None else tabla_detallado(det) + "\n\n"
          + conclusion_detallado(det)),
         "",
-        "## 12. Figuras",
-        "",
     ]
-    lineas += [f"- `kpis{sufijo}/graficos/{f}`: {m}" for f, m in figuras]
+    lineas += list(extras)
     lineas += [
-        "- Por corrida: `etapa3/h<h>/graficos/` (Gantt de cadenas, llegadas al patio por hora) y "
-        "`etapa4/h<h>_d<Delta>/graficos/` (ocupacion 24 h FIFO vs E2, energia por tarifa).",
+        "## Definiciones y supuestos que hay que tener presentes al analizar",
         "",
-        "## 13. Definiciones y supuestos que hay que tener presentes al analizar",
-        "",
-        "- E2-FIFO y E2 usan las mismas ventanas de la Etapa 3: la diferencia entre ellos es solo la programacion de la carga.",
-        "- E1 -> E2-FIFO cambia la carga reactiva por la Etapa 3 (cortes + re-encadenamiento con recarga completa en el patio).",
+        f"- La {N['E2-FIFO']} y la {N['E2']} usan las mismas ventanas de la Etapa 3: la diferencia entre ellas es solo la "
+        "programacion de la carga.",
+        f"- Del {N['E1']} a la {N['E2-FIFO']} se cambia la carga reactiva por la Etapa 3 (cortes + re-encadenamiento con "
+        "recarga completa en el patio).",
         "- Parte de la mejora de la Etapa 3 viene de permitir que un bus vuelva al patio y salga de nuevo (paso ii del "
-        "diagnostico), algo que ni el VSP ni el caso base permiten.",
+        "diagnostico), algo que ni las jornadas sin bateria ni el caso base permiten.",
         "- Reserva: si la carga de una ventana no termina antes de la siguiente salida del bus, un bus ya cargado cubre esa "
-        "salida (250 USD). En una ventana intermedia la reserva toma el resto de la cadena (supuesto conservador).",
-        "- La Etapa 3 no ve los puestos; la holgura h los anticipa. La Etapa 4 decide con los puestos y la tarifa.",
-        "- El modelo agregado escribe la capacidad en energia por bloque: es exacto salvo en los bloques de borde "
-        "('minutos sobre los puestos' mide ese error).",
+        "salida (250 USD). En una ventana diurna la reserva toma el resto de la cadena (supuesto conservador).",
+        "- La Etapa 3 no ve los puestos; la holgura de recarga los anticipa. La Etapa 4 decide con los puestos y la tarifa.",
+        "- Los modelos de la Etapa 4 escriben la capacidad en energia por bloque: es exacta salvo en los bloques de borde "
+        "('minutos sobre los puestos', en la ejecucion minuto a minuto, mide ese error). Solo la carga por orden de llegada "
+        "es exacta al minuto.",
         "- Limitaciones: un solo electroterminal; recarga completa entre tramos; deadhead euclidiano; un dia tipo; "
         "flujo de un dia (no ciclico).",
     ]
     return "\n".join(lineas) + "\n"
-
 
 if __name__ == "__main__":
     main()

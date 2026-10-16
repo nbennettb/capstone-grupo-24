@@ -1,0 +1,21 @@
+jornada_del_ejemplo;panel;fila;actividad;inicio_h;fin_h
+5039;Caso base con interlining;Bus 1;viajes del grupo;5.213;16.645
+5039;Caso base con interlining;Bus 1;cargando;16.65;17.977
+5039;Caso base con interlining;Bus 1;en el patio;16.645;16.65
+5039;Caso base con interlining;Bus 1;detenido el resto del día;17.977;40.0
+5039;Caso base con interlining;Bus 2 (nuevo);viajes del grupo;16.351;26.014
+5039;Caso base con interlining;Bus 2 (nuevo);cargando;36.917;38.165
+5039;Caso base con interlining;Bus 2 (nuevo);en el patio;26.014;36.917
+5039;Etapa 3 y Propuesta completa;Bus A;viajes del grupo;5.213;16.645
+5039;Etapa 3 y Propuesta completa;Bus A;en el patio;16.645;17.0
+5039;Etapa 3 y Propuesta completa;Bus A;cargando;17.0;18.419
+5039;Etapa 3 y Propuesta completa;Bus A;otro tramo (otra jornada);18.419;24.359
+5039;Etapa 3 y Propuesta completa;Bus A;en el patio;24.359;27.25
+5039;Etapa 3 y Propuesta completa;Bus A;cargando;27.25;28.0
+5039;Etapa 3 y Propuesta completa;Bus B;otro tramo (otra jornada);5.344;11.821
+5039;Etapa 3 y Propuesta completa;Bus B;en el patio;11.821;12.0
+5039;Etapa 3 y Propuesta completa;Bus B;cargando;12.0;13.0
+5039;Etapa 3 y Propuesta completa;Bus B;en el patio;13.0;16.351
+5039;Etapa 3 y Propuesta completa;Bus B;viajes del grupo;16.351;26.014
+5039;Etapa 3 y Propuesta completa;Bus B;en el patio;26.014;28.0
+5039;Etapa 3 y Propuesta completa;Bus B;cargando;28.0;29.25

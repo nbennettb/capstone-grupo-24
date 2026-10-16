@@ -1,11 +1,11 @@
-# Reporte caso base - carga reactiva, escenario E0, nivel 100%
+# Reporte caso base - carga reactiva, escenario Caso base, nivel 100%
 
-Politica miope sobre las jornadas del VSP (escenario E0). Nivel de partida, de llegada y tope de carga: 100% (energia utilizable 315 kWh). Carga parcial cuando el hueco no alcanza; la jornada se parte solo si ni asi puede seguir.
+Politica miope sobre las jornadas sin bateria (escenario Caso base). Nivel de partida, de llegada y tope de carga: 100% (energia utilizable 315 kWh). Carga parcial cuando el hueco no alcanza; la jornada se parte solo si ni asi puede seguir.
 
 ## Resultado
 
 - **Buses:** 1,333 en el VSP -> **1,726** tras la carga (+393; 393 jornadas partidas: 392 por falta de hueco, 1 por falta de puesto).
-- **Recargas intermedias:** 9 eventos en 9 jornadas (0.5% de las jornadas finales; el VSP estimaba 29.6% con energia sobre la bateria util).
+- **Recargas diurnas:** 9 eventos en 9 jornadas (0.5% de las jornadas finales; el VSP estimaba 29.6% con energia sobre la bateria util).
 - **Cargas finales:** 1,726; **ciclos no cumplidos:** 319 (retraso maximo 839 min); cargas fragmentadas por falta de tramo continuo: 0.
 - **Colas:** 1,410 eventos esperaron mas de 1 min por un puesto (maximo 684 min; 8,583.6 h en total).
 - **Energia:** 351.1 MWh cargados = 351.1 MWh consumidos (diferencia 0.00e+00 kWh). Costo 48,151 USD, 0.1372 USD/kWh, 50.9% en valle (P1 y P6).
@@ -24,7 +24,7 @@ Politica miope sobre las jornadas del VSP (escenario E0). Nivel de partida, de l
 | tipo       |   eventos |       kwh |   costo_usd |   espera_media_min |   espera_max_min |
 |:-----------|----------:|----------:|------------:|-------------------:|-----------------:|
 | final      |      1726 | 349046    |    47838    |             298.38 |           683.48 |
-| intermedia |         9 |   2009.95 |      313.47 |               0.75 |             0.91 |
+| diurna |         9 |   2009.95 |      313.47 |               0.75 |             0.91 |
 
 ## Uso de los puestos por electroterminal (modulo 24 h)
 

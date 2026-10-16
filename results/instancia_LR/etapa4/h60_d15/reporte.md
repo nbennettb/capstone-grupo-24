@@ -1,12 +1,12 @@
-# Etapa 4 - Programacion de la carga, La Reina (holgura 60 min, Delta 15 min, 100 puestos)
+# Etapa 4 - Programacion de la carga, La Reina (holgura 60 min, largo del bloque 15 min, 100 puestos)
 
 - Ventanas: 1,640; energia a reponer 343.3 MWh = 79.5% de la capacidad de 24 h.
 
-## E2-FIFO vs E2
+## Propuesta con carga por orden de llegada vs Propuesta completa (modelo agregado)
 
-|                             |    E2-FIFO |        E2 |
+|                             |    Propuesta con carga por orden de llegada |        Propuesta completa (modelo agregado) |
 |:----------------------------|-----------:|----------:|
-| reservas_intermedias        |     0      |     0     |
+| reservas_diurnas        |     0      |     0     |
 | reservas_nocturnas          |   435      |   190     |
 | costo_energia_usd           | 47004.7    | 46340.3   |
 | costo_medio_energia_usd_kwh |     0.1369 |     0.135 |
@@ -21,9 +21,9 @@
 
 |   holgura_min |   delta_min | modelo                  | estado                        |   objetivo_usd |   cota_usd |     brecha | fuente_brecha   |   segundos |   variables |   binarias |   restricciones |   desempate_usd |
 |--------------:|------------:|:------------------------|:------------------------------|---------------:|-----------:|-----------:|:----------------|-----------:|------------:|-----------:|----------------:|----------------:|
-|            60 |          15 | E2-FIFO                 | heuristica (sin optimizacion) |       155755   |      nan   | nan        | -               |       0.35 |         nan |        nan |             nan |        nan      |
-|            60 |          15 | E2 agregado - LP (cota) | optimo                        |        92879.4 |    92879.4 |   0        | Gurobi          |       2.15 |      163966 |          0 |            3376 |        nan      |
-|            60 |          15 | E2 agregado - MILP      | optimo (brecha pedida)        |        93840.3 |    93523.1 |   0.003443 | Gurobi          |      23.77 |      163966 |       1640 |            3376 |          5.9274 |
+|            60 |          15 | Propuesta con carga por orden de llegada                 | heuristica (sin optimizacion) |       155755   |      nan   | nan        | -               |       0.35 |         nan |        nan |             nan |        nan      |
+|            60 |          15 | Propuesta completa (modelo agregado) agregado - LP (cota) | optimo                        |        92879.4 |    92879.4 |   0        | Gurobi          |       2.15 |      163966 |          0 |            3376 |        nan      |
+|            60 |          15 | Propuesta completa (modelo agregado) agregado - MILP      | optimo (brecha pedida)        |        93840.3 |    93523.1 |   0.003443 | Gurobi          |      23.77 |      163966 |       1640 |            3376 |          5.9274 |
 
 ## Energia por periodo tarifario
 
@@ -37,15 +37,15 @@
 | P6        | 22-24   |              0.1 |    35743   |           3931.7 |  36000   |         3960   |
 
 ## Validaciones (todas pasaron)
-- FIFO: ocupacion <= puestos en cada minuto; energia cargada + deficit = consumida; su costo en la grilla = su costo al minuto.
-- E2: energia cargada + deficit = consumida; ocupacion <= puestos en cada bloque; toda carga despues de la hora limite lleva reserva; E2 <= E2-FIFO en la grilla.
-- Realizacion por minuto de E2: 131 minutos sobre los puestos (maximo 120.63); es el error del agregado en los bloques de borde.
+- orden de llegada: ocupacion <= puestos en cada minuto; energia cargada + deficit = consumida; su costo en la grilla = su costo al minuto.
+- Propuesta completa (modelo agregado): energia cargada + deficit = consumida; ocupacion <= puestos en cada bloque; toda carga despues de la hora limite lleva reserva; Propuesta completa (modelo agregado) <= Propuesta con carga por orden de llegada en la grilla.
+- Realizacion por minuto de Propuesta completa (modelo agregado): 131 minutos sobre los puestos (maximo 120.63); es el error del agregado en los bloques de borde.
 
 ## Tiempo y memoria
-- FIFO 0.4 s | armado 0.5 s | LP 2.1 s | MILP 23.8 s (1 nodos) | realizacion por minuto 2.0 s | total 31.3 s | pico de memoria 1,070 MB.
+- orden de llegada 0.4 s | armado 0.5 s | LP 2.1 s | MILP 23.8 s (1 nodos) | realizacion por minuto 2.0 s | total 31.3 s | pico de memoria 1,070 MB.
 
 ## Archivos
 - `tablas/programa_FIFO.csv`, `tablas/programa_E2.csv`: por ventana, kWh, inicio y fin de la carga, eventos, reserva, deficit y costo.
-- `tablas/ocupacion_minutos.csv` (FIFO exacta; E2 = realizacion por minuto), `tablas/ocupacion_bloques.csv`.
+- `tablas/ocupacion_minutos.csv` (orden de llegada exacta; Propuesta completa (modelo agregado) = realizacion por minuto), `tablas/ocupacion_bloques.csv`.
 - `tablas/energia_por_tarifa.csv`, `tablas/reservas.csv`, `tablas/modelo.csv`, `tablas/resumen.csv`.
 - `graficos/ocupacion_24h.png` (+ .csv), `graficos/energia_por_tarifa.png` (+ .csv).

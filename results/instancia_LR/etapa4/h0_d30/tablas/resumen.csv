@@ -1,4 +1,3 @@
 terminal;holgura_min;delta_min;puestos;prueba;politica;ventanas;kwh_necesarios;kwh_cargados;kwh_deficit;costo_energia_usd;reservas_intermedias;reservas_nocturnas;reservas;eventos;costo_eventos_usd;espera_patio_dia_min;espera_patio_noche_hasta_carga_min;uso_maximo_pct;minutos_saturados;minutos_sobre_puestos;segundos;energia_sobre_capacidad_pct;costo_medio_energia_usd_kwh;pct_energia_valle;segundos_total_script;memoria_mb
 La Reina;0.0;30;100;0;E2-FIFO;1640;343286.09;343286.09;0.0;47004.72;30;442;472;1640;8200.0;41705.2;310335.2;100.0;907;0;0.31;79.46;0.1369;52.06;3636.3;1035
 La Reina;0.0;30;100;0;E2;1640;343286.09;343286.09;0.0;46430.53;0;217;217;3618;18090.0;41705.2;161600.5;142.0;929;101;14.85;79.46;0.1353;52.43;3636.3;1035
-La Reina;0.0;30;100;0;E2-detallado;1640;343286.09;343286.09;0.0;47004.72;30;442;472;1640;8200.0;41705.2;294591.2;100.0;681;0;3603.37;79.46;0.1369;52.06;3636.3;1035

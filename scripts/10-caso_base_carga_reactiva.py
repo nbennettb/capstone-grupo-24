@@ -85,7 +85,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import geo, instancia, medicion, parametros                        # noqa: E402
+from common import geo, instancia, medicion, nombres, parametros               # noqa: E402
 from common.rutas import DATA_FILTRADO, DATA_PROCESSED, CSV_SEP, RESULTS_DIR  # noqa: E402
 
 # Carpeta de la red completa; con --terminal, main() la cambia por la de la instancia. No se crea al importar
@@ -817,7 +817,7 @@ def escribir_reporte(sim, fila, ev, jornadas, costos, sufijo, soc, vsp_pct):
         f"- `graficos/ocupacion_{sufijo}.png`: buses cargando durante el dia vs. puestos, con la tarifa punta sombreada.",
         f"- `graficos/soc_ejemplo_{sufijo}.png`: SOC a lo largo del dia de jornadas reales (con y sin recarga).",
     ]
-    (RESULTS / f"reporte_{sufijo}.md").write_text("\n".join(lineas), encoding="utf-8")
+    (RESULTS / f"reporte_{sufijo}.md").write_text(nombres.renombrar_texto("\n".join(lineas)), encoding="utf-8")
 
 
 # --------------------------------------------------------------------------- #
@@ -962,9 +962,10 @@ def main():
         print(f"  -> {TABLAS / 'resumen_carga.csv'} (solo la fila de resumen)")
     else:
         graficar_ocupacion(sim, GRAFICOS / f"ocupacion_{sufijo}.png",
-                           f"Buses cargando por electroterminal - {etq}, nivel {soc_pct}% (politica reactiva)")
+                           f"Buses cargando por electroterminal - {nombres.ESCENARIO.get(etq, etq)}, nivel {soc_pct}% "
+                           "(politica reactiva)")
         graficar_soc(finales, costos, args.soc, GRAFICOS / f"soc_ejemplo_{sufijo}.png",
-                     f"SOC de jornadas reales - {etq}, nivel {soc_pct}% (politica reactiva)")
+                     f"SOC de jornadas reales - {nombres.ESCENARIO.get(etq, etq)}, nivel {soc_pct}% (politica reactiva)")
         escribir_reporte(sim, fila, ev, jornadas, costos, sufijo, args.soc, vsp_pct)
         pd.DataFrame({"minuto": np.arange(DIA_MIN), "kwh": np.round(sim.kwh_dia, 6)}) \
             .to_csv(TABLAS / f"energia_minuto_{sufijo}.csv", index=False, sep=CSV_SEP)

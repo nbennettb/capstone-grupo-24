@@ -1,0 +1,5 @@
+escenario;costo_flota;costo_reservas_diurnas;costo_reservas_nocturnas;costo_km_vacios;costo_espera;costo_energia;costo_eventos;costo_total;costo_total_con_espera_nocturna
+Caso base;431500.0;0.0;79750.0;20240.0;6286.0;48151.0;8675.0;594602.0;610052.0
+Caso base con interlining;409500.0;0.0;78750.0;18699.0;5146.0;47482.0;8230.0;567807.0;583741.0
+Propuesta con carga por orden de llegada;291500.0;7500.0;110500.0;17465.0;6294.0;47005.0;8200.0;488464.0;497774.0
+Propuesta completa;291500.0;0.0;54250.0;17465.0;6294.0;46416.0;8375.0;424300.0;432525.0

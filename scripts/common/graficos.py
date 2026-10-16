@@ -15,8 +15,8 @@ PUNTA = "#52514e"            # sombreado de la tarifa punta (neutro, con transpa
 # Orden categorico fijo (se asigna por entidad, nunca por rango)
 CATEGORICOS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]
 ESCENARIO = {"E0": CATEGORICOS[0], "E1": CATEGORICOS[1], "E2-FIFO": CATEGORICOS[2], "E2": CATEGORICOS[3]}
-NOMBRE_ESCENARIO = {"E0": "E0 caso base", "E1": "E1 caso base + interlining",
-                    "E2-FIFO": "E2-FIFO propuesta, carga por llegada", "E2": "E2 propuesta completa"}
+NOMBRE_ESCENARIO = {"E0": "Caso base", "E1": "Caso base con interlining",
+                    "E2-FIFO": "Propuesta con carga por orden de llegada", "E2": "Propuesta completa"}
 
 
 def estilo(ax):

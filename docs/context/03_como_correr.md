@@ -19,13 +19,13 @@ queda guardado y se retoma desde el que falló.
 ## 2. Comandos en orden
 
 Los tiempos y la memoria se midieron en pruebas chicas (2 rutas, 20-71 jornadas) y se extrapolaron al terminal completo
-(1.333 jornadas E0, 1.203 E1, ~1.600-1.700 ventanas de carga). Son órdenes de magnitud.
+(1.333 jornadas Caso base, 1.203 Caso base con interlining, ~1.600-1.700 ventanas de carga). Son órdenes de magnitud.
 
-### Paso 1. Caso base E0 en La Reina
+### Paso 1. Caso base en La Reina
 ```
 python scripts/10-caso_base_carga_reactiva.py --escenario E0 --terminal 4
 ```
-- **Qué hace:** simula la carga reactiva sobre las 1.333 jornadas E0 del terminal, solo con sus 100 puestos.
+- **Qué hace:** simula la carga reactiva sobre las 1.333 jornadas Caso base del terminal, solo con sus 100 puestos.
 - **Tiempo y memoria:** ~10-40 s, ~300 MB.
 - **Debe imprimir:**
   - `[OK] Reconstruccion sin cargas calza con el VSP`;
@@ -34,11 +34,11 @@ python scripts/10-caso_base_carga_reactiva.py --escenario E0 --terminal 4
   - en `=== Resultado ===`: `buses_vsp 1,333`, `buses_final 1,726`, `buses_reserva 319`.
 - **Escribe:** `results/instancia_LR/caso_base/`.
 
-### Paso 2. Segundo caso base E1 en La Reina
+### Paso 2. Caso base con interlining en La Reina
 ```
 python scripts/10-caso_base_carga_reactiva.py --escenario E1 --terminal 4
 ```
-- **Qué hace:** lo mismo, sobre las 1.203 jornadas E1 (con interlining).
+- **Qué hace:** lo mismo, sobre las 1.203 jornadas Caso base con interlining (con interlining).
 - **Tiempo y memoria:** ~10-40 s, ~300 MB.
 - **Debe imprimir:** `[OK] Igual a la red completa filtrada a La Reina: 1,638 jornadas finales, 315 reservas, ...`;
   `buses_vsp 1,203`, `buses_final 1,638`, `buses_reserva 315`.
@@ -49,7 +49,7 @@ python scripts/12-etapa3_cortes_reencadenamiento.py --terminal 4 --escenario E1 
 python scripts/12-etapa3_cortes_reencadenamiento.py --terminal 4 --escenario E1 --holgura 30
 python scripts/12-etapa3_cortes_reencadenamiento.py --terminal 4 --escenario E1 --holgura 60
 ```
-- **Qué hace:** corta cada jornada E1 en tramos factibles con la batería y los re-encadena por el patio con un flujo de
+- **Qué hace:** corta cada jornada Caso base con interlining en tramos factibles con la batería y los re-encadena por el patio con un flujo de
   costo mínimo. Deja las ventanas de carga para la Etapa 4.
 - **Tiempo y memoria:** ~10-30 s cada una, ~300 MB.
 - **Debe imprimir:**
@@ -69,7 +69,7 @@ python scripts/13-etapa4_programacion_carga.py --terminal 4 --holgura 0 --delta 
 python scripts/13-etapa4_programacion_carga.py --terminal 4 --holgura 30 --delta 15
 python scripts/13-etapa4_programacion_carga.py --terminal 4 --holgura 60 --delta 15
 ```
-- **Qué hace:** con las ventanas de la Etapa 3 corre E2-FIFO (carga por orden de llegada, al minuto) y E2 (modelo
+- **Qué hace:** con las ventanas de la Etapa 3 corre Propuesta con carga por orden de llegada (carga por orden de llegada, al minuto) y Propuesta completa (modelo
   agregado: primero el LP como cota, luego el MILP con brecha de 0,5% y límite de 600 s).
 - **Requisito:** cada `--holgura h` necesita haber corrido antes el Paso 3 con esa holgura.
 - **Tiempo y memoria (el MILP manda; el límite es 600 s):**
@@ -99,20 +99,20 @@ python scripts/13-etapa4_programacion_carga.py --terminal 4 --holgura 60 --delta
 ```
 python scripts/14-kpis_instancia.py --terminal 4
 ```
-- **Qué hace:** no corre modelos. Lee todo lo anterior, arma la tabla de KPIs con las mismas definiciones para E0, E1,
-  E2-FIFO y E2 (más las variantes de h y Δ) y vuelve a verificar las validaciones desde los CSV. Genera las figuras y el
+- **Qué hace:** no corre modelos. Lee todo lo anterior, arma la tabla de KPIs con las mismas definiciones para Caso base, Caso base con interlining,
+  Propuesta con carga por orden de llegada y Propuesta completa (más las variantes de holgura de recarga y largo del bloque) y vuelve a verificar las validaciones desde los CSV. Genera las figuras y el
   resumen.
 - **Tiempo y memoria:** ~10-30 s, ~300 MB.
 - **Debe imprimir:** una línea por validación (`[OK]`, `[NO APLICA]` o `[FALLA]`), la tabla de KPIs y al final
   `TODAS LAS VALIDACIONES OK`.
-- **Escribe:** `results/instancia_LR/kpis/` y **`results/instancia_LR/resumen_para_analisis.md`**.
+- **Escribe:** `results/instancia_LR/kpis/tablas/`, las figuras del informe en `results/instancia_LR/informe/` (F0-F6) y **`results/instancia_LR/resumen_para_analisis.md`**.
 
 El orden de los pasos 4 y 5 permite correr el 5 en cualquier momento: el resumen incluye lo que exista y marca como no
 corrido lo que falte.
 
 ### Paso 6 (P2). Modelo detallado contra el agregado
 El detallado se corre **después** del agregado de la misma carpeta (Paso 4), en dos fases dentro de una hora (G11 en
-`02_decisiones.md`). No vuelve a resolver ni escribe nada del agregado ni de la FIFO; sus salidas van a
+`02_decisiones.md`). No vuelve a resolver ni escribe nada del agregado ni de la carga por orden de llegada; sus salidas van a
 `etapa4/h0_d<Δ>/detallado/`.
 
 **Antes de correr**, guardar el estado actual para no perder nada:
@@ -125,36 +125,38 @@ Luego:
 python scripts/13-etapa4_programacion_carga.py --terminal 4 --holgura 0 --delta 15 --detallado
 python scripts/14-kpis_instancia.py --terminal 4
 ```
-Δ = 30 es opcional (otra hora): `python scripts/13-etapa4_programacion_carga.py --terminal 4 --holgura 0 --delta 30 --detallado`.
+bloques de 30 es opcional (otra hora): `python scripts/13-etapa4_programacion_carga.py --terminal 4 --holgura 0 --delta 30 --detallado`.
 Después, un commit con los resultados.
 
-- **Tiempo y memoria:** ~1 h por Δ (fase 1 hasta 25 min, fase 2 el resto); ~1,5-2 GB con Δ = 15.
+- **Tiempo y memoria:** ~1 h por largo del bloque (fase 1 hasta 25 min, fase 2 el resto); ~1,5-2 GB con bloques de 15.
 - **Debe imprimir:**
   - `[OK] FIFO recalculada = FIFO guardada junto al agregado`. Si falla, la carpeta no tiene el agregado actual: correr antes `13- --delta 15` sin `--detallado`.
-  - `--- E2 detallado, fase 1: reservas fijas en las del agregado (218 reservas) ...` y `Fase 1: X USD (...)`. Si dice `[AVISO] La fase 1 no encontro una solucion sin deficit`, la fase 2 parte de la FIFO y se informa.
+  - `--- E2 detallado, fase 1: reservas fijas en las del agregado (218 reservas) ...` y `Fase 1: X USD (...)`. Si dice `[AVISO] La fase 1 no encontro una solucion sin deficit`, la fase 2 parte de la carga por orden de llegada y se informa.
   - `--- E2 detallado, fase 2: modelo completo desde la solucion de la fase 1, limite ... s ---`.
   - `Detallado: X USD (energia + reservas ... + eventos ...)` y `Brecha: ...% (<fuente>)`. La fuente es la menor entre la de Gurobi y la cota válida (G12).
   - `[OK] Detallado: ...` y `[OK] Detallado <= E2-FIFO con eventos (...)`. Si en vez de lo segundo dice `[AVISO] El detallado no supero a la FIFO`, es un resultado y se informa, no un error.
 - **En los logs** (`detallado/gurobi_fase1.log` y `gurobi_fase2.log`): la fase 1 debe terminar con `Thread count was 8` y la fase 2 debe empezar con `Loaded user MIP start`.
-- **Qué esperar con Δ = 15:** reservas ≈ 218, costo de carga ≈ 109 mil USD, brecha ≤ ~1%.
+- **Qué esperar con bloques de 15:** reservas ≈ 218, costo de carga ≈ 109 mil USD, brecha ≤ ~1%.
 - **Si se queda sin memoria:** informarlo; también es un resultado sobre el tamaño.
 - Los archivos del detallado de corridas anteriores que quedaron en la carpeta principal (`programa_E2_detallado.csv`, `gurobi_detallado.log`) ya no se usan. 14- los ignora, y se pueden borrar después del commit.
 
 ## 3. Qué entregar para el análisis
 
-Un solo archivo: `results/instancia_LR/resumen_para_analisis.md`, más las figuras de `results/instancia_LR/kpis/graficos/`
-si se quieren mostrar. El resumen contiene:
+Un solo archivo: `results/instancia_LR/resumen_para_analisis.md`, más las figuras finales del informe en
+`results/instancia_LR/informe/` (F0-F6, cada una en PDF para LaTeX, PNG y CSV con sus datos). El resumen contiene:
 - la instancia y los parámetros;
 - el estado de todas las validaciones;
-- los KPIs por escenario (costo original y comparable);
+- los KPIs por escenario (costo total y costo total con espera nocturna). La Propuesta completa es el modelo detallado
+  con bloques de 15 min, e incluye el máximo de buses cargando a la vez en la ejecución minuto a minuto;
 - el diagnóstico de flota de la Etapa 3;
-- las reservas por tipo;
-- la energía por periodo tarifario;
+- las reservas por tipo (diurnas y nocturnas);
+- la energía por tramo horario;
 - la ocupación por hora;
-- las sensibilidades a h y Δ;
+- las sensibilidades a la holgura de recarga y al largo del bloque (modelo agregado);
 - los segundos, el estado y la brecha de cada modelo;
-- el detallado vs agregado (P2);
-- la lista de figuras.
+- el modelo detallado frente al modelo agregado;
+- las figuras del informe, con un caption propuesto y la cifra principal de cada una;
+- las herramientas y el equipo (versiones leídas del entorno).
 
 No hace falta adjuntar los CSV: cada cifra del resumen sale de un CSV de `results/instancia_LR/`.
 
@@ -163,7 +165,7 @@ No hace falta adjuntar los CSV: cada cifra del resumen sale de un CSV de `result
 | Síntoma | Qué hacer |
 |---|---|
 | `GurobiError: No Gurobi license` o `Model too large for size-limited license` | Activar la licencia académica (`grbgetkey`) y comprobarla con el comando de la sección 1. |
-| `MemoryError` o el computador se queda sin memoria en el Paso 4 con Δ = 5 | Correr primero Δ = 30 y 15. Si Δ = 5 no cabe, se informa así (también es un resultado sobre el tamaño). Cerrar otros programas ayuda. |
+| `MemoryError` o el computador se queda sin memoria en el Paso 4 con bloques de 5 | Correr primero bloques de 30 y 15. Si bloques de 5 no cabe, se informa así (también es un resultado sobre el tamaño). Cerrar otros programas ayuda. |
 | El MILP termina por `limite de tiempo` | No es un error: el resumen informa la brecha alcanzada. |
 | `AssertionError` en cualquier paso | Copiar el mensaje **completo** (está en español y dice qué falló). No cambiar parámetros para que pase. |
 | `No existen las ventanas de la Etapa 3 (...)` | Falta el Paso 3 con esa `--holgura`. |

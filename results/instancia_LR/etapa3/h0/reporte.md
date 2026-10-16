@@ -1,10 +1,10 @@
-# Etapa 3 - Cortes y re-encadenamiento, La Reina (jornadas E1, holgura 0 min)
+# Etapa 3 - Cortes y re-encadenamiento, La Reina (jornadas Caso base con interlining, holgura 0 min)
 
 ## Diagnostico de flota
 
 | paso                             |   buses | que_mide                                                            |
 |:---------------------------------|--------:|:--------------------------------------------------------------------|
-| (i) VSP                          |    1203 | Punto de partida: una jornada = un bus                              |
+| (i) Jornadas sin bateria                          |    1203 | Punto de partida: una jornada = un bus                              |
 | (ii) Reuso del patio sin bateria |    1130 | Jornadas enteras re-encadenadas por el patio, sin tiempo de recarga |
 | (iii) Solo cortes                |    1640 | Cada tramo un bus                                                   |
 | (iv) Cortes + re-encadenamiento  |    1166 | La Etapa 3 completa (recarga completa + holgura 0 min)              |
@@ -13,7 +13,7 @@
 
 - Tramos: 1,640 (434 de 1,203 jornadas se cortan); km extra por los cortes: 5,227.3 km.
 - Energia: 343.29 MWh en los tramos (VSP: 335.97 MWh).
-- Ventanas de carga: 474 intermedias y 1,166 nocturnas. Holgura mediana de las intermedias: 71 min; de las nocturnas: 372 min.
+- Ventanas de carga: 474 diurnas y 1,166 nocturnas. Holgura mediana de las diurnas: 71 min; de las nocturnas: 372 min.
 - Ventanas nocturnas que no alcanzan la recarga completa ni con puesto libre: 53; de ellas 38 son cadenas de mas de 24 h (el flujo, como el VSP, es de un dia y no ciclico). La Etapa 4 las cubre con un bus de reserva, la misma regla del caso base.
 
 ## Validaciones (todas pasaron)

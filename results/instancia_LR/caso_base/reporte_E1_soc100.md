@@ -1,11 +1,11 @@
-# Reporte caso base - carga reactiva, escenario E1, nivel 100%
+# Reporte caso base - carga reactiva, escenario Caso base con interlining, nivel 100%
 
-Politica miope sobre las jornadas del VSP (escenario E1). Nivel de partida, de llegada y tope de carga: 100% (energia utilizable 315 kWh). Carga parcial cuando el hueco no alcanza; la jornada se parte solo si ni asi puede seguir.
+Politica miope sobre las jornadas sin bateria (escenario Caso base con interlining). Nivel de partida, de llegada y tope de carga: 100% (energia utilizable 315 kWh). Carga parcial cuando el hueco no alcanza; la jornada se parte solo si ni asi puede seguir.
 
 ## Resultado
 
 - **Buses:** 1,203 en el VSP -> **1,638** tras la carga (+435; 435 jornadas partidas: 435 por falta de hueco, 0 por falta de puesto).
-- **Recargas intermedias:** 8 eventos en 8 jornadas (0.5% de las jornadas finales; el VSP estimaba 36.1% con energia sobre la bateria util).
+- **Recargas diurnas:** 8 eventos en 8 jornadas (0.5% de las jornadas finales; el VSP estimaba 36.1% con energia sobre la bateria util).
 - **Cargas finales:** 1,638; **ciclos no cumplidos:** 315 (retraso maximo 627 min); cargas fragmentadas por falta de tramo continuo: 0.
 - **Colas:** 1,399 eventos esperaron mas de 1 min por un puesto (maximo 672 min; 8,852.3 h en total).
 - **Energia:** 346.7 MWh cargados = 346.7 MWh consumidos (diferencia -0.00e+00 kWh). Costo 47,482 USD, 0.1369 USD/kWh, 51.6% en valle (P1 y P6).
@@ -24,7 +24,7 @@ Politica miope sobre las jornadas del VSP (escenario E1). Nivel de partida, de l
 | tipo       |   eventos |       kwh |   costo_usd |   espera_media_min |   espera_max_min |
 |:-----------|----------:|----------:|------------:|-------------------:|-----------------:|
 | final      |      1638 | 345791    |    47310.6  |             324.26 |           671.51 |
-| intermedia |         8 |    949.34 |      170.96 |               0.65 |             0.99 |
+| diurna |         8 |    949.34 |      170.96 |               0.65 |             0.99 |
 
 ## Uso de los puestos por electroterminal (modulo 24 h)
 

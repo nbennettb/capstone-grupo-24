@@ -1,0 +1,61 @@
+\newcommand{\firmaBox}[2]{%
+  \begin{minipage}[t]{4.2cm}
+    \centering
+    \IfFileExists{firmas/#2.png}%
+      {\includegraphics[width=3.8cm,height=1.7cm,keepaspectratio]{firmas/#2.png}}%
+      {\IfFileExists{firmas/#2.jpg}%
+        {\includegraphics[width=3.8cm,height=1.7cm,keepaspectratio]{firmas/#2.jpg}}%
+        {\IfFileExists{firmas/#2.jpeg}%
+          {\includegraphics[width=3.8cm,height=1.7cm,keepaspectratio]{firmas/#2.jpeg}}%
+          {\fbox{\begin{minipage}[c][1.7cm][c]{3.7cm}\centering\footnotesize\textit{(firma pendiente)}\end{minipage}}}%
+        }%
+      }\\[2pt]
+    \rule{3.8cm}{0.4pt}\\[2pt]
+    \small #1
+  \end{minipage}%
+}
+
+\noindent\textbf{Grupo:} 24
+
+\vspace{0.35cm}
+
+\noindent\textbf{¿Hicieron uso de herramientas de IA en este informe y/o
+presentación?} \quad Sí: $\square$ \qquad No: $\square$
+
+\vspace{0.35cm}
+
+\noindent\textbf{Marquen los usos que correspondan:}
+
+\begin{itemize}
+\setlength{\itemsep}{2pt}
+\item[$\square$] Apoyo a la redacción, ortografía o estructura gramatical.
+\item[$\square$] Apoyo al análisis de datos e información del problema.
+\item[$\square$] Búsqueda o filtro de referencias y literatura.
+\item[$\square$] Apoyo al desarrollo del modelo.
+\item[$\square$] Apoyo al desarrollo de código computacional.
+\item[$\square$] Apoyo al análisis de resultados.
+\item[$\square$] Apoyo para construir figuras o diagramas.
+\item[$\square$] Apoyo para obtener conclusiones.
+\item[$\square$] Otro: \rule{8cm}{0.4pt}
+\end{itemize}
+
+\noindent\textbf{Herramientas de IA utilizadas y reflexión breve sobre su
+aporte, utilidad y verificación de sus resultados:}
+
+\vspace{0.2cm}
+\noindent\rule{\textwidth}{0.4pt}\\[0.7cm]
+\noindent\rule{\textwidth}{0.4pt}\\[0.7cm]
+\noindent\rule{\textwidth}{0.4pt}
+
+\vspace{0.5cm}
+
+\noindent\textbf{Nombres y firmas de todos los integrantes:}
+
+\vspace{0.3cm}
+
+\begin{center}
+\begin{tabular}{ccc}
+\firmaBox{Nicol\'as Bennett}{nicolas_bennett} & \firmaBox{Antonio De Frutos}{antonio_defrutos} & \firmaBox{Claudio Hasb\'un}{claudio_hasbun} \\
+\firmaBox{Agust\'in Irarr\'azaval}{agustin_irarrazaval} & \firmaBox{Joaqu\'in Jim\'enez}{joaquin_jimenez} & \firmaBox{Alonso Muelas}{alonso_muelas}
+\end{tabular}
+\end{center}

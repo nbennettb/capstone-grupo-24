@@ -33,6 +33,9 @@ Archivo generado por `scripts/14-kpis_instancia.py`. Todas las cifras salen de l
 | Etapa 4 (h=0, Delta=15): deficit 0                                             | OK          | FIFO 0.000 kWh, E2 0.000 kWh                                                                                    |
 | Etapa 4 (h=0, Delta=15): ocupacion <= 100 por bloque (E2) y por minuto (FIFO)  | OK          | maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 124 min sobre 100 (informativo) |
 | Etapa 4 (h=0, Delta=15): E2 <= E2-FIFO (energia + reservas)                    | OK          | 100,905.49 <= 165,004.72 USD                                                                                    |
+| Etapa 4 (h=0, Delta=15): detallado, deficit 0                                  | OK          | -0.000 kWh                                                                                                      |
+| Etapa 4 (h=0, Delta=15): detallado <= E2-FIFO (energia + reservas + eventos)   | OK          | 109,040.58 <= 173,204.72 USD                                                                                    |
+| Etapa 4 (h=0, Delta=15): detallado, ocupacion <= 100 por bloque                | OK          | maximo por bloque 100.00; realizacion por minuto: 32 min sobre 100 (informativo)                                |
 | Etapa 4 (h=0, Delta=30): deficit 0                                             | OK          | FIFO 0.000 kWh, E2 0.000 kWh                                                                                    |
 | Etapa 4 (h=0, Delta=30): ocupacion <= 100 por bloque (E2) y por minuto (FIFO)  | OK          | maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 101 min sobre 100 (informativo) |
 | Etapa 4 (h=0, Delta=30): E2 <= E2-FIFO (energia + reservas)                    | OK          | 100,680.53 <= 165,004.72 USD                                                                                    |
@@ -82,14 +85,15 @@ Original = espera como la cobra el caso base (incluye la espera nocturna hasta e
 
 ### Variantes (sensibilidad)
 
-| escenario   | variante   | modelo   |   buses_operativos |   reservas_intermedias |   reservas_nocturnas |   buses_totales |   costo_energia |   costo_eventos |   costo_total_comparable |   costo_total_original |
-|:------------|:-----------|:---------|-------------------:|-----------------------:|---------------------:|----------------:|----------------:|----------------:|-------------------------:|-----------------------:|
-| E2          | Delta=5    | agregado |               1166 |                      0 |                  219 |            1385 |           46398 |           54440 |                   470848 |                 474770 |
-| E2          | Delta=30   | agregado |               1166 |                      0 |                  217 |            1383 |           46431 |           18090 |                   434030 |                 438878 |
-| E2-FIFO     | h=30       | -        |               1196 |                      0 |                  440 |            1636 |           47005 |            8200 |                   488670 |                 497980 |
-| E2          | h=30       | agregado |               1196 |                      0 |                  203 |            1399 |           46347 |           28300 |                   448862 |                 453211 |
-| E2-FIFO     | h=60       | -        |               1219 |                      0 |                  435 |            1654 |           47005 |            8200 |                   493647 |                 502958 |
-| E2          | h=60       | agregado |               1219 |                      0 |                  190 |            1409 |           46340 |           29170 |                   452702 |                 456839 |
+| escenario   | variante               | modelo    |   buses_operativos |   reservas_intermedias |   reservas_nocturnas |   buses_totales |   costo_energia |   costo_eventos |   costo_total_comparable |   costo_total_original |
+|:------------|:-----------------------|:----------|-------------------:|-----------------------:|---------------------:|----------------:|----------------:|----------------:|-------------------------:|-----------------------:|
+| E2          | Delta=5                | agregado  |               1166 |                      0 |                  219 |            1385 |           46398 |           54440 |                   470848 |                 474770 |
+| E2          | detallado h=0 Delta=15 | detallado |               1166 |                      0 |                  217 |            1383 |           46416 |            8375 |                   424300 |                 432525 |
+| E2          | Delta=30               | agregado  |               1166 |                      0 |                  217 |            1383 |           46431 |           18090 |                   434030 |                 438878 |
+| E2-FIFO     | h=30                   | -         |               1196 |                      0 |                  440 |            1636 |           47005 |            8200 |                   488670 |                 497980 |
+| E2          | h=30                   | agregado  |               1196 |                      0 |                  203 |            1399 |           46347 |           28300 |                   448862 |                 453211 |
+| E2-FIFO     | h=60                   | -         |               1219 |                      0 |                  435 |            1654 |           47005 |            8200 |                   493647 |                 502958 |
+| E2          | h=60                   | agregado  |               1219 |                      0 |                  190 |            1409 |           46340 |           29170 |                   452702 |                 456839 |
 
 ## 4. Diagnostico de flota de la Etapa 3
 
@@ -174,32 +178,39 @@ Puestos: 100. E2 = realizacion por minuto del modelo agregado.
 
 El VSP (Etapa 2) no se vuelve a correr: sus jornadas son un archivo.
 
-| corrida                                        | estado                        | brecha   | fuente_brecha   |   segundos |
-|:-----------------------------------------------|:------------------------------|:---------|:----------------|-----------:|
-| Caso base E0 (simulador reactivo)              | -                             | -        | -               |       1.2  |
-| Caso base E1 (simulador reactivo)              | -                             | -        | -               |       1.7  |
-| Etapa 3 h=0 (DP + flujo)                       | optimo (flujo entero)         | 0        | flujo entero    |       3    |
-| Etapa 3 h=30 (DP + flujo)                      | optimo (flujo entero)         | 0        | flujo entero    |       3.7  |
-| Etapa 3 h=60 (DP + flujo)                      | optimo (flujo entero)         | 0        | flujo entero    |       2.2  |
-| Etapa 4 h=0 Delta=5: E2-FIFO                   | heuristica (sin optimizacion) | nan      | -               |       0.22 |
-| Etapa 4 h=0 Delta=5: E2 agregado - LP (cota)   | optimo                        | 0.0      | Gurobi          |       8.67 |
-| Etapa 4 h=0 Delta=5: E2 agregado - MILP        | optimo (brecha pedida)        | 0.003662 | Gurobi          |      93.65 |
-| Etapa 4 h=0 Delta=15: E2-FIFO                  | heuristica (sin optimizacion) | nan      | -               |       1.06 |
-| Etapa 4 h=0 Delta=15: E2 agregado - LP (cota)  | optimo                        | 0.0      | Gurobi          |       8.28 |
-| Etapa 4 h=0 Delta=15: E2 agregado - MILP       | optimo (brecha pedida)        | 0.003172 | Gurobi          |      89.4  |
-| Etapa 4 h=0 Delta=30: E2-FIFO                  | heuristica (sin optimizacion) | nan      | -               |       0.31 |
-| Etapa 4 h=0 Delta=30: E2 agregado - LP (cota)  | optimo                        | 0.0      | Gurobi          |       1.51 |
-| Etapa 4 h=0 Delta=30: E2 agregado - MILP       | optimo (brecha pedida)        | 0.003772 | Gurobi          |      13.34 |
-| Etapa 4 h=30 Delta=15: E2-FIFO                 | heuristica (sin optimizacion) | nan      | -               |       0.26 |
-| Etapa 4 h=30 Delta=15: E2 agregado - LP (cota) | optimo                        | 0.0      | Gurobi          |       2.38 |
-| Etapa 4 h=30 Delta=15: E2 agregado - MILP      | optimo (brecha pedida)        | 0.001547 | Gurobi          |      30.52 |
-| Etapa 4 h=60 Delta=15: E2-FIFO                 | heuristica (sin optimizacion) | nan      | -               |       0.35 |
-| Etapa 4 h=60 Delta=15: E2 agregado - LP (cota) | optimo                        | 0.0      | Gurobi          |       2.15 |
-| Etapa 4 h=60 Delta=15: E2 agregado - MILP      | optimo (brecha pedida)        | 0.003443 | Gurobi          |      23.77 |
+| corrida                                                      | estado                        | brecha   | fuente_brecha                                         |   segundos |
+|:-------------------------------------------------------------|:------------------------------|:---------|:------------------------------------------------------|-----------:|
+| Caso base E0 (simulador reactivo)                            | -                             | -        | -                                                     |       1.2  |
+| Caso base E1 (simulador reactivo)                            | -                             | -        | -                                                     |       1.7  |
+| Etapa 3 h=0 (DP + flujo)                                     | optimo (flujo entero)         | 0        | flujo entero                                          |       3    |
+| Etapa 3 h=30 (DP + flujo)                                    | optimo (flujo entero)         | 0        | flujo entero                                          |       3.7  |
+| Etapa 3 h=60 (DP + flujo)                                    | optimo (flujo entero)         | 0        | flujo entero                                          |       2.2  |
+| Etapa 4 h=0 Delta=5: E2-FIFO                                 | heuristica (sin optimizacion) | nan      | -                                                     |       0.22 |
+| Etapa 4 h=0 Delta=5: E2 agregado - LP (cota)                 | optimo                        | 0.0      | Gurobi                                                |       8.67 |
+| Etapa 4 h=0 Delta=5: E2 agregado - MILP                      | optimo (brecha pedida)        | 0.003662 | Gurobi                                                |      93.65 |
+| Etapa 4 h=0 Delta=15: E2-FIFO                                | heuristica (sin optimizacion) | nan      | -                                                     |       1.06 |
+| Etapa 4 h=0 Delta=15: E2 agregado - LP (cota)                | optimo                        | 0.0      | Gurobi                                                |       8.28 |
+| Etapa 4 h=0 Delta=15: E2 agregado - MILP                     | optimo (brecha pedida)        | 0.003172 | Gurobi                                                |      89.4  |
+| Etapa 4 h=0 Delta=15: E2 detallado - fase 1 (reservas fijas) | limite de tiempo              | 0.043684 | Gurobi, con las reservas fijas                        |    1506.46 |
+| Etapa 4 h=0 Delta=15: E2 detallado - MILP                    | limite de tiempo              | 0.006581 | cota valida (LP del agregado + un evento por ventana) |    3605.12 |
+| Etapa 4 h=0 Delta=30: E2-FIFO                                | heuristica (sin optimizacion) | nan      | -                                                     |       0.31 |
+| Etapa 4 h=0 Delta=30: E2 agregado - LP (cota)                | optimo                        | 0.0      | Gurobi                                                |       1.51 |
+| Etapa 4 h=0 Delta=30: E2 agregado - MILP                     | optimo (brecha pedida)        | 0.003772 | Gurobi                                                |      13.34 |
+| Etapa 4 h=30 Delta=15: E2-FIFO                               | heuristica (sin optimizacion) | nan      | -                                                     |       0.26 |
+| Etapa 4 h=30 Delta=15: E2 agregado - LP (cota)               | optimo                        | 0.0      | Gurobi                                                |       2.38 |
+| Etapa 4 h=30 Delta=15: E2 agregado - MILP                    | optimo (brecha pedida)        | 0.001547 | Gurobi                                                |      30.52 |
+| Etapa 4 h=60 Delta=15: E2-FIFO                               | heuristica (sin optimizacion) | nan      | -                                                     |       0.35 |
+| Etapa 4 h=60 Delta=15: E2 agregado - LP (cota)               | optimo                        | 0.0      | Gurobi                                                |       2.15 |
+| Etapa 4 h=60 Delta=15: E2 agregado - MILP                    | optimo (brecha pedida)        | 0.003443 | Gurobi                                                |      23.77 |
 
 ## 11. Modelo detallado vs agregado
 
-Pendiente (P2): correr 13- con --detallado.
+|   Delta (min) | modelo    |   reservas |   eventos | energia + reservas (USD)   | total carga = + eventos (USD)   |   minutos sobre los puestos | segundos   | brecha   | fuente de la brecha                                   |
+|--------------:|:----------|-----------:|----------:|:---------------------------|:--------------------------------|----------------------------:|:-----------|:---------|:------------------------------------------------------|
+|            15 | agregado  |        218 |      5866 | 100,905                    | 130,235                         |                         124 | 89         | 0.32%    | Gurobi                                                |
+|            15 | detallado |        217 |      1675 | 100,666                    | 109,041                         |                          32 | 3,605      | 0.66%    | cota valida (LP del agregado + un evento por ventana) |
+
+**Conclusion:** con Delta = 15 min, la programacion del detallado cuesta 109,041 USD/dia contra 130,235 del agregado con sus eventos contados despues (-16.3%), con 217 reservas contra 218 y 1,675 eventos contra 5,866; el agregado se resuelve en 89 s y el detallado en 3,605 s, con brecha 0.66%.
 
 ## 12. Figuras
 

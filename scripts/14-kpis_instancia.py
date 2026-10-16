@@ -83,6 +83,13 @@ class Corridas:
                 self.e4[(float(m.group(1)), int(m.group(2)))] = d / "tablas"
 
 
+def carpeta_detallado(t4):
+    """Carpeta del modelo detallado de una corrida de la Etapa 4 (o None si no se ha corrido). Las filas de detallado que
+    pudieran quedar en las tablas principales de una version anterior se ignoran."""
+    d = t4.parent / "detallado"
+    return d if (d / "resumen.csv").exists() and (d / "modelo.csv").exists() else None
+
+
 def ocupacion_caso_base(cb, esc):
     o = leer(cb / f"ocupacion_{esc}_soc100.csv")
     return None if o is None else o["buses_cargando"].values.astype(float)
@@ -232,15 +239,24 @@ def validaciones(corr, nombre, patios, prueba, costos):
         o2, of = mo.loc["E2 agregado - MILP", "objetivo_usd"], mo.loc["E2-FIFO", "objetivo_usd"]
         anotar(f"Etapa 4 (h={h:g}, Delta={d}): E2 <= E2-FIFO (energia + reservas)", o2 <= of + 0.01,
                f"{fmt(o2, 2)} <= {fmt(of, 2)} USD")
-        if "E2 detallado - MILP" in mo.index:
-            od = mo.loc["E2 detallado - MILP", "objetivo_usd"]
+        det_dir = carpeta_detallado(t4)
+        if det_dir is not None:
+            md = leer(det_dir / "modelo.csv").set_index("modelo").loc["E2 detallado - MILP"]
+            rd = leer(det_dir / "resumen.csv").iloc[0]
+            obd, omd = leer(det_dir / "ocupacion_bloques.csv"), leer(det_dir / "ocupacion_minutos.csv")
+            od = float(md["objetivo_usd"])
             of_ev = of + r4.loc["E2-FIFO", "costo_eventos_usd"]
-            anotar(f"Etapa 4 (h={h:g}, Delta={d}): detallado <= E2-FIFO (energia + reservas + eventos)",
-                   od <= of_ev + 0.01, f"{fmt(od, 2)} <= {fmt(of_ev, 2)} USD")
+            anotar(f"Etapa 4 (h={h:g}, Delta={d}): detallado, deficit 0", float(rd["kwh_deficit"]) < 1e-3,
+                   f"{rd['kwh_deficit']:.3f} kWh")
+            supera = od <= of_ev + 0.01
+            filas.append(dict(validacion=f"Etapa 4 (h={h:g}, Delta={d}): detallado <= E2-FIFO (energia + reservas + eventos)",
+                              resultado="OK" if supera else "AVISO",
+                              detalle=f"{fmt(od, 2)} <= {fmt(of_ev, 2)} USD" if supera else
+                              f"{fmt(od, 2)} > {fmt(of_ev, 2)} USD: el detallado no supero a la FIFO en el tiempo dado"))
             anotar(f"Etapa 4 (h={h:g}, Delta={d}): detallado, ocupacion <= {k} por bloque",
-                   bool((ob["buses_equivalentes_e2_detallado"] <= k + 1e-6).all()),
-                   f"maximo por bloque {ob['buses_equivalentes_e2_detallado'].max():.2f}; realizacion por minuto: "
-                   f"{int((om['e2_detallado'] > k + 1e-6).sum())} min sobre {k} (informativo)")
+                   bool((obd["buses_equivalentes_e2_detallado"] <= k + 1e-6).all()),
+                   f"maximo por bloque {obd['buses_equivalentes_e2_detallado'].max():.2f}; realizacion por minuto: "
+                   f"{int((omd['e2_detallado'] > k + 1e-6).sum())} min sobre {k} (informativo)")
     return pd.DataFrame(filas)
 
 
@@ -410,11 +426,11 @@ def main():
     for (h, d), t4 in sorted(corr.e4.items()):
         if h not in corr.e3:
             continue
-        politicas = set(leer(t4 / "resumen.csv")["politica"])
-        for pol in [p for p in ("E2-FIFO", "E2", "E2-detallado") if p in politicas]:
+        det_dir = carpeta_detallado(t4)
+        for pol in ("E2-FIFO", "E2") + (("E2-detallado",) if det_dir is not None else ()):
             if pol == "E2-FIFO" and d != d0:
                 continue                      # la FIFO es al minuto: no depende de Delta
-            f = fila_propuesta(corr.e3[h], t4, pol, h, d, costos)
+            f = fila_propuesta(corr.e3[h], det_dir if pol == "E2-detallado" else t4, pol, h, d, costos)
             if pol == "E2-detallado":
                 f["escenario"], f["variante"] = "E2", f"detallado h={h:g} Delta={d}"
             else:
@@ -517,15 +533,22 @@ def main():
         f = k[k["escenario"] == esc]
         if len(f):
             modelos.append(dict(corrida=f"Caso base {esc} (simulador reactivo)", estado="-", brecha="-",
-                                segundos=f["segundos"].iloc[0]))
+                                fuente_brecha="-", segundos=f["segundos"].iloc[0]))
     for h, t3 in sorted(corr.e3.items()):
         r3 = leer(t3 / "resumen.csv").iloc[0]
         modelos.append(dict(corrida=f"Etapa 3 h={h:g} (DP + flujo)", estado="optimo (flujo entero)", brecha=0,
-                            segundos=float(r3["segundos_total"])))
+                            fuente_brecha="flujo entero", segundos=float(r3["segundos_total"])))
     for (h, d), t4 in sorted(corr.e4.items()):
-        for r in leer(t4 / "modelo.csv").itertuples():
-            modelos.append(dict(corrida=f"Etapa 4 h={h:g} Delta={d}: {r.modelo}", estado=r.estado,
-                                brecha=r.brecha, segundos=r.segundos))
+        mo = leer(t4 / "modelo.csv").set_index("modelo")
+        mo = mo[~mo.index.str.startswith("E2 detallado")]
+        det_dir = carpeta_detallado(t4)
+        if det_dir is not None:
+            mo = pd.concat([mo, leer(det_dir / "modelo.csv").set_index("modelo")])
+        for nombre_mo, r in mo.iterrows():
+            fuente = r["fuente_brecha"] if "fuente_brecha" in r and isinstance(r["fuente_brecha"], str) else (
+                "Gurobi" if r["brecha"] == r["brecha"] else "-")
+            modelos.append(dict(corrida=f"Etapa 4 h={h:g} Delta={d}: {nombre_mo}", estado=r["estado"],
+                                brecha=r["brecha"], fuente_brecha=fuente, segundos=r["segundos"]))
     modelos = pd.DataFrame(modelos)
     modelos.to_csv(tablas / "tiempos_y_brechas.csv", index=False, sep=CSV_SEP)
     det = detallado_vs_agregado(corr)
@@ -579,20 +602,24 @@ def detallado_vs_agregado(corr):
     """Una fila por modelo (agregado y detallado) en cada corrida de la Etapa 4 que tenga el detallado."""
     filas = []
     for (h, d), t4 in sorted(corr.e4.items()):
-        mo = leer(t4 / "modelo.csv").set_index("modelo")
-        if "E2 detallado - MILP" not in mo.index:
+        det_dir = carpeta_detallado(t4)
+        if det_dir is None:
             continue
-        r4 = leer(t4 / "resumen.csv").set_index("politica")
-        om = leer(t4 / "ocupacion_minutos.csv")
-        k = int(om["puestos"].iloc[0])
-        for nombre, fila_mo, pol, col in (("agregado", "E2 agregado - MILP", "E2", "e2"),
-                                          ("detallado", "E2 detallado - MILP", "E2-detallado", "e2_detallado")):
-            m, r = mo.loc[fila_mo], r4.loc[pol]
+        fuentes = {"agregado": (leer(t4 / "modelo.csv").set_index("modelo").loc["E2 agregado - MILP"],
+                                leer(t4 / "resumen.csv").set_index("politica").loc["E2"],
+                                leer(t4 / "ocupacion_minutos.csv"), "e2"),
+                   "detallado": (leer(det_dir / "modelo.csv").set_index("modelo").loc["E2 detallado - MILP"],
+                                 leer(det_dir / "resumen.csv").set_index("politica").loc["E2-detallado"],
+                                 leer(det_dir / "ocupacion_minutos.csv"), "e2_detallado")}
+        for nombre, (m, r, om, col) in fuentes.items():
+            k = int(om["puestos"].iloc[0])
             eventos_usd = float(r["costo_eventos_usd"])
             # el objetivo del detallado incluye los eventos; el del agregado no
             energia_reservas = float(m["objetivo_usd"]) - (float(m["eventos_usd"]) if nombre == "detallado" else 0.0)
-            filas.append(dict(holgura_min=h, delta_min=d, modelo=nombre, estado=m["estado"], brecha=m["brecha"],
-                              segundos=m["segundos"], binarias=int(m["binarias"]), variables=int(m["variables"]),
+            brecha, fuente = float(m["brecha"]), (m["fuente_brecha"] if nombre == "detallado" else "Gurobi")
+            filas.append(dict(holgura_min=h, delta_min=d, modelo=nombre, estado=m["estado"], brecha=round(brecha, 6),
+                              fuente_brecha=fuente, segundos=m["segundos"], binarias=int(m["binarias"]),
+                              variables=int(m["variables"]),
                               energia_mas_reservas_usd=round(energia_reservas, 2), eventos=int(r["eventos"]),
                               costo_eventos_usd=round(eventos_usd, 2),
                               total_carga_usd=round(energia_reservas + eventos_usd, 2),
@@ -602,6 +629,31 @@ def detallado_vs_agregado(corr):
                               minutos_sobre_puestos=int((om[col] > k + 1e-6).sum()),
                               maximo_por_minuto=round(float(om[col].max()), 2)))
     return pd.DataFrame(filas) if filas else None
+
+
+def tabla_detallado(det):
+    """La comparacion en una sola tabla (USD/dia)."""
+    t = pd.DataFrame({
+        "Delta (min)": det["delta_min"].astype(int), "modelo": det["modelo"],
+        "reservas": det["reservas_intermedias"] + det["reservas_nocturnas"], "eventos": det["eventos"],
+        "energia + reservas (USD)": det["energia_mas_reservas_usd"].map(lambda x: fmt(x)),
+        "total carga = + eventos (USD)": det["total_carga_usd"].map(lambda x: fmt(x)),
+        "minutos sobre los puestos": det["minutos_sobre_puestos"], "segundos": det["segundos"].map(lambda x: fmt(x)),
+        "brecha": det["brecha"].map(lambda x: f"{x:.2%}"), "fuente de la brecha": det["fuente_brecha"]})
+    return tabla_md(t)
+
+
+def conclusion_detallado(det):
+    """Una frase con la comparacion del Delta base (o el primero disponible)."""
+    d0 = parametros.DELTA_MIN if (det["delta_min"] == parametros.DELTA_MIN).any() else det["delta_min"].iloc[0]
+    a = det[(det["delta_min"] == d0) & (det["modelo"] == "agregado")].iloc[0]
+    b = det[(det["delta_min"] == d0) & (det["modelo"] == "detallado")].iloc[0]
+    res = lambda f: int(f["reservas_intermedias"] + f["reservas_nocturnas"])
+    return (f"**Conclusion:** con Delta = {int(d0)} min, la programacion del detallado cuesta {fmt(b['total_carga_usd'])} "
+            f"USD/dia contra {fmt(a['total_carga_usd'])} del agregado con sus eventos contados despues "
+            f"({(b['total_carga_usd'] / a['total_carga_usd'] - 1) * 100:+.1f}%), con {res(b)} reservas contra {res(a)} y "
+            f"{fmt(b['eventos'])} eventos contra {fmt(a['eventos'])}; el agregado se resuelve en {fmt(a['segundos'])} s "
+            f"y el detallado en {fmt(b['segundos'])} s, con brecha {b['brecha']:.2%}.")
 
 
 def resumen_md(nombre, kappa, prueba, costos, corr, k, kb, val, diag, tab_tarifa, ocup_h, sens_h, sens_d, modelos,
@@ -737,12 +789,8 @@ def resumen_md(nombre, kappa, prueba, costos, corr, k, kb, val, diag, tab_tarifa
         "",
         "## 11. Modelo detallado vs agregado",
         "",
-        ("Pendiente (P2): correr 13- con --detallado." if det is None else
-         "El detallado agrega al agregado el enchufe por bloque (binaria), el costo de cada evento de carga en el objetivo "
-         "y la carga continua a plena potencia dentro de cada evento; capacidad, reservas y deficit son los mismos. "
-         "Energia + reservas: lo que optimiza el agregado. Total carga = energia + reservas + eventos (en el agregado, "
-         "los eventos se cuentan despues de resolver). Minutos sobre los puestos: realizacion por minuto de cada "
-         "solucion.\n\n" + tabla_md(det)),
+        ("Pendiente (P2): correr 13- con --detallado." if det is None else tabla_detallado(det) + "\n\n"
+         + conclusion_detallado(det)),
         "",
         "## 12. Figuras",
         "",

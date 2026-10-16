@@ -1,0 +1,370 @@
+\section{Revisión bibliográfica de la metodología}
+ 
+En la literatura de buses eléctricos se distinguen dos enfoques: los modelos integrados, que deciden al mismo tiempo qué viajes hace cada bus y cuándo carga, y los enfoques secuenciales, que separan estas decisiones en etapas \cite{perumal2022}. Los integrados entregan mejores soluciones, pero se han aplicado a instancias mucho más chicas que la nuestra y por lo general se resuelven con heurísticas como ALNS \cite{wen2016, wang2024}. Dado el tamaño del caso, con 64.502 expediciones diarias, optamos por una descomposición secuencial en cuatro etapas: asignar las rutas a electroterminales, construir las jornadas sin considerar la batería, cortarlas y reencadenarlas según la batería, y programar la carga en cada electroterminal.
+
+La principal fortaleza de este enfoque es que casi todas sus etapas se resuelven de forma exacta y en poco tiempo. Tanto la construcción de jornadas como su reencadenamiento usan la red espacio-tiempo de \citeA{kliewer2006}, pensada para problemas con varios depósitos y muchos viajes, cuya relajación lineal entrega directamente soluciones enteras. Además, cada etapa tiene una referencia con la cual comparar, lo que permite medir cuánto se pierde al dividir el problema. Por ejemplo, agrupar las rutas por electroterminal solo agrega 311 buses, algo que una heurística como ALNS no permitiría cuantificar. El MILP se reserva para la programación de la carga, que es donde se cruzan el horario, la tarifa y los puestos disponibles, en línea con \citeA{zhang2024} y \citeA{zhou2024}. Por último, como cada electroterminal es un problema independiente, la propuesta se pudo probar en un terminal completo, La Reina, donde reduce la flota total en cerca de un 30\% frente a la carga reactiva.
+ 
+La debilidad más importante sigue siendo que la construcción de jornadas no considera la batería, que es el costo típico de los enfoques secuenciales \cite{perumal2022}. La tercera etapa corrige esto después, cortando y reencadenando las jornadas, pero no las rediseña desde cero, por lo que la flota final sigue siendo mayor que la de las jornadas sin batería. Además, las etapas 3 y 4 no se retroalimentan: la tercera no ve los puestos de carga, y la única forma de anticipar las colas es dejar una holgura antes de que cada bus vuelva a salir, lo que no elimina los buses de reserva. En la programación de la carga también hay que elegir entre precisión y tiempo de cálculo. El modelo agregado se resuelve rápido, pero en algunos minutos del día supera los puestos disponibles, mientras que el modelo detallado respeta mejor la capacidad y no alcanza a resolverse en un tiempo razonable. Hasta ahora, todo esto solo se ha probado en La Reina, y los terminales más grandes quedan para la entrega final.
+ 
+Respecto a los supuestos, el más discutible es la carga lineal. \citeA{olsen2020} muestran que este supuesto subestima el tiempo real de carga, porque la carga se vuelve más lenta cerca del 100\%, y que puede generar jornadas imposibles de cumplir. Como en nuestro caso la carga ya es el cuello de botella, los resultados de energía probablemente son optimistas. Además, la tercera etapa supone que cada bus se recarga completo entre tramos, y el consumo se considera constante, sin considerar la pendiente ni la congestión. En cambio, el tamaño de los bloques de tiempo del MILP resultó poco relevante para los resultados. Para la entrega final, las mejoras prioritarias son llevar las etapas 3 y 4 a toda la red y coordinarlas entre sí. Si esto no basta, la alternativa natural es una heurística integrada como la de \citeA{wen2016}.
+
+\section{Metodología}
+
+La metodologia organiza la asignacion de expediciones a buses y la planificacion de sus recargas mediante una secuencia de etapas. A partir de recorridos y horarios previamente definidos, busca reducir el costo operativo mediante el uso compartido de buses entre rutas
+(\textit{interlining}) y la programación anticipada de la carga, considerando la autonomía de los vehículos y la infraestructura disponible. 
+
+
+
+
+\subsection{Asignación de rutas a electroterminales}
+
+La primera etapa determina el electroterminal desde el cual operará cada
+ruta. Para ello, se considera la distancia a los paraderos donde comienzan
+y terminan sus expediciones, ponderada por la frecuencia con que se utilizan estos paraderos.
+
+Sea $R$ el conjunto de rutas y $D$ el conjunto de electroterminales
+disponibles. Para cada ruta $r \in R$, se define $T_r$ como el conjunto
+de paraderos donde comienzan o terminan sus expediciones. El parámetro
+$\ell(k,d)$ representa la distancia estimada entre el paradero
+$k \in T_r$ y el electroterminal $d \in D$.
+
+Asimismo, $w_{rk}$ representa el peso relativo del paradero $k$, según
+la frecuencia con que aparece como origen o destino de las expediciones
+de la ruta $r$. Estos pesos satisfacen:
+
+\begin{equation}
+    w_{rk} \geq 0
+    \qquad \forall r \in R,\; k \in T_r.
+\end{equation}
+
+\begin{equation}
+    \sum_{k \in T_r} w_{rk} = 1
+    \qquad \forall r \in R.
+\end{equation}
+
+Cada ruta se asigna al electroterminal que minimiza la distancia promedio
+ponderada a sus paraderos terminales:
+
+\begin{equation}
+    d(r) \in
+    \operatorname*{arg\,min}_{d \in D}
+    \sum_{k \in T_r} w_{rk}\,\ell(k,d)
+    \qquad \forall r \in R.
+\end{equation}
+
+La expresión $\operatorname*{arg\,min}$ identifica el electroterminal
+que alcanza la menor distancia ponderada. Si varios electroterminales
+presentan el mismo valor mínimo, se selecciona uno de ellos.
+
+Este procedimiento entrega una asignación única por ruta y forma grupos
+de rutas asociados a cada electroterminal. La asignación obtenida se
+mantiene fija durante la construcción de jornadas y las etapas posteriores
+de carga. Por lo tanto, constituye un dato de entrada para esas etapas
+y solo requiere recalcularse si cambian los datos o el criterio de asignación.
+
+\subsection{Construcción de jornadas con interlining}
+
+Una jornada corresponde a una secuencia de expediciones atendidas por
+un bus, desde su salida del electroterminal hasta su regreso. En esta
+etapa se determina qué expediciones pueden realizarse consecutivamente
+y cuántos buses se necesitan, considerando los costos de utilización
+de flota, desplazamientos sin pasajeros y espera.
+
+Se permite el \textit{interlining}, de modo que un mismo bus puede atender
+expediciones de distintas rutas durante su jornada, siempre que
+pertenezcan al mismo electroterminal y que sus conexiones sean compatibles
+en tiempo y distancia. Esto permite aprovechar oportunidades de conexión
+entre rutas y reducir tiempos ociosos y necesidades de flota.
+
+\paragraph{Compatibilidad entre expediciones.}
+
+Sea $V$ el conjunto de expediciones y $U$ el conjunto de nodos de eventos
+que representan oportunidades de conexión y espera. Cada expedición
+$i \in V$ tiene una ruta $r_i$, una hora de salida $s_i$ y una hora
+de llegada $f_i$.
+
+La distancia y el tiempo de traslado vacío entre el destino de la
+expedición $i$ y el origen de la expedición $j$ se denotan por
+$\ell_{ij}$ y $\tau_{ij}$, respectivamente. El parámetro $\delta$
+representa el tiempo mínimo de preparación entre expediciones, mientras
+que $R_{\max}$ corresponde a la distancia máxima permitida para conectarlas.
+
+Para conectar una expedición $i$ con una expedición $j$, se consideran
+sus rutas $r_i$ y $r_j$ y los electroterminales asignados a ellas,
+$d(r_i)$ y $d(r_j)$. Se denota por $f_i$ la hora de término de $i$
+y por $s_j$ la hora de inicio de $j$. El traslado vacío desde el
+destino de $i$ hasta el origen de $j$ tiene una distancia
+$\ell_{ij}$ y una duración $\tau_{ij}$. Además, $\delta$ es el
+tiempo mínimo de preparación y $R_{\max}$ la distancia máxima
+permitida para la conexión. 
+Una expedición $i$ puede conectarse con una expedición $j$ cuando
+se cumplen las siguientes condiciones:
+
+\begin{equation}
+    \begin{aligned}
+        d(r_i) &= d(r_j), \\
+        f_i + \tau_{ij} + \delta &\leq s_j, \\
+        \ell_{ij} &\leq R_{\max}.
+    \end{aligned}
+\end{equation}
+
+La primera condición exige que las rutas de ambas expediciones
+pertenezcan al mismo electroterminal. A diferencia del caso base,
+no se exige que $r_i = r_j$, por lo que se admiten conexiones entre
+rutas diferentes.
+
+La segunda condición garantiza que el bus termine la expedición $i$
+y disponga de tiempo suficiente para trasladarse al origen de $j$
+y completar la preparación mínima antes de su salida. La tercera
+limita la distancia del desplazamiento sin pasajeros. Solo se incorporan
+a la red las conexiones que cumplen estas condiciones.
+
+\paragraph{Representación mediante una red de flujo.}
+
+La construcción de jornadas se representa mediante una red cuyos arcos
+describen las actividades disponibles para los buses. El conjunto de
+arcos $A$ se compone de cinco tipos:
+
+\begin{itemize}
+    \item $A_{\mathrm{out}}$: salidas del electroterminal hacia una
+    primera expedición.
+
+    \item $A_{\mathrm{dh}}$: traslados vacíos entre el final de una
+    expedición y un paradero de salida.
+
+    \item $A_{\mathrm{wait}}$: espera entre eventos consecutivos.
+
+    \item $A_{\mathrm{start}}$: acceso desde un evento a una expedición.
+
+    \item $A_{\mathrm{in}}$: regreso al electroterminal al finalizar
+    una jornada.
+\end{itemize}
+
+Las líneas de tiempo se organizan por paradero y electroterminal,
+permitiendo conexiones entre las rutas del mismo grupo. Los arcos
+de salida y regreso se vinculan al electroterminal correspondiente,
+de manera que cada jornada comience y termine en su electroterminal base.
+
+\paragraph{Variable de decisión.}
+
+Para cada arco $a \in A$, se define $x_a$ como la cantidad de buses
+que utilizan dicho arco:
+
+\begin{equation}
+    x_a \geq 0
+    \qquad \forall a \in A.
+\end{equation}
+
+La formulación conserva una estructura de flujo de red con requerimientos
+enteros, lo que permite obtener una solución óptima entera mediante
+programación lineal. El número de buses utilizados corresponde al flujo
+total de salida de los electroterminales:
+
+\begin{equation}
+    B = \sum_{a \in A_{\mathrm{out}}} x_a.
+\end{equation}
+
+\paragraph{Función objetivo.}
+
+Se minimiza la suma del costo fijo de los buses, el costo de los kilómetros
+recorridos sin pasajeros y el costo de espera:
+
+\begin{equation}
+    \min\;
+    \sum_{a \in A_{\mathrm{out}}}
+    \left(c_B + c_D \ell_a\right)x_a
+    +
+    \sum_{a \in A_{\mathrm{dh}} \cup A_{\mathrm{in}}}
+    c_D \ell_a x_a
+    +
+    \sum_{a \in A_{\mathrm{wait}}}
+    c_W t_a x_a.
+\end{equation}
+
+Aquí, $c_B$ es el costo por bus utilizado, $c_D$ el costo por kilómetro
+vacío y $c_W$ el costo por minuto de espera. Los parámetros $\ell_a$
+y $t_a$ representan la distancia y el tiempo de espera asociados al arco.
+
+El primer término considera la activación del bus y su traslado desde
+el electroterminal hacia la primera expedición. El segundo incorpora
+los traslados vacíos entre expediciones y el regreso al electroterminal.
+El tercero contabiliza las esperas entre viajes.
+
+El costo de los kilómetros comerciales se omite de esta función objetivo,
+puesto que todas las expediciones deben realizarse y ese componente
+permanece constante entre soluciones. Los costos energéticos y de recarga
+se incorporan en etapas posteriores.
+
+\paragraph{Restricciones.}
+
+Denotando por $\delta^{-}(n)$ y $\delta^{+}(n)$ los conjuntos de arcos
+que entran y salen del nodo $n$, respectivamente, cada expedición debe
+recibir y entregar exactamente un bus:
+
+\begin{equation}
+    \sum_{a \in \delta^{-}(i)} x_a = 1
+    \qquad \forall i \in V.
+\end{equation}
+
+\begin{equation}
+    \sum_{a \in \delta^{+}(i)} x_a = 1
+    \qquad \forall i \in V.
+\end{equation}
+
+Estas restricciones aseguran que cada expedición se atienda una sola vez.
+En los nodos de eventos se exige conservación de flujo:
+
+\begin{equation}
+    \sum_{a \in \delta^{-}(u)} x_a
+    =
+    \sum_{a \in \delta^{+}(u)} x_a
+    \qquad \forall u \in U.
+\end{equation}
+
+Así, los buses que ingresan a un evento deben continuar mediante alguna
+actividad permitida. La construcción temporal de la red y sus conexiones
+de salida y regreso permiten formar jornadas que parten y terminan
+en el electroterminal correspondiente.
+
+El resultado de esta etapa es el número inicial de buses y la secuencia
+de expediciones de cada jornada, incluyendo sus traslados y esperas.
+Estas jornadas cumplen las condiciones de cobertura y compatibilidad
+temporal, pero su factibilidad energética deberá evaluarse en las
+etapas posteriores de la metodología.
+
+\section{Caso base}
+
+\subsection{Propósito y criterio de construcción}
+
+El caso base, denominado E0, representa una operación organizada por ruta,
+sin \textit{interlining} y con una política de carga reactiva. Cada bus
+atiende exclusivamente expediciones de una misma ruta y las decisiones
+de recarga responden a sus necesidades inmediatas de energía. Esta
+configuración permite establecer una referencia para evaluar el efecto
+de habilitar conexiones entre rutas y programar anticipadamente las recargas.
+
+Su construcción combina un modelo de optimización que asigna expediciones
+a buses, inicialmente sin restricciones de batería, y una simulación que
+incorpora posteriormente los requerimientos energéticos. Por lo tanto,
+el caso base optimiza la construcción de jornadas dentro de cada ruta pero sin permitir interlining, y ademas no coordina anticipadamente la asignación de viajes con la carga.
+
+Se utilizan las mismas expediciones, horarios, parámetros de costos
+y condiciones de infraestructura que en los escenarios de mejora.
+La flota es irrestricta, ademas se mantiene la representación conjunta de Los Espinos y Santa Rosa
+como un electroterminal operativo con capacidad de carga compartida.
+
+\subsection{Asignación de rutas y construcción de jornadas}
+
+La asignación de rutas a electroterminales utiliza el procedimiento
+descrito en la primera etapa de la metodología. Cada ruta se asigna
+al electroterminal que minimiza la distancia promedio ponderada a sus
+paraderos de inicio y término. Esta asignación se calcula previamente
+y permanece fija durante la construcción de jornadas y la simulación
+de carga.
+
+La construcción de jornadas mantiene las variables, la función objetivo
+y las restricciones de cobertura y conservación de flujo presentadas
+en la segunda etapa de la metodología. La diferencia es que solo se
+permiten conexiones entre expediciones de una misma ruta. Para conectar
+las expediciones $i$ y $j$, se añade la condición:
+
+\begin{equation}
+    r_i = r_j.
+\end{equation}
+
+Esta condición restringe el conjunto de conexiones disponibles e impide
+el \textit{interlining}. En consecuencia, las líneas de tiempo se organizan
+por paradero y ruta, manteniendo las condiciones de compatibilidad
+temporal, distancia máxima de traslado y retorno al electroterminal.
+El resultado es un conjunto inicial de jornadas que cubre todas las
+expediciones, cuya factibilidad energética se revisa en la siguiente etapa.
+
+\subsection{Incorporación de carga reactiva}
+
+Las jornadas iniciales se evalúan mediante una simulación que actualiza
+la energía disponible de cada bus después de cada expedición y traslado
+sin pasajeros. El bus comienza con el nivel de batería definido para
+el caso base, correspondiente al 100\%, y debe conservar en todo momento
+al menos el 10\% de su capacidad.
+
+Sea $Q_i$ la energía disponible al terminar la expedición $i$.
+Si la siguiente expedición asignada es $j$, el bus continúa cuando
+se cumple:
+
+\begin{equation}
+    Q_i - E_{ij} - E_j - E_{jd} \geq Q_{\min},
+\end{equation}
+
+donde $E_{ij}$ es la energía requerida para trasladarse desde el final
+de $i$ al inicio de $j$, $E_j$ es el consumo de la expedición $j$,
+$E_{jd}$ es la energía necesaria para regresar desde su término
+al electroterminal y $Q_{\min}$ es el nivel mínimo de energía permitido.
+Esta condición verifica que el bus pueda realizar la siguiente expedición
+y regresar al electroterminal sin bajar del mínimo de batería.
+
+Si la condición no se cumple, el bus intenta regresar al electroterminal
+y recargar antes de la siguiente expedición. Para determinar si esto
+es posible, se consideran los tiempos de traslado, la disponibilidad
+de un puesto de carga y el tiempo necesario para recibir la energía
+requerida. Se admite una carga parcial cuando permite continuar
+la operación, respetando el horario de salida de la siguiente expedición.
+
+Cuando no existe tiempo suficiente para realizar la recarga y llegar
+a la siguiente salida, la jornada se divide y un nuevo bus atiende
+las expediciones restantes. Así, la flota obtenida después de incorporar
+las restricciones energéticas puede superar la calculada inicialmente
+por el modelo de asignación.
+
+La simulación también incorpora la recarga final necesaria para recuperar
+el nivel de batería de partida y repetir la operación al día siguiente.
+Si un bus no termina de cargar antes de su próxima salida, se contabiliza
+un bus de reserva ya cargado para cubrirla, mientras el primero completa
+su recarga. Tanto la energía repuesta como el costo de las reservas
+se incluyen en la evaluación. Esta representación supone una rotación
+de buses entre días; las reservas no sustituyen la energía que debe
+recargarse ni aumentan la capacidad de los cargadores.
+
+La política es reactiva porque decide cargar según la necesidad inmediata
+del bus, sin anticipar oportunidades futuras ni seleccionar horarios
+en función de las tarifas eléctricas. Esto permite evaluar posteriormente
+el beneficio de introducir una programación de carga.
+
+\subsection{Evaluación y validación del caso base}
+
+El caso base constituye una referencia adecuada porque utiliza reglas
+operacionales claras, como mantener los buses dentro de una misma ruta y recargar
+cuando la energía resulta insuficiente para continuar. Representa una
+alternativa de planificación reproducible, sin asumir que reproduce
+exactamente la operación real de RED. Al mantener las mismas condiciones
+de demanda, infraestructura y costos que los escenarios de mejora, permite
+atribuir las diferencias observadas a las decisiones que se modifican.
+
+La evaluación se realiza sobre el día laboral completo, compuesto por
+64.502 expediciones y 417 rutas, después de pruebas iniciales sobre
+subconjuntos de rutas. La asignación a electroterminales permanece fija
+y las jornadas obtenidas alimentan la simulación energética.
+
+La verificación comprueba que cada expedición se cubra exactamente una vez,
+que las conexiones respeten los horarios y tiempos de traslado, que cada
+jornada atienda una sola ruta y que los buses regresen a su electroterminal.
+Para comprobar la cobertura se utilizan identificadores únicos por
+expedición, distinguiendo las distintas salidas de un mismo patrón de viaje.
+
+En términos energéticos, se revisan el nivel mínimo de batería, la capacidad
+simultánea de los cargadores y la reposición de la energía consumida.
+Se distinguen los buses adicionales por división de jornadas de las reservas
+necesarias cuando la recarga final supera la siguiente salida. Bajo la
+rotación adoptada, se exige ausencia de déficit energético y atrasos de
+carga inferiores a 24 horas: las reservas cubren demoras, pero no resuelven
+una insuficiencia de infraestructura.
+
+El desempeño se mide mediante los KPIs definidos, incluyendo costo total
+y desglose, flota requerida, kilómetros sin pasajeros y utilización de
+cargadores. La flota inicial, los buses adicionales y las reservas se reportan
+por separado para identificar el efecto de las restricciones energéticas.
+
+Finalmente, la comparación con E1 mantiene la carga reactiva y habilita
+únicamente el \textit{interlining}. La carga optimizada se evalúa sobre
+instancias con las mismas jornadas y capacidades para ambas políticas.
+Los resultados se presentan en la sección de resultados y análisis,
+distinguiendo entre la red completa y las instancias reducidas.

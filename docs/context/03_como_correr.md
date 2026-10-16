@@ -111,25 +111,34 @@ El orden de los pasos 4 y 5 permite correr el 5 en cualquier momento: el resumen
 corrido lo que falte.
 
 ### Paso 6 (P2). Modelo detallado contra el agregado
+El detallado se corre **después** del agregado de la misma carpeta (Paso 4), en dos fases dentro de una hora (G11 en
+`02_decisiones.md`). No vuelve a resolver ni escribe nada del agregado ni de la FIFO; sus salidas van a
+`etapa4/h0_d<Δ>/detallado/`.
+
+**Antes de correr**, guardar el estado actual para no perder nada:
 ```
-python scripts/13-etapa4_programacion_carga.py --terminal 4 --holgura 0 --delta 30 --detallado
+git add results/instancia_LR
+git commit -m "Resultados de la instancia La Reina antes del detallado en dos fases"
+```
+Luego:
+```
 python scripts/13-etapa4_programacion_carga.py --terminal 4 --holgura 0 --delta 15 --detallado
 python scripts/14-kpis_instancia.py --terminal 4
 ```
-- **Qué hace:** repite el Paso 4 para ese Δ y agrega el modelo detallado: el agregado más el enchufe por bloque, el costo
-  de cada evento en el objetivo y la carga continua dentro del evento. La FIFO y el agregado se vuelven a resolver y dan
-  lo mismo que en el Paso 4. Después, 14- llena la sección 11 del resumen.
-- **Tiempo y memoria:** el detallado se detiene a los 900 s si no alcanza la brecha de 0,5%, que es lo esperable con
-  Δ = 15 (~160 mil binarias). Con Δ = 30 ~5-17 min y ~1-2 GB; con Δ = 15 ~17 min y ~2-4 GB.
-- **Debe imprimir, además de lo del Paso 4:**
-  - `Detallado: N binarias | X USD (energia + reservas ... + eventos ...), <estado>, brecha ...%`;
-  - `[OK] Detallado: energia cargada + deficit = consumida | ocupacion <= puestos en cada bloque | detallado <= E2-FIFO con eventos (...) | cota LP del agregado <= detallado sin eventos (...)`;
-  - `Realizacion por minuto del detallado ...` (informativo).
-- **Qué mirar:** cuántos eventos y USD de eventos se ahorra el detallado frente al agregado (que tiene ~5.900 eventos
-  con Δ = 15), a cambio de cuánta energía y cuántas reservas, y con qué brecha y tiempo.
-- **Escribe:** en las mismas carpetas `etapa4/h0_d30/` y `h0_d15/`, más `tablas/programa_E2_detallado.csv`. La sección 11
-  de `resumen_para_analisis.md` y `kpis/tablas/detallado_vs_agregado.csv`.
-- **Si se queda sin memoria con Δ = 15:** dejar solo Δ = 30 e informarlo; también es un resultado sobre el tamaño.
+Δ = 30 es opcional (otra hora): `python scripts/13-etapa4_programacion_carga.py --terminal 4 --holgura 0 --delta 30 --detallado`.
+Después, un commit con los resultados.
+
+- **Tiempo y memoria:** ~1 h por Δ (fase 1 hasta 25 min, fase 2 el resto); ~1,5-2 GB con Δ = 15.
+- **Debe imprimir:**
+  - `[OK] FIFO recalculada = FIFO guardada junto al agregado`. Si falla, la carpeta no tiene el agregado actual: correr antes `13- --delta 15` sin `--detallado`.
+  - `--- E2 detallado, fase 1: reservas fijas en las del agregado (218 reservas) ...` y `Fase 1: X USD (...)`. Si dice `[AVISO] La fase 1 no encontro una solucion sin deficit`, la fase 2 parte de la FIFO y se informa.
+  - `--- E2 detallado, fase 2: modelo completo desde la solucion de la fase 1, limite ... s ---`.
+  - `Detallado: X USD (energia + reservas ... + eventos ...)` y `Brecha: ...% (<fuente>)`. La fuente es la menor entre la de Gurobi y la cota válida (G12).
+  - `[OK] Detallado: ...` y `[OK] Detallado <= E2-FIFO con eventos (...)`. Si en vez de lo segundo dice `[AVISO] El detallado no supero a la FIFO`, es un resultado y se informa, no un error.
+- **En los logs** (`detallado/gurobi_fase1.log` y `gurobi_fase2.log`): la fase 1 debe terminar con `Thread count was 8` y la fase 2 debe empezar con `Loaded user MIP start`.
+- **Qué esperar con Δ = 15:** reservas ≈ 218, costo de carga ≈ 109 mil USD, brecha ≤ ~1%.
+- **Si se queda sin memoria:** informarlo; también es un resultado sobre el tamaño.
+- Los archivos del detallado de corridas anteriores que quedaron en la carpeta principal (`programa_E2_detallado.csv`, `gurobi_detallado.log`) ya no se usan. 14- los ignora, y se pueden borrar después del commit.
 
 ## 3. Qué entregar para el análisis
 
@@ -166,7 +175,7 @@ No hace falta adjuntar los CSV: cada cifra del resumen sale de un CSV de `result
 ```
 python scripts/10-caso_base_carga_reactiva.py --escenario E1 --terminal 4 --rutas C09 C10
 python scripts/12-etapa3_cortes_reencadenamiento.py --terminal 4 --rutas C09 C10
-python scripts/13-etapa4_programacion_carga.py --prueba --puestos-prueba 3          # con --detallado: ~7 min (congestion forzada)
+python scripts/13-etapa4_programacion_carga.py --prueba --puestos-prueba 3          # con --detallado: ~8 min (congestion forzada)
 python scripts/14-kpis_instancia.py --terminal 4 --prueba
 ```
 Escriben en carpetas `*_prueba/` y en `resumen_para_analisis_prueba.md`. `--puestos-prueba` baja los puestos solo para

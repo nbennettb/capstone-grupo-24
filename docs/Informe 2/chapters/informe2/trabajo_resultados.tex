@@ -1,0 +1,25 @@
+\section{Implementación y herramientas}
+\textit{[Documentar herramientas, lenguajes, solver y estructura del código.
+Indicar dónde se compartirán los códigos (por ejemplo, enlace al repositorio o
+archivo adjunto) y cómo reproducir los experimentos.]}
+
+\section{Prueba de concepto o prototipo}
+\textit{[Describir la instancia de prueba, las simplificaciones y su
+justificación, los supuestos, el diseño del experimento y cómo se verificó la
+implementación.]}
+
+\section{Resultados preliminares}
+\textit{[Presentar resultados con tablas y figuras legibles. Reportar la
+variabilidad entre corridas o escenarios cuando corresponda.]}
+
+\section{Resultados del caso base}
+
+El caso base (E0) representa la operación sin optimizar: cada ruta usa solo sus propios buses, opera desde el electroterminal más cercano y carga de forma reactiva, es decir, solo cuando la batería no le alcanza para el siguiente viaje y sin considerar la tarifa. Los electroterminales Los Espinos y Santa Rosa, ubicados a 1,1 km de distancia, se modelan como un solo terminal de 270 puestos, porque al tratarlos por separado Los Espinos no tiene capacidad de carga suficiente y el caso base resulta infactible. Para aislar el efecto del \textit{interlining}, se evaluó también un escenario E1, que es igual a E0 pero permite combinar viajes de distintas rutas dentro de un mismo electroterminal. En ambos escenarios, cada bus debe terminar el día con la batería al 100\%. Cuando esto no se logra, se agrega un bus de reserva.
+
+E0 tiene un costo de 3.958.063 USD/día, mientras que E1 llega a 3.751.250 USD/día, un 5,2\% menos. Sin considerar la batería, el \textit{interlining} reduce la flota de 8.654 a 7.366 buses ($-$14,9\%). Sin embargo, al incluir la carga, esta ventaja se reduce a 745 buses ($-$5,6\%). Esto ocurre porque, en E1, las jornadas son más largas y requieren más energía, por lo que hay que dividir más jornadas y agregar más buses de reserva (2.207 en E1, frente a 1.988 en E0). El principal resultado es que la batería es el cuello de botella: al incluir la carga, la flota sube un 53\% en E0 (a 13.247 buses) y un 70\% en E1 (a 12.502 buses) respecto de la asignación de buses sin considerar la batería. Además, todos los electroterminales llegan al 100\% de ocupación en algún momento del día.
+
+Respecto a los KPIs, el número de buses y el porcentaje de km sin pasajeros sí distinguen entre ambos escenarios. En cambio, el costo medio de la energía (0,14 USD/kWh) y el porcentaje cargado en horario valle (cerca del 50\%) son prácticamente iguales, porque los dos escenarios cargan de forma reactiva. Por lo tanto, estos últimos indicadores solo serán útiles para evaluar la programación de la carga, y proponemos agregar el número de buses de reserva como KPI, ya que es el que mejor refleja el costo de no planificar la carga.
+
+\section{Discusión}
+\textit{[Explicar qué se aprendió del prototipo, sus límites y cómo los
+resultados orientan la implementación final.]}

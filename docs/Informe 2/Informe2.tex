@@ -1,0 +1,109 @@
+\documentclass[pdftex,spanish]{pucthesis}
+
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subfigure}
+\usepackage[table]{xcolor}
+\usepackage{amsmath}
+\counterwithout{figure}{chapter}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{etoolbox}
+\apptocmd{\sloppy}{\hbadness 10000\relax}{}{}
+\usepackage[hidelinks,pdfusetitle,pdfdisplaydoctitle]{hyperref}
+\usepackage[notocbib]{apacite}
+\usepackage{doi}
+\renewcommand{\doitext}{}
+
+\makeatletter
+\renewcommand{\normalsize}{%
+  \@setfontsize\normalsize\@xipt{13.6}%
+  \abovedisplayskip 11\p@ \@plus3\p@ \@minus6\p@
+  \abovedisplayshortskip \z@ \@plus3\p@
+  \belowdisplayshortskip 6.5\p@ \@plus3.5\p@ \@minus3\p@
+  \belowdisplayskip \abovedisplayskip
+  \let\@listi\@listI}
+\normalsize
+\makeatother
+
+\begin{document}
+\raggedbottom
+
+\setstretch{1.4}
+\mdate{Octubre 2026}
+\version{2}
+
+\title[PLANIFICACI\'ON DE LA OPERACI\'ON DE LOS BUSES EL\'ECTRICOS\\ EN LA RED METROPOLITANA DE MOVILIDAD DE SANTIAGO\\ GRUPO 24]
+   {\bf PLANIFICACI\'ON DE LA OPERACI\'ON DE LOS BUSES EL\'ECTRICOS\\ EN LA RED METROPOLITANA DE MOVILIDAD DE SANTIAGO\\ GRUPO 24}
+\author[Integrantes:]{Integrantes:\\
+\textnormal{\small{
+Nicol\'as Bennett\\
+Antonio De Frutos\\
+Claudio Hasb\'un\\
+Agust\'in Irarr\'azaval\\
+Joaqu\'in Jim\'enez\\
+Alonso Muelas}
+}}
+
+\address{Escuela de Ingenier\'ia\\
+                   Pontificia Universidad Cat\'olica de Chile\\
+                   Vicu\~na Mackenna 4860\\
+                  Santiago, Chile\\
+                  {\it Tel.\/} : 56 (2) 354-2000}
+
+\advisor{\textbf{Profesor Gu\'ia:} Agust\'in Chiu}
+\ogrsmember{\textbf{Ayudante Tutor:} Max Burr}
+\date{Octubre 2026}
+\copyrightname{Grupo 24}
+\copyrightyear{2026}
+
+\NoChapterPageNumber
+\pagenumbering{roman}
+{\hfuzz=11pt\maketitle}
+
+\pdfbookmark{\contentsname}{toc}
+\tableofcontents
+\listoffigures
+\listoftables
+\cleardoublepage
+
+\phantomsection \label{resumen}
+\chapter*{RESUMEN}
+\input{chapters/informe2/resumen.tex}
+\cleardoublepage
+
+\pagenumbering{arabic}
+
+\chapter[INTRODUCCI\'ON]{Introducci\'on}
+\input{chapters/informe2/introduccion.tex}
+
+\chapter[PROBLEMA, DATOS Y MODELO]{Descripci\'on del problema, datos y modelo}
+\input{chapters/informe2/problema_modelo.tex}
+
+\chapter[DISCUSI\'ON METODOL\'OGICA]{Discusi\'on metodol\'ogica}
+\input{chapters/informe2/metodologia.tex}
+
+\chapter[TRABAJO Y RESULTADOS PRELIMINARES]{Trabajo desarrollado y resultados preliminares}
+\input{chapters/informe2/trabajo_resultados.tex}
+
+\chapter[CONCLUSIONES]{Conclusiones}
+\input{chapters/informe2/conclusiones.tex}
+
+\chapter[PASOS FUTUROS]{Pasos futuros}
+\input{chapters/informe2/pasos_futuros.tex}
+
+\cleardoublepage
+\phantomsection \label{references}
+\bibliographystyle{apacite}
+\renewcommand{\bibname}{BIBLIOGRAF\'IA}
+\setlength{\bibitemsep}{0.3em}
+{\small\singlespacing\bibliography{Thesis}}
+
+\appendix
+\newpage
+\section[Declaraci\'on de uso de IA]{Declaraci\'on de uso de inteligencia artificial en este informe y presentaci\'on asociada}
+\input{chapters/informe2/declaracion_ia.tex}
+
+\end{document}

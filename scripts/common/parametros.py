@@ -54,8 +54,12 @@ HOLGURAS_RECARGA_MIN = [0, 30, 60]
 # --- Etapa 4: programacion de la carga (scripts/13-etapa4_programacion_carga.py) ---
 DELTA_MIN = 15                   # largo del bloque (min); las tarifas cambian en horas exactas
 DELTAS_SENSIBILIDAD = [5, 15, 30]
-TIEMPO_LIMITE_S = {"agregado": 600, "detallado": 900}
+# El detallado (~80 mil binarias con Delta = 30, ~160 mil con Delta = 15) se resuelve en dos fases dentro del total de
+# "detallado": la fase 1 (reservas fijas en las del agregado) busca una solucion completa; la fase 2 (modelo completo)
+# parte de ella con el tiempo restante (docs/context/02_decisiones.md, G11).
+TIEMPO_LIMITE_S = {"agregado": 600, "detallado": 3600, "detallado_fase1": 1500}
 GAP_MIP = 0.005                  # brecha de optimalidad pedida (0,5% del objetivo de la Etapa 4)
+GAP_DETALLADO_FASE1 = 0.01       # la fase 1 solo construye el punto de partida de la fase 2
 # Penalizacion por kWh no repuesto (M del deficit). Muy por sobre el costo de una reserva (250 USD), para que el
 # deficit solo aparezca si la energia no cabe en los puestos en 24 h.
 PENALIZACION_DEFICIT_USD_KWH = 10_000.0

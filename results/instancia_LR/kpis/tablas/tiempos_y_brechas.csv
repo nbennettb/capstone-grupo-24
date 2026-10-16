@@ -10,6 +10,8 @@ Etapa 4 h=0 Delta=5: E2 agregado - MILP;optimo (brecha pedida);0.003662;Gurobi;9
 Etapa 4 h=0 Delta=15: E2-FIFO;heuristica (sin optimizacion);;-;1.06
 Etapa 4 h=0 Delta=15: E2 agregado - LP (cota);optimo;0.0;Gurobi;8.28
 Etapa 4 h=0 Delta=15: E2 agregado - MILP;optimo (brecha pedida);0.003172;Gurobi;89.4
+Etapa 4 h=0 Delta=15: E2 detallado - fase 1 (reservas fijas);limite de tiempo;0.043684;Gurobi, con las reservas fijas;1506.46
+Etapa 4 h=0 Delta=15: E2 detallado - MILP;limite de tiempo;0.006581;cota valida (LP del agregado + un evento por ventana);3605.12
 Etapa 4 h=0 Delta=30: E2-FIFO;heuristica (sin optimizacion);;-;0.31
 Etapa 4 h=0 Delta=30: E2 agregado - LP (cota);optimo;0.0;Gurobi;1.51
 Etapa 4 h=0 Delta=30: E2 agregado - MILP;optimo (brecha pedida);0.003772;Gurobi;13.34

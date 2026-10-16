@@ -1,0 +1,122 @@
+\section{Avance respecto del plan del Informe 1}
+\textit{[Indicar qué actividades se cumplieron, cuáles se retrasaron o cambiaron,
+y explicar las dificultades y ajustes de rumbo.]}
+
+\section{Plan de trabajo actualizado}
+
+Habiendo implementado el caso base y evaluado preliminarmente la metodología
+de descomposición secuencial, el trabajo futuro se concentrará en mejorar la
+coordinación entre las jornadas de los buses y sus requerimientos de recarga.
+A partir de las limitaciones identificadas, se proponen las siguientes
+cinco etapas:
+
+\begin{enumerate}
+    \emergencystretch=2em
+    \renewcommand{\labelenumi}{(\roman{enumi})}
+
+    \item \textbf{Mejorar la generación de ventanas de carga.}
+    Se evaluará incorporar los requerimientos de batería durante la
+    construcción o ajuste de las jornadas, considerando los tiempos
+    necesarios para trasladarse al electroterminal y recargar.
+    Actualmente, estas oportunidades se determinan mediante una política
+    reactiva, lo que puede obligar a dividir jornadas y utilizar buses
+    adicionales. Se estudiará una formulación de optimización que permita
+    seleccionar ventanas de carga compatibles con los viajes programados,
+    buscando reducir la flota necesaria y manteniendo la cobertura de
+    todas las expediciones.
+
+    \item \textbf{Ampliar la implementación del MILP de carga.}
+    Se extenderán progresivamente las pruebas realizadas en instancias
+    reducidas de Los Espinos--Santa Rosa hacia conjuntos mayores de buses
+    y otros electroterminales. En cada ejecución se registrarán los tiempos
+    de resolución y las brechas de optimalidad, para determinar la escala
+    que puede abordarse con los recursos disponibles. Si se presentan
+    dificultades computacionales, se evaluarán mejoras de la formulación
+    y estrategias de resolución por electroterminal, con el objetivo de
+    avanzar hacia la programación de carga de toda la red.
+
+    \item \textbf{Validar y ajustar los supuestos del modelo.}
+    Se profundizará el análisis de sensibilidad de las distancias y
+    velocidades de los traslados sin pasajeros, los tiempos mínimos entre
+    viajes y el radio permitido para el \textit{interlining}. También se
+    compararán distintas duraciones de los intervalos del MILP, para
+    evaluar cómo la discretización temporal afecta los costos, las
+    reservas y el tiempo de cálculo. Estas pruebas permitirán justificar
+    mejor las simplificaciones adoptadas y determinar cuáles requieren
+    ajustes antes de consolidar la solución final.
+
+    \item \textbf{Evaluar la metodología bajo distintos tipos de día.}
+    Una vez validado el funcionamiento para el día laboral, se buscará
+    extender el análisis a sábados y domingos, sujeto al tiempo disponible.
+    Para ello, se prepararán las expediciones correspondientes a cada tipo
+    de día y se ejecutará nuevamente la metodología, considerando sus
+    diferencias de horarios y frecuencias. En todos los casos se verificará
+    la cobertura de los viajes, la factibilidad de los traslados, los límites
+    de batería y la capacidad de carga de los electroterminales.
+
+    \item \textbf{Analizar los resultados y preparar los entregables finales.}
+    Se compararán las soluciones obtenidas con el caso base mediante los
+    indicadores definidos, distinguiendo el costo total, la flota
+    operacional, los buses de reserva y la utilización de los cargadores.
+    Se identificarán los beneficios y las limitaciones de cada mejora,
+    diferenciando los resultados de instancias reducidas de aquellos
+    obtenidos para la red completa. Finalmente, se consolidarán las
+    jornadas por bus, los itinerarios de recarga y el desglose de costos,
+    junto con las conclusiones del proyecto y la documentación necesaria
+    para reproducir los resultados.
+
+\end{enumerate}
+
+\begin{table}[H]
+\centering
+\caption{Carta Gantt actualizada para los pasos futuros}
+\label{tab:gantt-informe2}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}p{0.29\textwidth}p{0.23\textwidth}p{0.18\textwidth}*{6}{c}@{}}
+\toprule
+\textbf{Actividad / hito}
+& \textbf{Depende de}
+& \textbf{Responsable(s)}
+& \textbf{S1}
+& \textbf{S2}
+& \textbf{S3}
+& \textbf{S4}
+& \textbf{S5}
+& \textbf{S6} \\
+\midrule
+
+1. Mejorar la generación de ventanas de carga
+& Metodología y caso base disponibles
+& \textit{[Nombre(s)]}
+& X & X & X & $\square$ & $\square$ & $\square$ \\
+
+2. Ampliar la implementación del MILP de carga
+& Validación inicial de la actividad 1
+& \textit{[Nombre(s)]}
+& $\square$ & $\square$ & X & X & X & $\square$ \\
+
+3. Validar y ajustar los supuestos del modelo
+& Modelo ejecutable; avances de las actividades 1 y 2
+& \textit{[Nombre(s)]}
+& $\square$ & X & X & X & X & $\square$ \\
+
+4. Evaluar días sábado y domingo
+& Modelo laboral validado en las actividades 2 y 3
+& \textit{[Nombre(s)]}
+& $\square$ & $\square$ & $\square$ & $\square$ & X & $\square$ \\
+
+5. Analizar resultados y preparar los entregables finales
+& Resultados progresivos de las actividades 1--4
+& \textit{[Nombre(s)]}
+& $\square$ & $\square$ & $\square$ & X & X & X \\
+
+Entrega del informe final: 27 de noviembre
+& Cierre de la actividad 5
+& \textit{[Nombre(s)]}
+& $\square$ & $\square$ & $\square$ & $\square$ & $\square$ & X \\
+
+\bottomrule
+\end{tabular}%
+}
+\end{table}

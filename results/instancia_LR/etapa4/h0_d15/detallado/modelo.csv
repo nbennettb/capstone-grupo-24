@@ -1,0 +1,3 @@
+holgura_min;delta_min;modelo;estado;objetivo_usd;cota_usd;brecha;fuente_brecha;segundos;variables;binarias;restricciones;cota_gurobi_usd;brecha_gurobi;cota_valida_usd;segundos_fase2;inicio_fase2;supera_fifo;desempate_usd;eventos_usd
+0.0;15;E2 detallado - fase 1 (reservas fijas);limite de tiempo;110653.14;105825.04;0.043684;Gurobi, con las reservas fijas;1506.46;482122;160720;478938;;;;;;;;
+0.0;15;E2 detallado - MILP;limite de tiempo;109040.58;108328.94;0.006581;cota valida (LP del agregado + un evento por ventana);3605.12;482122;160720;478938;105379.16;0.033631;108328.94;2098.66;la solucion de la fase 1;1.0;5.9506;8375.0

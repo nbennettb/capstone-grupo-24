@@ -27,13 +27,17 @@ E2 (modelo agregado). 24 h de una vez en bloques de Delta minutos, modulo 24 h:
 E2 detallado (--detallado). El agregado mas, por (ventana, bloque), una binaria de enchufe, el inicio de cada evento
     de carga con fixed_charge_cost en el objetivo y carga continua a plena potencia dentro del evento. Capacidad,
     reservas y deficit son los del agregado: la diferencia es solo la estructura de los eventos, que el agregado no ve.
+    Se corre despues del agregado (lee sus reservas y su cota LP de la misma carpeta) y en dos fases: fase 1 con las
+    reservas fijas en las del agregado, para construir una solucion completa; fase 2, el modelo completo desde ella.
+    Escribe solo en <carpeta>/detallado/.
 
 Capacidad por minuto: la FIFO se valida al minuto. El agregado es exacto por bloque salvo en los bloques de borde;
 se valida por bloque y se informa una realizacion por minuto (LP por bloque) con los minutos sobre los puestos.
 
 Input:  results/instancia_<siglas>/etapa3/h<h>/tablas/ventanas.csv, data-filtrado/{depots,electricity_prices}.csv
 Output: results/instancia_<siglas>/etapa4/h<h>_d<Delta>/
-        tablas/{programa_FIFO,programa_E2,programa_E2_detallado (con --detallado),ocupacion_minutos,ocupacion_bloques,energia_por_tarifa,reservas,
+        detallado/ (con --detallado): programa_E2_detallado, resumen, modelo (una fila por fase), ocupacion, logs
+        tablas/{programa_FIFO,programa_E2,ocupacion_minutos,ocupacion_bloques,energia_por_tarifa,reservas,
                 modelo,resumen}.csv
         graficos/{ocupacion_24h,energia_por_tarifa}.png (+ .csv con los datos de cada grafico)
         reporte.md
@@ -62,7 +66,7 @@ import scipy.sparse as sps
 from scipy.optimize import linprog
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import graficos as gr, instancia, medicion, parametros            # noqa: E402
+from common import brechas, graficos as gr, instancia, medicion, parametros   # noqa: E402
 from common.rutas import DATA_FILTRADO, DATA_PROCESSED, CSV_SEP                # noqa: E402
 
 _spec = importlib.util.spec_from_file_location(
@@ -140,9 +144,11 @@ def correr_fifo(sim, v):
     return pd.DataFrame(filas), cargas
 
 
-def fifo_en_grilla(cargas, v, seg, delta):
-    """Lleva la FIFO a las variables de segmento (para la solucion inicial y para comparar en la grilla). Cada minuto se
-    reparte entre la parte dentro y la extension segun d_w."""
+def fifo_en_grilla(cargas, v, seg, delta, kwh_min):
+    """Lleva la FIFO a las variables de segmento (para la solucion inicial y para comparar en la grilla). Igual que en
+    la simulacion, en cada minuto el bus carga a plena potencia desde el comienzo del minuto: del minuto que cruza la
+    hora limite d_w, va dentro de la ventana lo cargado antes de d_w (a lo mas kwh_min x (d_w - m)) y el resto a la
+    extension."""
     idx = {(w, u, p): i for i, (w, u, p) in enumerate(zip(seg["w"].values, seg["u"].values, seg["parte"].values))}
     e = np.zeros(len(seg))
     lim = v["limite_min"].values
@@ -150,14 +156,17 @@ def fifo_en_grilla(cargas, v, seg, delta):
         d = lim[w]
         for m, em in zip(minutos, e_min):
             u = m // delta
-            frac_dentro = min(max(d - m, 0.0), 1.0)
-            if frac_dentro >= 1 - 1e-9:
-                e[idx[(w, u, 0)]] += em
-            elif frac_dentro <= 1e-9:
-                e[idx[(w, u, 1)]] += em
-            else:
-                e[idx[(w, u, 0)]] += em * frac_dentro
-                e[idx[(w, u, 1)]] += em * (1 - frac_dentro)
+            dentro = min(em, kwh_min * max(d - m, 0.0))
+            fuera = em - dentro
+            # un segmento de menos de 1e-9 min no existe en la grilla: su energia (despreciable) va a la otra parte
+            if dentro > 0 and (w, u, 0) not in idx:
+                dentro, fuera = 0.0, em
+            if fuera > 0 and (w, u, 1) not in idx:
+                dentro, fuera = em, 0.0
+            if dentro > 0:
+                e[idx[(w, u, 0)]] += dentro
+            if fuera > 0:
+                e[idx[(w, u, 1)]] += fuera
     return e
 
 
@@ -235,11 +244,16 @@ def y_desde_e(p, par_de_seg, e):
     return y, z
 
 
-def resolver_detallado(seg, v, precio_bloque, cap_bloque, costos, inicios, delta):
+def resolver_detallado(seg, v, precio_bloque, cap_bloque, costos, delta, log_path, tiempo_s, gap, inicio=None,
+                       r_fijo=None, mipfocus=0):
     """Modelo detallado: el agregado mas, por (ventana, bloque), y = enchufado (binaria) y z = inicio de evento
     (fixed_charge_cost en el objetivo). Solo se carga enchufado (e <= tope * y) y la carga es continua: en un bloque
     interior de un evento (enchufado antes, ahora y despues) el bus carga a plena potencia todo el bloque. La capacidad,
-    las reservas y el deficit son los del agregado. inicios: lista de soluciones iniciales (e, r, deficit)."""
+    las reservas y el deficit son los del agregado.
+    inicio: solucion inicial completa (e, r, deficit) o None. r_fijo: si se da, las reservas quedan fijas en esos valores
+    (fase 1) y se fijan en 0 la energia de la extension y los enchufes de los bloques enteramente en la extension de las
+    ventanas sin reserva (no pueden usarse). Devuelve None si no encuentra solucion en el tiempo dado. El log de Gurobi
+    se escribe en log_path."""
     nS, nW, nb = len(seg), len(v), DIA_MIN // delta
     E = v["kwh"].values
     p, par_de_seg = pares_bloque(seg)
@@ -260,12 +274,21 @@ def resolver_detallado(seg, v, precio_bloque, cap_bloque, costos, inicios, delta
                                                         np.column_stack([ant[interior], interior, sig[interior]]).ravel())),
                            shape=(len(interior), nP))
 
+    ub_e, lb_r, ub_r, ub_y = seg["ub"].values.copy(), np.zeros(nW), np.ones(nW), np.ones(nP)
+    if r_fijo is not None:
+        lb_r = ub_r = np.asarray(r_fijo, dtype=float)
+        muerto = ext & (lb_r[seg["w"].values] == 0)                      # extension de una ventana sin reserva
+        ub_e[muerto] = 0.0
+        par_muerto = np.bincount(par_de_seg, weights=(~muerto).astype(float), minlength=nP) == 0
+        ub_y[par_muerto] = 0.0
+        info_fijo = dict(variables_fijas_en_cero=int(muerto.sum() + par_muerto.sum()))
+
     m = gp.Model()
     m.Params.OutputFlag = 0
-    e = m.addMVar(nS, lb=0, ub=seg["ub"].values, obj=precio_bloque[seg["t"].values] + desempate(seg))
-    r = m.addMVar(nW, vtype=gp.GRB.BINARY, obj=costos.vehicle_fixed_cost)
+    e = m.addMVar(nS, lb=0, ub=ub_e, obj=precio_bloque[seg["t"].values] + desempate(seg))
+    r = m.addMVar(nW, lb=lb_r, ub=ub_r, vtype=gp.GRB.BINARY, obj=costos.vehicle_fixed_cost)
     dlt = m.addMVar(nW, lb=0, obj=parametros.PENALIZACION_DEFICIT_USD_KWH)
-    y = m.addMVar(nP, vtype=gp.GRB.BINARY)
+    y = m.addMVar(nP, ub=ub_y, vtype=gp.GRB.BINARY)
     z = m.addMVar(nP, lb=0, ub=1, obj=costos.fixed_charge_cost)
     m.addConstr(A_en @ e + dlt == E)
     m.addConstr(A_ext @ e - sps.diags(E) @ r <= 0)
@@ -277,16 +300,23 @@ def resolver_detallado(seg, v, precio_bloque, cap_bloque, costos, inicios, delta
     m.update()
     info = dict(variables=m.NumVars, binarias=nW + nP, restricciones=m.NumConstrs,
                 segundos_armado=round(time.perf_counter() - t0, 2))
+    if r_fijo is not None:
+        info.update(info_fijo)
 
-    m.NumStart = len(inicios)
-    for k, (e0, r0, d0) in enumerate(inicios):
-        m.Params.StartNumber = k
+    if inicio is not None:
+        e0, r0, d0 = inicio
         y0, z0 = y_desde_e(p, par_de_seg, e0)
         e.Start, r.Start, dlt.Start, y.Start, z.Start = e0, r0, d0, y0, z0
-    m.Params.MIPGap = parametros.GAP_MIP
-    m.Params.TimeLimit = parametros.TIEMPO_LIMITE_S["detallado"]
+    log_path.unlink(missing_ok=True)
+    m.Params.LogToConsole = 0
+    m.Params.LogFile = str(log_path)
+    m.Params.OutputFlag = 1
+    m.Params.MIPGap = gap
+    m.Params.TimeLimit = max(tiempo_s, 1.0)
+    m.Params.MIPFocus = mipfocus
     m.optimize()
-    assert m.SolCount > 0, f"El modelo detallado no encontro solucion (status {m.Status})."
+    if m.SolCount == 0:
+        return None
     estado = {gp.GRB.OPTIMAL: "optimo (brecha pedida)", gp.GRB.TIME_LIMIT: "limite de tiempo"}.get(m.Status, f"status {m.Status}")
     rx = np.round(r.X)
     assert np.all(np.abs(r.X - rx) < 1e-5), "Las reservas del modelo detallado no son enteras."
@@ -443,6 +473,174 @@ def resumen_politica(nombre, prog, v, occ_min, kappa, costos, P, segundos):
 # Main
 # --------------------------------------------------------------------------- #
 
+def modo_detallado(args, salida, nombre, h_txt, delta, prueba, v, seg, costos, precio_bloque, cap_bloque, kappa,
+                   kwh_min, nb, P, tarifa, prog_f, e_f, obj_f, obj_f_modelo, occ_f, t_inicio):
+    """Modelo detallado en dos fases, a partir del agregado ya resuelto en la misma carpeta (reservas y cota LP). No
+    vuelve a resolver ni escribe nada del agregado ni de la FIFO: sus salidas van a <carpeta>/detallado/.
+    Fase 1: el detallado con las reservas fijas en las del agregado, como modelo principal, para construir una solucion
+    completa. Fase 2: el modelo completo (reservas libres) desde esa solucion, con el tiempo restante."""
+    tablas = salida / "tablas"
+    rutas = {f: tablas / f for f in ("programa_E2.csv", "modelo.csv", "programa_FIFO.csv", "ocupacion_minutos.csv")}
+    faltan = [f for f, r in rutas.items() if not r.exists()]
+    assert not faltan, (f"Faltan resultados del agregado en {tablas} ({faltan}): correr antes 13- con --holgura {h_txt} "
+                        f"--delta {delta} sin --detallado.")
+    prog_agr = pd.read_csv(rutas["programa_E2.csv"], sep=CSV_SEP)
+    mod_agr = pd.read_csv(rutas["modelo.csv"], sep=CSV_SEP).set_index("modelo")
+    fifo_guardada = pd.read_csv(rutas["programa_FIFO.csv"], sep=CSV_SEP)
+    assert len(prog_agr) == len(v) and (prog_agr["ventana_id"].values == v["ventana_id"].values).all(), \
+        "El agregado guardado no corresponde a estas ventanas de la Etapa 3."
+    cols = ["kwh_cargado", "reserva", "inicio_carga_min", "fin_carga_min", "eventos", "costo_energia_usd"]
+    dif = np.abs(prog_f[cols].round(4).fillna(-1).values - fifo_guardada[cols].fillna(-1).values).max()
+    assert dif < 1e-3, ("La FIFO recalculada no calza con la guardada junto al agregado: esa carpeta se hizo con otras "
+                        "ventanas u otra version del codigo. Correr antes 13- sin --detallado.")
+    print(f"  [OK] FIFO recalculada = FIFO guardada junto al agregado (diferencia maxima {dif:.1e}).")
+    r_agr = prog_agr["reserva"].values.astype(float)
+    cota_lp = float(mod_agr.loc["E2 agregado - LP (cota)", "objetivo_usd"])
+    obj_agr = float(mod_agr.loc["E2 agregado - MILP", "objetivo_usd"])
+    det = salida / "detallado"
+    det.mkdir(exist_ok=True)
+    eventos_f = float(costos.fixed_charge_cost * prog_f["eventos"].sum())
+    total = parametros.TIEMPO_LIMITE_S["detallado"]
+    filas_mod = []
+
+    # --- Fase 1: reservas fijas ---
+    print(f"\n--- E2 detallado, fase 1: reservas fijas en las del agregado ({int(r_agr.sum())} reservas), "
+          f"limite {parametros.TIEMPO_LIMITE_S['detallado_fase1']} s ---")
+    t_det = time.perf_counter()
+    f1 = resolver_detallado(seg, v, precio_bloque, cap_bloque, costos, delta, det / "gurobi_fase1.log",
+                            parametros.TIEMPO_LIMITE_S["detallado_fase1"], parametros.GAP_DETALLADO_FASE1,
+                            r_fijo=r_agr, mipfocus=1)
+    t1 = time.perf_counter() - t_det
+    if f1 is not None and f1[2].sum() < 1e-3:
+        e1, r1, d1, i1 = f1
+        inicio, origen = (e1, r1.astype(float), d1), "la solucion de la fase 1"
+        obj1 = i1["objetivo"] - i1["desempate_usd"]
+        print(f"  Fase 1: {obj1:,.2f} USD ({i1['estado']}, brecha {i1['brecha']:.2%} con las reservas fijas, {t1:.0f} s; "
+              f"{i1['variables_fijas_en_cero']:,} variables fijas en 0).")
+        filas_mod.append(dict(modelo="E2 detallado - fase 1 (reservas fijas)", estado=i1["estado"],
+                              objetivo_usd=round(obj1, 2), cota_usd=round(i1["cota_milp"], 2),
+                              brecha=round(i1["brecha"], 6), fuente_brecha="Gurobi, con las reservas fijas",
+                              segundos=round(t1, 2), variables=i1["variables"], binarias=i1["binarias"],
+                              restricciones=i1["restricciones"]))
+    else:
+        inicio = (e_f, prog_f["reserva"].values.astype(float), prog_f["deficit_kwh"].values)
+        origen = "la FIFO (la fase 1 no encontro una solucion sin deficit)"
+        print(f"  [AVISO] La fase 1 no encontro una solucion sin deficit en {t1:.0f} s: la fase 2 parte de la FIFO.")
+        filas_mod.append(dict(modelo="E2 detallado - fase 1 (reservas fijas)", estado="sin solucion sin deficit",
+                              objetivo_usd=np.nan, cota_usd=np.nan, brecha=np.nan, fuente_brecha="-",
+                              segundos=round(t1, 2)))
+
+    # --- Fase 2: modelo completo ---
+    t2_lim = total - (time.perf_counter() - t_det)
+    print(f"\n--- E2 detallado, fase 2: modelo completo desde {origen}, limite {t2_lim:.0f} s ---")
+    t0 = time.perf_counter()
+    f2 = resolver_detallado(seg, v, precio_bloque, cap_bloque, costos, delta, det / "gurobi_fase2.log", t2_lim,
+                            parametros.GAP_MIP, inicio=inicio)
+    t2 = time.perf_counter() - t0
+    assert f2 is not None, ("La fase 2 no devolvio solucion pese a partir de una solucion completa: revisar "
+                            "gurobi_fase2.log (debe decir 'Loaded user MIP start').")
+    e_d, r_d, d_d, info_d = f2
+    obj_d = info_d["objetivo"] - info_d["desempate_usd"]                  # energia + reservas + eventos
+    obj_d_er = obj_d - info_d["eventos_usd"]                              # energia + reservas
+    brecha_d, cota_d, fuente_d, cota_valida_d = brechas.mejor_brecha(
+        info_d["objetivo"], info_d["cota_milp"], cota_lp, v["kwh"].values, costos.fixed_charge_cost)
+    print(f"  Detallado: {obj_d:,.2f} USD (energia + reservas {obj_d_er:,.2f} + eventos {info_d['eventos_usd']:,.2f}), "
+          f"{info_d['estado']}, fase 2 {t2:.0f} s")
+    print(f"  Brecha: {brecha_d:.3%} ({fuente_d}); la de Gurobi era {info_d['brecha']:.3%}"
+          + (f", la de la cota valida {(info_d['objetivo'] - cota_valida_d) / abs(info_d['objetivo']):.3%}"
+             if cota_valida_d is not None else ", la cota valida no aplica") + ".")
+
+    # --- Validaciones ---
+    assert abs(e_d.sum() + d_d.sum() - v["kwh"].sum()) < 1e-3 * len(v), \
+        "Detallado: energia cargada + deficit != energia consumida."
+    ocup_bloque_d = np.bincount(seg["t"].values, weights=e_d, minlength=nb)
+    assert ocup_bloque_d.max() <= cap_bloque * (1 + 1e-6) + 1e-6, "Detallado: un bloque supera la capacidad en energia."
+    assert cota_lp <= info_d["objetivo"] - info_d["eventos_usd"] + 1e-6 * abs(obj_f_modelo) + 1e-3, (
+        "La cota LP del agregado supera al detallado sin eventos: el agregado deberia ser una relajacion.")
+    supera_fifo = info_d["objetivo"] <= obj_f_modelo + eventos_f + 1e-6 * abs(obj_f_modelo) + 1e-3
+    print("  [OK] Detallado: energia cargada + deficit = consumida | ocupacion <= puestos en cada bloque | cota LP del "
+          f"agregado <= detallado sin eventos ({cota_lp:,.2f} <= {obj_d_er:,.2f}).")
+    if supera_fifo:
+        print(f"  [OK] Detallado <= E2-FIFO con eventos ({obj_d:,.2f} <= {obj_f + eventos_f:,.2f}).")
+    else:
+        print(f"  [AVISO] El detallado no supero a la FIFO en {total} s ({obj_d:,.2f} > {obj_f + eventos_f:,.2f}): se "
+              "informa como resultado.")
+    if d_d.sum() > 1e-3:
+        print(f"  [AVISO] El detallado deja {d_d.sum():,.1f} kWh de deficit.")
+    occ_d = realizacion_por_minuto(seg, e_d, delta, kappa, kwh_min)
+    print(f"  Realizacion por minuto del detallado: maximo {occ_d.max():.2f} buses; minutos sobre {kappa} puestos: "
+          f"{int((occ_d > kappa + 1e-6).sum())}.")
+
+    # --- Salidas (solo en detallado/) ---
+    base = v[["ventana_id", "bus", "tipo", "tramo_id", "llegada_min", "limite_min", "kwh"]]
+    p_d = programa_desde_segmentos(seg, e_d, v, kwh_min)
+    costo_wd = np.bincount(seg["w"].values, weights=precio_bloque[seg["t"].values] * e_d, minlength=len(v))
+    prog_d = pd.concat([base, p_d.assign(deficit_kwh=d_d, reserva=r_d, costo_energia_usd=costo_wd)], axis=1)
+    prog_d["termina_a_tiempo"] = prog_d["fin_carga_min"] <= prog_d["limite_min"] + 1e-6
+    tarde = ~prog_d["termina_a_tiempo"] & (prog_d["kwh_cargado"] > TOL_E)
+    assert (prog_d.loc[tarde, "reserva"] == 1).all(), "Detallado: una ventana carga despues de su hora limite sin reserva."
+    precios = pd.read_csv(DATA_FILTRADO / "electricity_prices.csv", sep=CSV_SEP)
+    td = energia_por_periodo(precios, energia_minuto_segmentos(seg, e_d))
+    valle = td["precio_usd_kwh"] <= td["precio_usd_kwh"].min() * 1.2
+    mem = medicion.pico_memoria_mb()
+    res = pd.DataFrame([resumen_politica("E2-detallado", prog_d, v, occ_d, kappa, costos, P, t1 + t2)])
+    for k_col, (nombre_col, valor) in enumerate((("terminal", nombre), ("holgura_min", args.holgura),
+                                                  ("delta_min", delta), ("puestos", kappa), ("prueba", int(prueba)))):
+        res.insert(k_col, nombre_col, valor)
+    res["energia_sobre_capacidad_pct"] = round(v["kwh"].sum() / (kappa * P * 24) * 100, 2)
+    res["costo_medio_energia_usd_kwh"] = (res["costo_energia_usd"] / res["kwh_cargados"]).round(4)
+    res["pct_energia_valle"] = round(td.loc[valle, "kwh"].sum() / td["kwh"].sum() * 100, 2)
+    res["segundos_total_script"] = round(time.perf_counter() - t_inicio, 1)
+    res["memoria_mb"] = round(mem)
+    filas_mod.append(dict(modelo="E2 detallado - MILP", estado=info_d["estado"], objetivo_usd=round(obj_d, 2),
+                          cota_usd=round(cota_d, 2), brecha=round(brecha_d, 6), fuente_brecha=fuente_d,
+                          cota_gurobi_usd=round(info_d["cota_milp"], 2), brecha_gurobi=round(info_d["brecha"], 6),
+                          cota_valida_usd=np.nan if cota_valida_d is None else round(cota_valida_d, 2),
+                          segundos=round(t1 + t2, 2), segundos_fase2=round(t2, 2), inicio_fase2=origen,
+                          supera_fifo=int(supera_fifo), desempate_usd=round(info_d["desempate_usd"], 4),
+                          eventos_usd=round(info_d["eventos_usd"], 2), variables=info_d["variables"],
+                          binarias=info_d["binarias"], restricciones=info_d["restricciones"]))
+    modelo = pd.DataFrame(filas_mod)
+    modelo.insert(0, "delta_min", delta)
+    modelo.insert(0, "holgura_min", args.holgura)
+    occ_agr = pd.read_csv(rutas["ocupacion_minutos.csv"], sep=CSV_SEP)["e2"].values
+
+    prog_d.round(4).to_csv(det / "programa_E2_detallado.csv", index=False, sep=CSV_SEP)
+    res.to_csv(det / "resumen.csv", index=False, sep=CSV_SEP)
+    modelo.to_csv(det / "modelo.csv", index=False, sep=CSV_SEP)
+    pd.DataFrame({"minuto": np.arange(DIA_MIN), "e2_detallado": np.round(occ_d, 4), "puestos": kappa}) \
+        .to_csv(det / "ocupacion_minutos.csv", index=False, sep=CSV_SEP)
+    pd.DataFrame({"bloque": np.arange(nb), "inicio_min": np.arange(nb) * delta,
+                  "buses_equivalentes_e2_detallado": ocup_bloque_d / (kwh_min * delta), "puestos": kappa}) \
+        .round(4).to_csv(det / "ocupacion_bloques.csv", index=False, sep=CSV_SEP)
+    td.round(3).to_csv(det / "energia_por_tarifa.csv", index=False, sep=CSV_SEP)
+    graficar_ocupacion(occ_f, occ_agr, occ_d, kappa, tarifa, det / "ocupacion_24h.png",
+                       f"Buses cargando en {nombre}: FIFO, agregado y detallado (holgura {h_txt} min, Delta {delta} min)")
+    lineas = [
+        f"# Etapa 4 - Modelo detallado, {nombre} (holgura {h_txt} min, Delta {delta} min, {kappa} puestos)",
+        "" if not prueba else "\n**PRUEBA: no es la instancia real.**\n",
+        f"- Detallado: {obj_d:,.2f} USD = energia + reservas {obj_d_er:,.2f} + eventos {info_d['eventos_usd']:,.2f}; "
+        f"{int(r_d.sum())} reservas; {info_d['estado']}; brecha {brecha_d:.3%} ({fuente_d}); {t1 + t2:,.0f} s.",
+        f"- Agregado (misma carpeta): energia + reservas {obj_agr:,.2f} USD; con sus eventos contados despues: "
+        f"{obj_agr + costos.fixed_charge_cost * prog_agr['eventos'].sum():,.2f} USD; {int(r_agr.sum())} reservas.",
+        f"- E2-FIFO: {obj_f + eventos_f:,.2f} USD con eventos; el detallado {'la supera' if supera_fifo else 'NO la supera'}.",
+        f"- Realizacion por minuto del detallado: {int((occ_d > kappa + 1e-6).sum())} minutos sobre los puestos "
+        f"(maximo {occ_d.max():.2f}).",
+        "",
+        "## Fases",
+        "",
+        modelo.to_markdown(index=False),
+        "",
+        "## Archivos",
+        "- `programa_E2_detallado.csv`, `resumen.csv`, `modelo.csv`, `ocupacion_minutos.csv`, `ocupacion_bloques.csv`, "
+        "`energia_por_tarifa.csv`, `ocupacion_24h.png` (+ .csv), `gurobi_fase1.log`, `gurobi_fase2.log`.",
+    ]
+    (det / "reporte.md").write_text("\n".join(lineas), encoding="utf-8")
+    print(f"\n  -> {det}")
+    print(f"\n  Tiempo: {time.perf_counter() - t_inicio:,.1f} s | pico de memoria: {mem:,.0f} MB")
+    print("\n=== FIN ETAPA 4 (detallado) ===")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--terminal", default=parametros.TERMINAL_INSTANCIA, help="depot_id del electroterminal.")
@@ -453,8 +651,8 @@ def main():
     parser.add_argument("--puestos-prueba", type=int, default=None,
                         help="SOLO PRUEBAS: reemplaza los puestos del terminal para forzar congestion.")
     parser.add_argument("--detallado", action="store_true",
-                        help="Corre ademas el modelo detallado (eventos de carga en el objetivo, carga continua) y lo "
-                             "compara con el agregado.")
+                        help="Corre solo el modelo detallado (en dos fases) a partir del agregado ya resuelto en la misma "
+                             "carpeta (correr antes sin --detallado). Escribe en <carpeta>/detallado/ sin tocar el resto.")
     args = parser.parse_args()
     t_inicio = time.perf_counter()
     delta, h_txt = args.delta, f"{args.holgura:g}"
@@ -513,8 +711,12 @@ def main():
 
     # --- Grilla ---
     seg = construir_segmentos(v, delta, kwh_min)
-    e_f = fifo_en_grilla(cargas, v, seg, delta)
+    e_f = fifo_en_grilla(cargas, v, seg, delta, kwh_min)
     assert np.all(e_f <= seg["ub"].values + 1e-6), "FIFO en la grilla: un segmento supera P x Delta x fraccion."
+    ext_f = np.bincount(seg["w"].values, weights=e_f * (seg["parte"].values == 1), minlength=len(v))
+    sin_reserva = prog_f["reserva"].values == 0
+    assert np.all(ext_f[sin_reserva] <= 1e-9), (
+        "FIFO en la grilla: una ventana que termina a tiempo (sin reserva) quedo con energia despues de su hora limite.")
     ocup_bloque_f = np.bincount(seg["t"].values, weights=e_f, minlength=nb)
     assert ocup_bloque_f.max() <= cap_bloque + 1e-6, "FIFO en la grilla: un bloque supera la capacidad."
     costo_grilla_f = float((precio_bloque[seg["t"].values] * e_f).sum())
@@ -526,6 +728,11 @@ def main():
     obj_f_modelo = obj_f + float(desempate(seg) @ e_f)          # el mismo objetivo que ve el MILP (con desempate)
     print(f"  [OK] FIFO en la grilla de {delta} min: factible para el modelo agregado y mismo costo de energia "
           f"(energia + reservas: {obj_f:,.2f} USD).")
+
+    if args.detallado:
+        modo_detallado(args, salida, nombre, h_txt, delta, prueba, v, seg, costos, precio_bloque, cap_bloque, kappa,
+                       kwh_min, nb, P, tarifa, prog_f, e_f, obj_f, obj_f_modelo, occ_f, t_inicio)
+        return
 
     # --- E2 agregado ---
     print(f"\n--- E2 agregado: {len(seg):,} variables de energia, {len(v):,} binarias, {nb} bloques ---")
@@ -551,35 +758,6 @@ def main():
     print(f"  Realizacion por minuto de E2 ({t_real:.1f} s): maximo {occ_2.max():.2f} buses; minutos sobre "
           f"{kappa} puestos: {int((occ_2 > kappa + 1e-6).sum())} (solo pueden aparecer en bloques de borde).")
 
-    # --- E2 detallado (opcional) ---
-    if args.detallado:
-        print("\n--- E2 detallado: eventos de carga en el objetivo, carga continua dentro del evento ---")
-        e_d, r_d, d_d, info_d = resolver_detallado(seg, v, precio_bloque, cap_bloque, costos,
-                                                   [(e_f, r_f, d_f), (e2, r2.astype(float), d2)], delta)
-        obj_d = info_d["objetivo"] - info_d["desempate_usd"]                  # energia + reservas + eventos
-        obj_d_er = obj_d - info_d["eventos_usd"]                              # energia + reservas
-        eventos_f = float(costos.fixed_charge_cost * prog_f["eventos"].sum())
-        print(f"  Detallado: {info_d['binarias']:,} binarias | {obj_d:,.2f} USD (energia + reservas {obj_d_er:,.2f} + "
-              f"eventos {info_d['eventos_usd']:,.2f}), {info_d['estado']}, brecha {info_d['brecha']:.3%}, "
-              f"{info_d['segundos_milp']:.1f} s")
-        assert abs(e_d.sum() + d_d.sum() - v["kwh"].sum()) < 1e-3 * len(v), \
-            "Detallado: energia cargada + deficit != energia consumida."
-        ocup_bloque_d = np.bincount(seg["t"].values, weights=e_d, minlength=nb)
-        assert ocup_bloque_d.max() <= cap_bloque * (1 + 1e-6) + 1e-6, "Detallado: un bloque supera la capacidad en energia."
-        assert info_d["objetivo"] <= obj_f_modelo + eventos_f + 1e-6 * abs(obj_f_modelo) + 1e-3, (
-            "Detallado peor que E2-FIFO con sus eventos: la FIFO era solucion inicial.")
-        assert info["cota_lp"] <= info_d["objetivo"] - info_d["eventos_usd"] + 1e-6 * abs(obj_f_modelo) + 1e-3, (
-            "La cota LP del agregado supera al detallado sin eventos: el agregado deberia ser una relajacion.")
-        print(f"  [OK] Detallado: energia cargada + deficit = consumida | ocupacion <= puestos en cada bloque | "
-              f"detallado <= E2-FIFO con eventos ({obj_d:,.2f} <= {obj_f + eventos_f:,.2f}) | cota LP del agregado "
-              f"<= detallado sin eventos ({info['cota_lp']:,.2f} <= {obj_d_er:,.2f}).")
-        if d_d.sum() > 1e-3:
-            print(f"  [AVISO] El detallado deja {d_d.sum():,.1f} kWh de deficit.")
-        t0 = time.perf_counter()
-        occ_d = realizacion_por_minuto(seg, e_d, delta, kappa, kwh_min)
-        print(f"  Realizacion por minuto del detallado ({time.perf_counter() - t0:.1f} s): maximo {occ_d.max():.2f} "
-              f"buses; minutos sobre {kappa} puestos: {int((occ_d > kappa + 1e-6).sum())}.")
-
     # --- Programas por ventana ---
     p2 = programa_desde_segmentos(seg, e2, v, kwh_min)
     em2 = energia_minuto_segmentos(seg, e2)
@@ -592,24 +770,12 @@ def main():
         p["termina_a_tiempo"] = p["fin_carga_min"] <= p["limite_min"] + 1e-6
     assert (prog_2_out.loc[~prog_2_out["termina_a_tiempo"] & (prog_2_out["kwh_cargado"] > TOL_E), "reserva"] == 1).all(), \
         "E2: una ventana carga despues de su hora limite sin reserva."
-    if args.detallado:
-        p_d = programa_desde_segmentos(seg, e_d, v, kwh_min)
-        costo_wd = np.bincount(seg["w"].values, weights=precio_bloque[seg["t"].values] * e_d, minlength=len(v))
-        prog_d_out = pd.concat([base, p_d.assign(deficit_kwh=d_d, reserva=r_d, costo_energia_usd=costo_wd)], axis=1)
-        prog_d_out["termina_a_tiempo"] = prog_d_out["fin_carga_min"] <= prog_d_out["limite_min"] + 1e-6
-        tarde = ~prog_d_out["termina_a_tiempo"] & (prog_d_out["kwh_cargado"] > TOL_E)
-        assert (prog_d_out.loc[tarde, "reserva"] == 1).all(), \
-            "Detallado: una ventana carga despues de su hora limite sin reserva."
 
     t_total = time.perf_counter() - t_inicio
     mem = medicion.pico_memoria_mb()
     res_f = resumen_politica("E2-FIFO", prog_f_out, v, occ_f, kappa, costos, P, t_fifo)
     res_2 = resumen_politica("E2", prog_2_out, v, occ_2, kappa, costos, P, info["segundos_milp"] + info["segundos_lp"])
-    filas_res = [res_f, res_2]
-    if args.detallado:
-        filas_res.append(resumen_politica("E2-detallado", prog_d_out, v, occ_d, kappa, costos, P,
-                                          info_d["segundos_milp"]))
-    resumen = pd.DataFrame(filas_res)
+    resumen = pd.DataFrame([res_f, res_2])
     resumen.insert(0, "terminal", nombre)
     resumen.insert(1, "holgura_min", args.holgura)
     resumen.insert(2, "delta_min", delta)
@@ -624,10 +790,6 @@ def main():
     tarifa_tab = tf[["periodo", "horas", "precio_usd_kwh"]].assign(
         kwh_fifo=tf["kwh"], costo_fifo_usd=tf["costo_usd"], kwh_e2=t2["kwh"], costo_e2_usd=t2["costo_usd"])
     columnas_kwh = ["kwh_fifo", "kwh_e2"]
-    if args.detallado:
-        td = energia_por_periodo(precios, energia_minuto_segmentos(seg, e_d))
-        tarifa_tab = tarifa_tab.assign(kwh_e2_detallado=td["kwh"], costo_e2_detallado_usd=td["costo_usd"])
-        columnas_kwh.append("kwh_e2_detallado")
     valle = tarifa_tab["precio_usd_kwh"] <= tarifa_tab["precio_usd_kwh"].min() * 1.2
     resumen["pct_energia_valle"] = [round(tarifa_tab.loc[valle, c].sum() / tarifa_tab[c].sum() * 100, 2)
                                     for c in columnas_kwh]
@@ -636,22 +798,16 @@ def main():
 
     modelo = pd.DataFrame([
         dict(modelo="E2-FIFO", estado="heuristica (sin optimizacion)", objetivo_usd=round(obj_f, 2), cota_usd=np.nan,
-             brecha=np.nan, segundos=round(t_fifo, 2), variables=np.nan, binarias=np.nan, restricciones=np.nan),
+             brecha=np.nan, fuente_brecha="-", segundos=round(t_fifo, 2), variables=np.nan, binarias=np.nan,
+             restricciones=np.nan),
         dict(modelo="E2 agregado - LP (cota)", estado="optimo", objetivo_usd=round(info["cota_lp"], 2),
-             cota_usd=round(info["cota_lp"], 2), brecha=0.0, segundos=info["segundos_lp"], variables=info["variables"],
-             binarias=0, restricciones=info["restricciones"]),
+             cota_usd=round(info["cota_lp"], 2), brecha=0.0, fuente_brecha="Gurobi", segundos=info["segundos_lp"],
+             variables=info["variables"], binarias=0, restricciones=info["restricciones"]),
         dict(modelo="E2 agregado - MILP", estado=info["estado"], objetivo_usd=round(obj_2, 2),
-             cota_usd=round(info["cota_milp"], 2), brecha=round(info["brecha"], 6), segundos=info["segundos_milp"],
-             desempate_usd=round(info["desempate_usd"], 4),
+             cota_usd=round(info["cota_milp"], 2), brecha=round(info["brecha"], 6), fuente_brecha="Gurobi",
+             segundos=info["segundos_milp"], desempate_usd=round(info["desempate_usd"], 4),
              variables=info["variables"], binarias=info["binarias"], restricciones=info["restricciones"]),
     ])
-    if args.detallado:
-        modelo = pd.concat([modelo, pd.DataFrame([dict(
-            modelo="E2 detallado - MILP", estado=info_d["estado"], objetivo_usd=round(obj_d, 2),
-            cota_usd=round(info_d["cota_milp"], 2), brecha=round(info_d["brecha"], 6), segundos=info_d["segundos_milp"],
-            desempate_usd=round(info_d["desempate_usd"], 4), eventos_usd=round(info_d["eventos_usd"], 2),
-            variables=info_d["variables"], binarias=info_d["binarias"], restricciones=info_d["restricciones"])])],
-            ignore_index=True)
     modelo.insert(0, "delta_min", delta)
     modelo.insert(0, "holgura_min", args.holgura)
 
@@ -662,10 +818,6 @@ def main():
                                  "buses_equivalentes_fifo": ocup_bloque_f / (kwh_min * delta),
                                  "buses_equivalentes_e2": ocup_bloque_2 / (kwh_min * delta), "puestos": kappa})
     ocup_min = pd.DataFrame({"minuto": np.arange(DIA_MIN), "fifo": occ_f, "e2": np.round(occ_2, 4), "puestos": kappa})
-    if args.detallado:
-        ocup_bloques.insert(6, "buses_equivalentes_e2_detallado", ocup_bloque_d / (kwh_min * delta))
-        ocup_min.insert(3, "e2_detallado", np.round(occ_d, 4))
-        prog_d_out.round(4).to_csv(tablas / "programa_E2_detallado.csv", index=False, sep=CSV_SEP)
     reservas = resumen[["politica", "reservas_intermedias", "reservas_nocturnas", "reservas"]]
 
     prog_f_out.round(4).to_csv(tablas / "programa_FIFO.csv", index=False, sep=CSV_SEP)
@@ -676,7 +828,7 @@ def main():
     reservas.to_csv(tablas / "reservas.csv", index=False, sep=CSV_SEP)
     modelo.to_csv(tablas / "modelo.csv", index=False, sep=CSV_SEP)
     resumen.to_csv(tablas / "resumen.csv", index=False, sep=CSV_SEP)
-    graficar_ocupacion(occ_f, occ_2, occ_d if args.detallado else None, kappa, tarifa, graficos / "ocupacion_24h.png",
+    graficar_ocupacion(occ_f, occ_2, None, kappa, tarifa, graficos / "ocupacion_24h.png",
                        f"Buses cargando en {nombre}: por orden de llegada vs programada (holgura {h_txt} min, Delta {delta} min)")
     graficar_tarifa(tarifa_tab, graficos / "energia_por_tarifa.png",
                     f"Energia cargada por periodo tarifario en {nombre} (holgura {h_txt} min, Delta {delta} min)")
@@ -710,21 +862,6 @@ def main():
         f"- Realizacion por minuto de E2: {int((occ_2 > kappa + 1e-6).sum())} minutos sobre los puestos (maximo "
         f"{occ_2.max():.2f}); es el error del agregado en los bloques de borde.",
         "",
-    ]
-    if args.detallado:
-        lineas += [
-            "## Modelo detallado vs agregado",
-            "",
-            f"- Detallado: {info_d['estado']}, brecha {info_d['brecha']:.3%}, {info_d['segundos_milp']:.1f} s, "
-            f"{info_d['binarias']:,} binarias. Objetivo {obj_d:,.2f} USD = energia + reservas {obj_d_er:,.2f} + "
-            f"eventos {info_d['eventos_usd']:,.2f}.",
-            f"- Agregado: energia + reservas {obj_2:,.2f} USD; con sus eventos contados despues: "
-            f"{obj_2 + costos.fixed_charge_cost * p2['eventos'].sum():,.2f} USD.",
-            f"- Realizacion por minuto del detallado: {int((occ_d > kappa + 1e-6).sum())} minutos sobre los puestos "
-            f"(maximo {occ_d.max():.2f}).",
-            "",
-        ]
-    lineas += [
         "## Tiempo y memoria",
         f"- FIFO {t_fifo:.1f} s | armado {info['segundos_armado']:.1f} s | LP {info['segundos_lp']:.1f} s | MILP "
         f"{info['segundos_milp']:.1f} s ({info['nodos']:,} nodos) | realizacion por minuto {t_real:.1f} s | total "

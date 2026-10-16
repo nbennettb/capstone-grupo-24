@@ -1,5 +1,3 @@
 holgura_min;delta_min;modelo;estado;brecha;fuente_brecha;segundos;binarias;variables;energia_mas_reservas_usd;eventos;costo_eventos_usd;total_carga_usd;reservas_intermedias;reservas_nocturnas;costo_energia_usd;minutos_sobre_puestos;maximo_por_minuto
 0.0;15;agregado;optimo (brecha pedida);0.003172;Gurobi;89.4;1640;163962;100905.49;5866;29330.0;130235.49;0;218;46405.49;124;125.18
-0.0;15;detallado;limite de tiempo;0.374583;cota valida (LP del agregado + un evento por ventana);3600.9;160720;482122;165004.72;1640;8200.0;173204.72;30;442;47004.72;0;100.0
-0.0;30;agregado;optimo (brecha pedida);0.003772;Gurobi;13.34;1640;85242;100680.53;3618;18090.0;118770.53;0;217;46430.53;101;141.99
-0.0;30;detallado;limite de tiempo;0.376156;cota valida (LP del agregado + un evento por ventana);3603.37;82000;245962;165004.72;1640;8200.0;173204.72;30;442;47004.72;0;100.0
+0.0;15;detallado;limite de tiempo;0.006581;cota valida (LP del agregado + un evento por ventana);3605.12;160720;482122;100665.58;1675;8375.0;109040.58;0;217;46415.59;32;115.0

@@ -295,7 +295,7 @@ Cómo se lee la evidencia:
 ### G7. Solver y criterio de parada
 - **Qué:** Gurobi.
   - Primero el LP (cota inferior) y luego el MILP, con la FIFO como solución inicial.
-  - Brecha 0,5% del objetivo, límite 600 s (detallado: 900 s).
+  - Brecha 0,5% del objetivo, límite 600 s (detallado: 3.600 s y brecha válida, ver G11 y G12).
   - El déficit se penaliza con 10.000 USD/kWh.
 - **Por qué:** la brecha de 0,5% es menor que cualquier diferencia que se quiera interpretar entre escenarios. Si no se alcanza, se reporta la brecha obtenida. La penalización hace que el déficit solo aparezca si la energía no cabe en los puestos en 24 h; debe salir 0.
 - **Dónde:** `parametros.GAP_MIP`, `TIEMPO_LIMITE_S`, `PENALIZACION_DEFICIT_USD_KWH`.
@@ -315,7 +315,7 @@ Cómo se lee la evidencia:
   - una binaria y = "el bus de la ventana está enchufado en el bloque";
   - el inicio de cada evento (z, 5 USD) en el objetivo;
   - carga continua a plena potencia en los bloques interiores de cada evento.
-  Así la única diferencia con el agregado es la estructura de los eventos. Se corre con Δ = 15 y 30, 900 s, partiendo de la FIFO (factible, 1 evento por ventana) y de la solución del agregado.
+  Así la única diferencia con el agregado es la estructura de los eventos. Se corre con Δ = 15 y 30, con límite de 1 h.
 - **Por qué:** el error principal del agregado en La Reina es la fragmentación.
   - Con los puestos saturados 17,2 h al día, reparte cada bloque entre muchos buses, porque no ve el costo por evento. Resultan 5.894 eventos contra 1.640 de la FIFO (29.470 contra 8.200 USD/día).
   - La cifra depende de Δ: 8,9, 3,6 y 2,3 eventos por ventana con Δ = 5, 15 y 30, lo que muestra que es un artefacto.
@@ -329,8 +329,50 @@ Cómo se lee la evidencia:
   | 30 | 167 | 804 h |
 
   La carga necesita 1.907 de las 2.400 puesto-horas, así que con Δ = 30 la energía ni siquiera cabría.
-- **Evidencia del tiempo:** en una prueba chica con congestión forzada (38 ventanas, 3 puestos, 3.724 binarias), el detallado bajó los eventos de 126 a 39, con las mismas reservas y +1,2 USD de energía. Tardó 401 s en llegar a una brecha de 0,49%. En la instancia completa (~160 mil binarias con Δ = 15) se espera que llegue al límite de tiempo. Se informa la brecha alcanzada.
+- **Evidencia del tiempo:** en una prueba chica con congestión forzada (38 ventanas, 3 puestos, 3.724 binarias), el detallado bajó los eventos de 126 a 39, con las mismas reservas y +1,2 USD de energía.
 - **Dónde:** `resolver_detallado` y opción `--detallado` de 13-; sección 11 de `resumen_para_analisis.md` (`detallado_vs_agregado` de 14-).
+
+### G11. Detallado en dos fases
+- **Qué:** el detallado se corre después del agregado y en dos fases, dentro de una hora en total.
+  1. **Fase 1 (25 min, brecha 1%):** el mismo modelo con las reservas fijas en las del agregado, resuelto como modelo principal (todos los hilos, foco en encontrar soluciones). En las 1.422 ventanas sin reserva no se puede cargar después de la hora límite, así que el 65% de las variables de energía y de enchufe quedan fijas en 0.
+  2. **Fase 2 (el tiempo restante, brecha 0,5%):** el modelo completo, con las reservas libres, partiendo de la solución completa de la fase 1. Si la fase 1 no encuentra una solución sin déficit, parte de la FIFO, y se informa.
+
+  El modelo que se reporta es el completo: la fase 1 solo construye el punto de partida.
+  - Lee las reservas y la cota LP del agregado de la misma carpeta, y no vuelve a resolver ni a escribir el agregado ni la FIFO.
+  - Sus salidas van a `etapa4/h<h>_d<Δ>/detallado/`, con un log por fase.
+  - Si el detallado no supera a la FIFO con eventos, queda como aviso y no como error.
+- **Por qué (lo observado en tres corridas):**
+
+  | Corrida | Soluciones iniciales aceptadas | Δ = 30 | Δ = 15 |
+  |---|---|---|---|
+  | 1ª (900 s) | ninguna (la FIFO por un error de 0,02 kWh; el agregado porque viola la carga continua) | 109.705 USD, brecha 3,8% | 135.342 USD, 322 reservas, brecha 22% |
+  | 2ª (1 h) | solo el inicio parcial con las reservas del agregado | 108.686 USD, brecha válida 0,58% | 109.421 USD (apareció a los ~46 min), brecha válida 1,0% |
+  | 3ª (1 h, FIFO corregida) | la FIFO y el inicio parcial | igual a la FIFO (173.205 USD) | igual a la FIFO (173.205 USD) |
+
+  - En la 3ª corrida, los dos logs muestran la hora completa en `Processing user MIP start 2 … 0 nodes explored in subMIP`, sin soluciones nuevas, y terminan con `Thread count was 1 (of 8)`: la búsqueda principal nunca empezó.
+  - En la 2ª, el mismo paso entregó soluciones cada vez mejores, pero la buena de Δ = 15 llegó cerca del límite.
+  - Completar un inicio parcial depende de un paso que en estos logs se ve en un solo hilo y fuera de nuestro control. Resolver ese mismo problema (reservas fijas) como modelo principal usa todos los hilos, tiene su propio tiempo y entrega una solución completa, que la fase 2 carga al instante.
+- **Corrección de la FIFO en la grilla** (encontrada en los logs de la 2ª corrida): el minuto que cruza la hora límite se repartía en proporción al tiempo, pero en la simulación el bus carga desde el comienzo del minuto, así que quedaban 0,02 kWh después de la hora límite en una ventana sin reserva.
+  - Ahora lo cargado antes de la hora límite va dentro de la ventana y el resto a la extensión.
+  - Las cifras de E2-FIFO al minuto no cambian (verificado en La Reina con Δ = 15 y 30).
+  - La FIFO cumple todas las restricciones del detallado.
+- **Alternativas descartadas:**
+  - solo el inicio parcial (depende de que ese paso termine a tiempo);
+  - más tiempo sin mejor inicio (mejora a saltos e incierta);
+  - fijar las reservas del agregado como datos del modelo final (sería otro modelo, no el detallado).
+- **Escalabilidad:** el detallado con Δ = 15 (~160 mil binarias) necesita del orden de una hora por terminal en un computador de 4 núcleos, contra 25-90 s del agregado. Es un dato para decidir qué modelo llevar a la red completa.
+- **Dónde:** `modo_detallado` y `resolver_detallado` (parámetro `r_fijo`) de 13-, `fifo_en_grilla`, `parametros.TIEMPO_LIMITE_S` y `GAP_DETALLADO_FASE1`.
+
+### G12. Brecha válida del detallado
+- **Qué:** además de la cota de Gurobi, se usa una cota inferior propia: cota LP del agregado + 5 USD × número de ventanas. Se reporta la mejor brecha disponible (la de Gurobi o la de esta cota) e indica cuál es.
+- **Por qué:**
+  - El detallado tiene todas las restricciones del agregado más los eventos, así que su costo es al menos la cota LP del agregado más un evento por cada ventana que carga.
+  - Toda ventana carga en cualquier solución que valga la pena: dejarla sin cargar cuesta la penalización del déficit por su energía. Con 10.000 USD/kWh y la ventana más chica de 25,4 kWh son 254 mil USD, más que la solución completa (~109 mil).
+  - La cota solo se usa si se cumple esa condición, y el código lo verifica.
+  - Sirve de respaldo cuando Gurobi no alcanza a resolver el nodo raíz.
+- **Alternativa:** reportar solo la brecha de Gurobi, que con Δ = 15 no tenía sentido (1.412.718%).
+- **Evidencia (2ª corrida):** brecha válida 1,0% con Δ = 15 (109.421 contra la cota 108.329) y 0,58% con Δ = 30 (108.686 contra 108.055; la de Gurobi era 2,76%). Las dos son menores que la diferencia que se quiere medir entre agregado y detallado (9-16% del costo de carga).
+- **Dónde:** `scripts/common/brechas.py` (`mejor_brecha`), usado por 13- (`modelo.csv`: `brecha`, `fuente_brecha`, `brecha_gurobi`, `cota_valida_usd`) y 14- (secciones 10 y 11 del resumen).
 
 ## H. KPIs y comparación
 

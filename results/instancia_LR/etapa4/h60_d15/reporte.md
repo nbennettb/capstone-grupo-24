@@ -8,41 +8,41 @@
 |:----------------------------|-----------:|----------:|
 | reservas_intermedias        |     0      |     0     |
 | reservas_nocturnas          |   435      |   190     |
-| costo_energia_usd           | 47004.7    | 46342.6   |
+| costo_energia_usd           | 47004.7    | 46340.3   |
 | costo_medio_energia_usd_kwh |     0.1369 |     0.135 |
 | pct_energia_valle           |    52.06   |    52.43  |
-| eventos                     |  1640      |  5584     |
+| eventos                     |  1640      |  5834     |
 | kwh_deficit                 |     0      |     0     |
-| uso_maximo_pct              |   100      |   124.7   |
-| minutos_saturados           |   907      |   899     |
-| minutos_sobre_puestos       |     0      |   165     |
+| uso_maximo_pct              |   100      |   120.6   |
+| minutos_saturados           |   907      |   921     |
+| minutos_sobre_puestos       |     0      |   131     |
 
 ## Modelos (estado, brecha y tiempos)
 
-|   holgura_min |   delta_min | modelo                  | estado                        |   objetivo_usd |   cota_usd |     brecha |   segundos |   variables |   binarias |   restricciones |   desempate_usd |
-|--------------:|------------:|:------------------------|:------------------------------|---------------:|-----------:|-----------:|-----------:|------------:|-----------:|----------------:|----------------:|
-|            60 |          15 | E2-FIFO                 | heuristica (sin optimizacion) |       155755   |      nan   | nan        |       0.26 |         nan |        nan |             nan |        nan      |
-|            60 |          15 | E2 agregado - LP (cota) | optimo                        |        92879.4 |    92879.4 |   0        |       2.36 |      163966 |          0 |            3376 |        nan      |
-|            60 |          15 | E2 agregado - MILP      | optimo (brecha pedida)        |        93842.6 |    93526.4 |   0.003433 |      21.01 |      163966 |       1640 |            3376 |          5.9256 |
+|   holgura_min |   delta_min | modelo                  | estado                        |   objetivo_usd |   cota_usd |     brecha | fuente_brecha   |   segundos |   variables |   binarias |   restricciones |   desempate_usd |
+|--------------:|------------:|:------------------------|:------------------------------|---------------:|-----------:|-----------:|:----------------|-----------:|------------:|-----------:|----------------:|----------------:|
+|            60 |          15 | E2-FIFO                 | heuristica (sin optimizacion) |       155755   |      nan   | nan        | -               |       0.35 |         nan |        nan |             nan |        nan      |
+|            60 |          15 | E2 agregado - LP (cota) | optimo                        |        92879.4 |    92879.4 |   0        | Gurobi          |       2.15 |      163966 |          0 |            3376 |        nan      |
+|            60 |          15 | E2 agregado - MILP      | optimo (brecha pedida)        |        93840.3 |    93523.1 |   0.003443 | Gurobi          |      23.77 |      163966 |       1640 |            3376 |          5.9274 |
 
 ## Energia por periodo tarifario
 
 | periodo   | horas   |   precio_usd_kwh |   kwh_fifo |   costo_fifo_usd |   kwh_e2 |   costo_e2_usd |
 |:----------|:--------|-----------------:|-----------:|-----------------:|---------:|---------------:|
 | P1        | 00-08   |              0.1 |   142986   |          14298.6 | 144000   |        14400   |
-| P2        | 08-14   |              0.2 |    99142   |          14871.3 |  97674.2 |        14651.1 |
+| P2        | 08-14   |              0.2 |    99142   |          14871.3 |  97707.7 |        14656.2 |
 | P3        | 14-17   |              0.2 |     8980.4 |           1975.7 |      0   |            0   |
 | P4        | 17-19   |              0.2 |     6975.3 |           1046.3 |  15758.6 |         2363.8 |
-| P5        | 19-22   |              0.2 |    49459.7 |          10881.1 |  49853.2 |        10967.7 |
+| P5        | 19-22   |              0.2 |    49459.7 |          10881.1 |  49819.7 |        10960.3 |
 | P6        | 22-24   |              0.1 |    35743   |           3931.7 |  36000   |         3960   |
 
 ## Validaciones (todas pasaron)
 - FIFO: ocupacion <= puestos en cada minuto; energia cargada + deficit = consumida; su costo en la grilla = su costo al minuto.
 - E2: energia cargada + deficit = consumida; ocupacion <= puestos en cada bloque; toda carga despues de la hora limite lleva reserva; E2 <= E2-FIFO en la grilla.
-- Realizacion por minuto de E2: 165 minutos sobre los puestos (maximo 124.69); es el error del agregado en los bloques de borde.
+- Realizacion por minuto de E2: 131 minutos sobre los puestos (maximo 120.63); es el error del agregado en los bloques de borde.
 
 ## Tiempo y memoria
-- FIFO 0.3 s | armado 0.5 s | LP 2.4 s | MILP 21.0 s (1 nodos) | realizacion por minuto 1.4 s | total 27.7 s | pico de memoria 1,035 MB.
+- FIFO 0.4 s | armado 0.5 s | LP 2.1 s | MILP 23.8 s (1 nodos) | realizacion por minuto 2.0 s | total 31.3 s | pico de memoria 1,070 MB.
 
 ## Archivos
 - `tablas/programa_FIFO.csv`, `tablas/programa_E2.csv`: por ventana, kWh, inicio y fin de la carga, eventos, reserva, deficit y costo.

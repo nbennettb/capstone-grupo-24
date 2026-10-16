@@ -1,23 +1,21 @@
-corrida;estado;brecha;segundos
-Caso base E0 (simulador reactivo);-;-;1.2
-Caso base E1 (simulador reactivo);-;-;1.7
-Etapa 3 h=0 (DP + flujo);optimo (flujo entero);0;3.0
-Etapa 3 h=30 (DP + flujo);optimo (flujo entero);0;3.7
-Etapa 3 h=60 (DP + flujo);optimo (flujo entero);0;2.2
-Etapa 4 h=0 Delta=5: E2-FIFO;heuristica (sin optimizacion);;0.73
-Etapa 4 h=0 Delta=5: E2 agregado - LP (cota);optimo;0.0;9.06
-Etapa 4 h=0 Delta=5: E2 agregado - MILP;optimo (brecha pedida);0.001118;157.79
-Etapa 4 h=0 Delta=15: E2-FIFO;heuristica (sin optimizacion);;0.31
-Etapa 4 h=0 Delta=15: E2 agregado - LP (cota);optimo;0.0;4.04
-Etapa 4 h=0 Delta=15: E2 agregado - MILP;optimo (brecha pedida);0.003176;29.12
-Etapa 4 h=0 Delta=15: E2 detallado - MILP;limite de tiempo;0.222871;900.33
-Etapa 4 h=0 Delta=30: E2-FIFO;heuristica (sin optimizacion);;0.29
-Etapa 4 h=0 Delta=30: E2 agregado - LP (cota);optimo;0.0;1.65
-Etapa 4 h=0 Delta=30: E2 agregado - MILP;optimo (brecha pedida);0.004362;8.19
-Etapa 4 h=0 Delta=30: E2 detallado - MILP;limite de tiempo;0.037598;900.37
-Etapa 4 h=30 Delta=15: E2-FIFO;heuristica (sin optimizacion);;0.27
-Etapa 4 h=30 Delta=15: E2 agregado - LP (cota);optimo;0.0;2.52
-Etapa 4 h=30 Delta=15: E2 agregado - MILP;optimo (brecha pedida);0.001547;35.59
-Etapa 4 h=60 Delta=15: E2-FIFO;heuristica (sin optimizacion);;0.26
-Etapa 4 h=60 Delta=15: E2 agregado - LP (cota);optimo;0.0;2.36
-Etapa 4 h=60 Delta=15: E2 agregado - MILP;optimo (brecha pedida);0.003433;21.01
+corrida;estado;brecha;fuente_brecha;segundos
+Caso base E0 (simulador reactivo);-;-;-;1.2
+Caso base E1 (simulador reactivo);-;-;-;1.7
+Etapa 3 h=0 (DP + flujo);optimo (flujo entero);0;flujo entero;3.0
+Etapa 3 h=30 (DP + flujo);optimo (flujo entero);0;flujo entero;3.7
+Etapa 3 h=60 (DP + flujo);optimo (flujo entero);0;flujo entero;2.2
+Etapa 4 h=0 Delta=5: E2-FIFO;heuristica (sin optimizacion);;-;0.22
+Etapa 4 h=0 Delta=5: E2 agregado - LP (cota);optimo;0.0;Gurobi;8.67
+Etapa 4 h=0 Delta=5: E2 agregado - MILP;optimo (brecha pedida);0.003662;Gurobi;93.65
+Etapa 4 h=0 Delta=15: E2-FIFO;heuristica (sin optimizacion);;-;1.06
+Etapa 4 h=0 Delta=15: E2 agregado - LP (cota);optimo;0.0;Gurobi;8.28
+Etapa 4 h=0 Delta=15: E2 agregado - MILP;optimo (brecha pedida);0.003172;Gurobi;89.4
+Etapa 4 h=0 Delta=30: E2-FIFO;heuristica (sin optimizacion);;-;0.31
+Etapa 4 h=0 Delta=30: E2 agregado - LP (cota);optimo;0.0;Gurobi;1.51
+Etapa 4 h=0 Delta=30: E2 agregado - MILP;optimo (brecha pedida);0.003772;Gurobi;13.34
+Etapa 4 h=30 Delta=15: E2-FIFO;heuristica (sin optimizacion);;-;0.26
+Etapa 4 h=30 Delta=15: E2 agregado - LP (cota);optimo;0.0;Gurobi;2.38
+Etapa 4 h=30 Delta=15: E2 agregado - MILP;optimo (brecha pedida);0.001547;Gurobi;30.52
+Etapa 4 h=60 Delta=15: E2-FIFO;heuristica (sin optimizacion);;-;0.35
+Etapa 4 h=60 Delta=15: E2 agregado - LP (cota);optimo;0.0;Gurobi;2.15
+Etapa 4 h=60 Delta=15: E2 agregado - MILP;optimo (brecha pedida);0.003443;Gurobi;23.77

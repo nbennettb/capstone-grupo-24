@@ -19,11 +19,11 @@
 
 ## Modelos (estado, brecha y tiempos)
 
-|   holgura_min |   delta_min | modelo                  | estado                        |   objetivo_usd |   cota_usd |     brecha |   segundos |   variables |   binarias |   restricciones |   desempate_usd |
-|--------------:|------------:|:------------------------|:------------------------------|---------------:|-----------:|-----------:|-----------:|------------:|-----------:|----------------:|----------------:|
-|            30 |          15 | E2-FIFO                 | heuristica (sin optimizacion) |       157005   |      nan   | nan        |       0.27 |         nan |        nan |             nan |        nan      |
-|            30 |          15 | E2 agregado - LP (cota) | optimo                        |        96165.3 |    96165.3 |   0        |       2.52 |      163966 |          0 |            3376 |        nan      |
-|            30 |          15 | E2 agregado - MILP      | optimo (brecha pedida)        |        97097.3 |    96953   |   0.001547 |      35.59 |      163966 |       1640 |            3376 |          5.9237 |
+|   holgura_min |   delta_min | modelo                  | estado                        |   objetivo_usd |   cota_usd |     brecha | fuente_brecha   |   segundos |   variables |   binarias |   restricciones |   desempate_usd |
+|--------------:|------------:|:------------------------|:------------------------------|---------------:|-----------:|-----------:|:----------------|-----------:|------------:|-----------:|----------------:|----------------:|
+|            30 |          15 | E2-FIFO                 | heuristica (sin optimizacion) |       157005   |      nan   | nan        | -               |       0.26 |         nan |        nan |             nan |        nan      |
+|            30 |          15 | E2 agregado - LP (cota) | optimo                        |        96165.3 |    96165.3 |   0        | Gurobi          |       2.38 |      163966 |          0 |            3376 |        nan      |
+|            30 |          15 | E2 agregado - MILP      | optimo (brecha pedida)        |        97097.3 |    96953   |   0.001547 | Gurobi          |      30.52 |      163966 |       1640 |            3376 |          5.9237 |
 
 ## Energia por periodo tarifario
 
@@ -42,7 +42,7 @@
 - Realizacion por minuto de E2: 112 minutos sobre los puestos (maximo 119.15); es el error del agregado en los bloques de borde.
 
 ## Tiempo y memoria
-- FIFO 0.3 s | armado 0.6 s | LP 2.5 s | MILP 35.6 s (1 nodos) | realizacion por minuto 1.4 s | total 43.0 s | pico de memoria 1,106 MB.
+- FIFO 0.3 s | armado 0.5 s | LP 2.4 s | MILP 30.5 s (1 nodos) | realizacion por minuto 2.0 s | total 37.9 s | pico de memoria 1,080 MB.
 
 ## Archivos
 - `tablas/programa_FIFO.csv`, `tablas/programa_E2.csv`: por ventana, kWh, inicio y fin de la carga, eventos, reserva, deficit y costo.

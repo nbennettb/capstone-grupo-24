@@ -13,21 +13,17 @@ Etapa 3 (h=60): cobertura exacta;OK;10,327 expediciones en 1,640 tramos
 Etapa 3 (h=60): todo tramo cabe en la bateria util;OK;maximo 314.9 kWh de 315
 Etapa 3 (h=60): flota = maximo de intervalos superpuestos;OK;flujo 1,219, intervalos 1,219
 Etapa 4 (h=0, Delta=15): deficit 0;OK;FIFO 0.000 kWh, E2 0.000 kWh
-Etapa 4 (h=0, Delta=15): ocupacion <= 100 por bloque (E2) y por minuto (FIFO);OK;"maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 138 min sobre 100 (informativo)"
-Etapa 4 (h=0, Delta=15): E2 <= E2-FIFO (energia + reservas);OK;100,905.85 <= 165,004.72 USD
-Etapa 4 (h=0, Delta=15): detallado <= E2-FIFO (energia + reservas + eventos);OK;135,341.86 <= 173,204.72 USD
-Etapa 4 (h=0, Delta=15): detallado, ocupacion <= 100 por bloque;OK;"maximo por bloque 100.00; realizacion por minuto: 23 min sobre 100 (informativo)"
+Etapa 4 (h=0, Delta=15): ocupacion <= 100 por bloque (E2) y por minuto (FIFO);OK;"maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 124 min sobre 100 (informativo)"
+Etapa 4 (h=0, Delta=15): E2 <= E2-FIFO (energia + reservas);OK;100,905.49 <= 165,004.72 USD
 Etapa 4 (h=0, Delta=30): deficit 0;OK;FIFO 0.000 kWh, E2 0.000 kWh
-Etapa 4 (h=0, Delta=30): ocupacion <= 100 por bloque (E2) y por minuto (FIFO);OK;"maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 155 min sobre 100 (informativo)"
-Etapa 4 (h=0, Delta=30): E2 <= E2-FIFO (energia + reservas);OK;100,674.02 <= 165,004.72 USD
-Etapa 4 (h=0, Delta=30): detallado <= E2-FIFO (energia + reservas + eventos);OK;109,704.78 <= 173,204.72 USD
-Etapa 4 (h=0, Delta=30): detallado, ocupacion <= 100 por bloque;OK;"maximo por bloque 100.00; realizacion por minuto: 46 min sobre 100 (informativo)"
+Etapa 4 (h=0, Delta=30): ocupacion <= 100 por bloque (E2) y por minuto (FIFO);OK;"maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 101 min sobre 100 (informativo)"
+Etapa 4 (h=0, Delta=30): E2 <= E2-FIFO (energia + reservas);OK;100,680.53 <= 165,004.72 USD
 Etapa 4 (h=0, Delta=5): deficit 0;OK;FIFO 0.000 kWh, E2 0.000 kWh
-Etapa 4 (h=0, Delta=5): ocupacion <= 100 por bloque (E2) y por minuto (FIFO);OK;"maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 121 min sobre 100 (informativo)"
-Etapa 4 (h=0, Delta=5): E2 <= E2-FIFO (energia + reservas);OK;100,899.66 <= 165,004.72 USD
+Etapa 4 (h=0, Delta=5): ocupacion <= 100 por bloque (E2) y por minuto (FIFO);OK;"maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 146 min sobre 100 (informativo)"
+Etapa 4 (h=0, Delta=5): E2 <= E2-FIFO (energia + reservas);OK;101,148.24 <= 165,004.72 USD
 Etapa 4 (h=30, Delta=15): deficit 0;OK;FIFO 0.000 kWh, E2 0.000 kWh
 Etapa 4 (h=30, Delta=15): ocupacion <= 100 por bloque (E2) y por minuto (FIFO);OK;"maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 112 min sobre 100 (informativo)"
 Etapa 4 (h=30, Delta=15): E2 <= E2-FIFO (energia + reservas);OK;97,097.32 <= 157,004.72 USD
 Etapa 4 (h=60, Delta=15): deficit 0;OK;FIFO 0.000 kWh, E2 0.000 kWh
-Etapa 4 (h=60, Delta=15): ocupacion <= 100 por bloque (E2) y por minuto (FIFO);OK;"maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 165 min sobre 100 (informativo)"
-Etapa 4 (h=60, Delta=15): E2 <= E2-FIFO (energia + reservas);OK;93,842.64 <= 155,754.72 USD
+Etapa 4 (h=60, Delta=15): ocupacion <= 100 por bloque (E2) y por minuto (FIFO);OK;"maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 131 min sobre 100 (informativo)"
+Etapa 4 (h=60, Delta=15): E2 <= E2-FIFO (energia + reservas);OK;93,840.30 <= 155,754.72 USD

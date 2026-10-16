@@ -31,24 +31,20 @@ Archivo generado por `scripts/14-kpis_instancia.py`. Todas las cifras salen de l
 | Etapa 3 (h=60): todo tramo cabe en la bateria util                             | OK          | maximo 314.9 kWh de 315                                                                                         |
 | Etapa 3 (h=60): flota = maximo de intervalos superpuestos                      | OK          | flujo 1,219, intervalos 1,219                                                                                   |
 | Etapa 4 (h=0, Delta=15): deficit 0                                             | OK          | FIFO 0.000 kWh, E2 0.000 kWh                                                                                    |
-| Etapa 4 (h=0, Delta=15): ocupacion <= 100 por bloque (E2) y por minuto (FIFO)  | OK          | maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 138 min sobre 100 (informativo) |
-| Etapa 4 (h=0, Delta=15): E2 <= E2-FIFO (energia + reservas)                    | OK          | 100,905.85 <= 165,004.72 USD                                                                                    |
-| Etapa 4 (h=0, Delta=15): detallado <= E2-FIFO (energia + reservas + eventos)   | OK          | 135,341.86 <= 173,204.72 USD                                                                                    |
-| Etapa 4 (h=0, Delta=15): detallado, ocupacion <= 100 por bloque                | OK          | maximo por bloque 100.00; realizacion por minuto: 23 min sobre 100 (informativo)                                |
+| Etapa 4 (h=0, Delta=15): ocupacion <= 100 por bloque (E2) y por minuto (FIFO)  | OK          | maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 124 min sobre 100 (informativo) |
+| Etapa 4 (h=0, Delta=15): E2 <= E2-FIFO (energia + reservas)                    | OK          | 100,905.49 <= 165,004.72 USD                                                                                    |
 | Etapa 4 (h=0, Delta=30): deficit 0                                             | OK          | FIFO 0.000 kWh, E2 0.000 kWh                                                                                    |
-| Etapa 4 (h=0, Delta=30): ocupacion <= 100 por bloque (E2) y por minuto (FIFO)  | OK          | maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 155 min sobre 100 (informativo) |
-| Etapa 4 (h=0, Delta=30): E2 <= E2-FIFO (energia + reservas)                    | OK          | 100,674.02 <= 165,004.72 USD                                                                                    |
-| Etapa 4 (h=0, Delta=30): detallado <= E2-FIFO (energia + reservas + eventos)   | OK          | 109,704.78 <= 173,204.72 USD                                                                                    |
-| Etapa 4 (h=0, Delta=30): detallado, ocupacion <= 100 por bloque                | OK          | maximo por bloque 100.00; realizacion por minuto: 46 min sobre 100 (informativo)                                |
+| Etapa 4 (h=0, Delta=30): ocupacion <= 100 por bloque (E2) y por minuto (FIFO)  | OK          | maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 101 min sobre 100 (informativo) |
+| Etapa 4 (h=0, Delta=30): E2 <= E2-FIFO (energia + reservas)                    | OK          | 100,680.53 <= 165,004.72 USD                                                                                    |
 | Etapa 4 (h=0, Delta=5): deficit 0                                              | OK          | FIFO 0.000 kWh, E2 0.000 kWh                                                                                    |
-| Etapa 4 (h=0, Delta=5): ocupacion <= 100 por bloque (E2) y por minuto (FIFO)   | OK          | maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 121 min sobre 100 (informativo) |
-| Etapa 4 (h=0, Delta=5): E2 <= E2-FIFO (energia + reservas)                     | OK          | 100,899.66 <= 165,004.72 USD                                                                                    |
+| Etapa 4 (h=0, Delta=5): ocupacion <= 100 por bloque (E2) y por minuto (FIFO)   | OK          | maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 146 min sobre 100 (informativo) |
+| Etapa 4 (h=0, Delta=5): E2 <= E2-FIFO (energia + reservas)                     | OK          | 101,148.24 <= 165,004.72 USD                                                                                    |
 | Etapa 4 (h=30, Delta=15): deficit 0                                            | OK          | FIFO 0.000 kWh, E2 0.000 kWh                                                                                    |
 | Etapa 4 (h=30, Delta=15): ocupacion <= 100 por bloque (E2) y por minuto (FIFO) | OK          | maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 112 min sobre 100 (informativo) |
 | Etapa 4 (h=30, Delta=15): E2 <= E2-FIFO (energia + reservas)                   | OK          | 97,097.32 <= 157,004.72 USD                                                                                     |
 | Etapa 4 (h=60, Delta=15): deficit 0                                            | OK          | FIFO 0.000 kWh, E2 0.000 kWh                                                                                    |
-| Etapa 4 (h=60, Delta=15): ocupacion <= 100 por bloque (E2) y por minuto (FIFO) | OK          | maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 165 min sobre 100 (informativo) |
-| Etapa 4 (h=60, Delta=15): E2 <= E2-FIFO (energia + reservas)                   | OK          | 93,842.64 <= 155,754.72 USD                                                                                     |
+| Etapa 4 (h=60, Delta=15): ocupacion <= 100 por bloque (E2) y por minuto (FIFO) | OK          | maximo E2 por bloque 100.00; FIFO por minuto 100; realizacion por minuto de E2: 131 min sobre 100 (informativo) |
+| Etapa 4 (h=60, Delta=15): E2 <= E2-FIFO (energia + reservas)                   | OK          | 93,840.30 <= 155,754.72 USD                                                                                     |
 
 ## 3. KPIs por escenario (configuracion base)
 
@@ -56,16 +52,16 @@ Original = espera como la cobra el caso base (incluye la espera nocturna hasta e
 
 | KPI                                             | E0      | E1      | E2-FIFO   | E2      |
 |:------------------------------------------------|:--------|:--------|:----------|:--------|
-| 1. Costo total original (USD/dia)               | 610,052 | 583,741 | 497,774   | 449,569 |
-| 1. Costo total comparable (USD/dia)             | 594,602 | 567,807 | 488,464   | 445,635 |
+| 1. Costo total original (USD/dia)               | 610,052 | 583,741 | 497,774   | 449,668 |
+| 1. Costo total comparable (USD/dia)             | 594,602 | 567,807 | 488,464   | 445,495 |
 | · flota                                         | 431,500 | 409,500 | 291,500   | 291,500 |
 | · reservas intermedias                          | 0       | 0       | 7,500     | 0       |
 | · reservas nocturnas                            | 79,750  | 78,750  | 110,500   | 54,500  |
 | · km vacios                                     | 20,240  | 18,699  | 17,465    | 17,465  |
-| · espera original                               | 21,736  | 21,080  | 15,605    | 10,228  |
+| · espera original                               | 21,736  | 21,080  | 15,605    | 10,467  |
 | · espera comparable                             | 6,286   | 5,146   | 6,294     | 6,294   |
-| · energia                                       | 48,151  | 47,482  | 47,005    | 46,406  |
-| · eventos de carga                              | 8,675   | 8,230   | 8,200     | 29,470  |
+| · energia                                       | 48,151  | 47,482  | 47,005    | 46,405  |
+| · eventos de carga                              | 8,675   | 8,230   | 8,200     | 29,330  |
 | 2. N de buses (operativos + reservas)           | 2,045   | 1,953   | 1,638     | 1,384   |
 | · buses del VSP                                 | 1,333   | 1,203   | 1,203     | 1,203   |
 | · buses operativos (tras la carga / Etapa 3)    | 1,726   | 1,638   | 1,166     | 1,166   |
@@ -75,27 +71,25 @@ Original = espera como la cobra el caso base (incluye la espera nocturna hasta e
 | 5. Buses extra por bateria                      | 712     | 750     | 435       | 181     |
 | 6. Reservas intermedias                         | 0       | 0       | 30        | 0       |
 | 6. Reservas nocturnas                           | 319     | 315     | 442       | 218     |
-| 7. Uso maximo de los puestos (%)                | 100.0   | 100.0   | 100.0     | 126.2   |
+| 7. Uso maximo de los puestos (%)                | 100.0   | 100.0   | 100.0     | 125.2   |
 | 7. Horas con todos los puestos ocupados         | 17.0    | 17.1    | 15.1      | 15.3    |
-| · minutos sobre los puestos                     | 0       | 0       | 0         | 138     |
-| 8. Segundos de computo (sin el VSP)             | 1.2     | 1.7     | 3.3       | 36.2    |
+| · minutos sobre los puestos                     | 0       | 0       | 0         | 124     |
+| 8. Segundos de computo (sin el VSP)             | 1.2     | 1.7     | 4.1       | 100.7   |
 | · energia cargada (MWh)                         | 351.1   | 346.7   | 343.3     | 343.3   |
 | · deficit de energia (kWh)                      | 0.00    | 0.00    | 0.00      | 0.00    |
-| · eventos de carga                              | 1,735   | 1,646   | 1,640     | 5,894   |
+| · eventos de carga                              | 1,735   | 1,646   | 1,640     | 5,866   |
 | · utilizacion del bus (% de 24 h con pasajeros) | 27.3    | 28.6    | 34.1      | 40.4    |
 
 ### Variantes (sensibilidad)
 
-| escenario   | variante               | modelo    |   buses_operativos |   reservas_intermedias |   reservas_nocturnas |   buses_totales |   costo_energia |   costo_eventos |   costo_total_comparable |   costo_total_original |
-|:------------|:-----------------------|:----------|-------------------:|-----------------------:|---------------------:|----------------:|----------------:|----------------:|-------------------------:|-----------------------:|
-| E2          | Delta=5                | agregado  |               1166 |                      0 |                  218 |            1384 |           46400 |           72930 |                   489089 |                 492764 |
-| E2          | detallado h=0 Delta=15 | detallado |               1166 |                      0 |                  322 |            1488 |           46427 |            8435 |                   450621 |                 459265 |
-| E2          | Delta=30               | agregado  |               1166 |                      0 |                  217 |            1383 |           46424 |           18910 |                   434843 |                 439304 |
-| E2          | detallado h=0 Delta=30 | detallado |               1166 |                      0 |                  220 |            1386 |           46440 |            8265 |                   424964 |                 433246 |
-| E2-FIFO     | h=30                   | -         |               1196 |                      0 |                  440 |            1636 |           47005 |            8200 |                   488670 |                 497980 |
-| E2          | h=30                   | agregado  |               1196 |                      0 |                  203 |            1399 |           46347 |           28300 |                   448862 |                 453211 |
-| E2-FIFO     | h=60                   | -         |               1219 |                      0 |                  435 |            1654 |           47005 |            8200 |                   493647 |                 502958 |
-| E2          | h=60                   | agregado  |               1219 |                      0 |                  190 |            1409 |           46343 |           27920 |                   451455 |                 455368 |
+| escenario   | variante   | modelo   |   buses_operativos |   reservas_intermedias |   reservas_nocturnas |   buses_totales |   costo_energia |   costo_eventos |   costo_total_comparable |   costo_total_original |
+|:------------|:-----------|:---------|-------------------:|-----------------------:|---------------------:|----------------:|----------------:|----------------:|-------------------------:|-----------------------:|
+| E2          | Delta=5    | agregado |               1166 |                      0 |                  219 |            1385 |           46398 |           54440 |                   470848 |                 474770 |
+| E2          | Delta=30   | agregado |               1166 |                      0 |                  217 |            1383 |           46431 |           18090 |                   434030 |                 438878 |
+| E2-FIFO     | h=30       | -        |               1196 |                      0 |                  440 |            1636 |           47005 |            8200 |                   488670 |                 497980 |
+| E2          | h=30       | agregado |               1196 |                      0 |                  203 |            1399 |           46347 |           28300 |                   448862 |                 453211 |
+| E2-FIFO     | h=60       | -        |               1219 |                      0 |                  435 |            1654 |           47005 |            8200 |                   493647 |                 502958 |
+| E2          | h=60       | agregado |               1219 |                      0 |                  190 |            1409 |           46340 |           29170 |                   452702 |                 456839 |
 
 ## 4. Diagnostico de flota de la Etapa 3
 
@@ -123,10 +117,10 @@ Original = espera como la cobra el caso base (incluye la espera nocturna hasta e
 | periodo   | horas   |   precio_usd_kwh |   kwh_E0 |   kwh_E1 |   kwh_E2-FIFO |   kwh_E2 |   usd_E0 |   usd_E1 |   usd_E2-FIFO |   usd_E2 |
 |:----------|:--------|-----------------:|---------:|---------:|--------------:|---------:|---------:|---------:|--------------:|---------:|
 | P1        | 00-08   |             0.1  |   143053 |   143012 |        142986 |   144000 |    14305 |    14301 |         14299 |    14400 |
-| P2        | 08-14   |             0.15 |   103026 |    99886 |         99142 |    97620 |    15454 |    14983 |         14871 |    14643 |
+| P2        | 08-14   |             0.15 |   103026 |    99886 |         99142 |    97625 |    15454 |    14983 |         14871 |    14644 |
 | P3        | 14-17   |             0.22 |     7273 |     6779 |          8980 |      848 |     1600 |     1491 |          1976 |      187 |
 | P4        | 17-19   |             0.15 |    10975 |    10196 |          6975 |    14910 |     1646 |     1529 |          1046 |     2237 |
-| P5        | 19-22   |             0.22 |    50962 |    51102 |         49460 |    49908 |    11212 |    11243 |         10881 |    10980 |
+| P5        | 19-22   |             0.22 |    50962 |    51102 |         49460 |    49903 |    11212 |    11243 |         10881 |    10979 |
 | P6        | 22-24   |             0.11 |    35767 |    35765 |         35743 |    36000 |     3934 |     3934 |          3932 |     3960 |
 
 ## 7. Ocupacion de los puestos por hora (buses cargando: promedio y maximo de la hora)
@@ -140,81 +134,72 @@ Puestos: 100. E2 = realizacion por minuto del modelo agregado.
 |      2 |         100   |         100 |         100   |         100 |              100   |              100 |         100   |       100   |
 |      3 |         100   |         100 |         100   |         100 |              100   |              100 |         100   |       100   |
 |      4 |         100   |         100 |         100   |         100 |              100   |              100 |         100   |       100   |
-|      5 |         100   |         100 |         100   |         100 |              100   |              100 |         100   |       103.2 |
-|      6 |         100   |         100 |         100   |         100 |               99.8 |              100 |         100   |       110.9 |
-|      7 |         100   |         100 |         100   |         100 |               99.8 |              100 |         100   |       126.2 |
-|      8 |          99.8 |         100 |          99.8 |         100 |               98.8 |              100 |         100   |       102.3 |
+|      5 |         100   |         100 |         100   |         100 |              100   |              100 |         100   |       108.7 |
+|      6 |         100   |         100 |         100   |         100 |               99.8 |              100 |         100   |       112.7 |
+|      7 |         100   |         100 |         100   |         100 |               99.8 |              100 |         100   |       125.2 |
+|      8 |          99.8 |         100 |          99.8 |         100 |               98.8 |              100 |         100   |       103.1 |
 |      9 |          99.4 |         100 |          99.7 |         100 |               98.9 |              100 |         100   |       100   |
 |     10 |          99.7 |         100 |         100   |         100 |               99.5 |              100 |         100   |       100   |
 |     11 |         100   |         100 |         100   |         100 |               99.6 |              100 |         100   |       100   |
-|     12 |          99.9 |         100 |         100   |         100 |               98.8 |              100 |         100   |       100.8 |
-|     13 |          79.4 |         100 |          61.2 |         100 |               60.2 |               90 |          42.3 |       100   |
+|     12 |          99.9 |         100 |         100   |         100 |               98.8 |              100 |         100   |       100   |
+|     13 |          79.4 |         100 |          61.2 |         100 |               60.2 |               90 |          42.4 |       100   |
 |     14 |          21.4 |          41 |          10.8 |          20 |               17.1 |               26 |           3.3 |         7   |
 |     15 |          10.3 |          11 |          10.8 |          13 |               17.7 |               20 |           1   |         6   |
 |     16 |           9.2 |          15 |          16.2 |          24 |               15.5 |               20 |           0.4 |         2   |
 |     17 |          25.6 |          34 |          23.6 |          28 |               18.5 |               22 |          59   |        69   |
 |     18 |          35.6 |          55 |          33.2 |          56 |               20.5 |               41 |          23.9 |        43   |
-|     19 |          84.6 |         100 |          85.5 |         100 |               76.3 |              100 |          77.3 |       115   |
-|     20 |         100   |         100 |         100   |         100 |              100   |              100 |         100   |       118.3 |
-|     21 |         100   |         100 |         100   |         100 |              100   |              100 |         100   |       123.6 |
-|     22 |         100   |         100 |         100   |         100 |              100   |              100 |         100   |       110   |
-|     23 |         100   |         100 |         100   |         100 |              100   |              100 |         100   |       100.2 |
+|     19 |          84.6 |         100 |          85.5 |         100 |               76.3 |              100 |          77.2 |       113.9 |
+|     20 |         100   |         100 |         100   |         100 |              100   |              100 |         100   |       116.7 |
+|     21 |         100   |         100 |         100   |         100 |              100   |              100 |         100   |       119.4 |
+|     22 |         100   |         100 |         100   |         100 |              100   |              100 |         100   |       109.1 |
+|     23 |         100   |         100 |         100   |         100 |              100   |              100 |         100   |       100   |
 
 ## 8. Sensibilidad a la holgura h de la Etapa 3 (Delta base)
 
 |   holgura_min |   buses_etapa3 |   reservas_FIFO |   reservas_E2 |   buses_totales_FIFO |   buses_totales_E2 |   costo_total_comparable_E2 |   costo_energia_E2 |   nocturnas_sin_tiempo_carga |
 |--------------:|---------------:|----------------:|--------------:|---------------------:|-------------------:|----------------------------:|-------------------:|-----------------------------:|
-|             0 |           1166 |             472 |           218 |                 1638 |               1384 |                      445635 |              46406 |                           53 |
+|             0 |           1166 |             472 |           218 |                 1638 |               1384 |                      445495 |              46405 |                           53 |
 |            30 |           1196 |             440 |           203 |                 1636 |               1399 |                      448862 |              46347 |                           57 |
-|            60 |           1219 |             435 |           190 |                 1654 |               1409 |                      451455 |              46343 |                           50 |
+|            60 |           1219 |             435 |           190 |                 1654 |               1409 |                      452702 |              46340 |                           50 |
 
 ## 9. Sensibilidad al largo del bloque Delta (holgura base)
 
 |   delta_min |   objetivo_usd |   cota_lp_usd |   reservas |   costo_energia |   eventos |   minutos_sobre_puestos |   variables |   segundos_lp |   segundos_milp |   brecha | estado                 |
 |------------:|---------------:|--------------:|-----------:|----------------:|----------:|------------------------:|------------:|--------------:|----------------:|---------:|:-----------------------|
-|           5 |         100900 |      100351   |        218 |         46399.7 |     14586 |                     121 |      478841 |          9.06 |          157.79 | 0.001118 | optimo (brecha pedida) |
-|          15 |         100906 |      100129   |        218 |         46405.8 |      5894 |                     138 |      163962 |          4.04 |           29.12 | 0.003176 | optimo (brecha pedida) |
-|          30 |         100674 |       99854.6 |        217 |         46424   |      3782 |                     155 |       85242 |          1.65 |            8.19 | 0.004362 | optimo (brecha pedida) |
+|           5 |         101148 |      100351   |        219 |         46398.2 |     10888 |                     146 |      478841 |          8.67 |           93.65 | 0.003662 | optimo (brecha pedida) |
+|          15 |         100905 |      100129   |        218 |         46405.5 |      5866 |                     124 |      163962 |          8.28 |           89.4  | 0.003172 | optimo (brecha pedida) |
+|          30 |         100681 |       99854.6 |        217 |         46430.5 |      3618 |                     101 |       85242 |          1.51 |           13.34 | 0.003772 | optimo (brecha pedida) |
 
 ## 10. Segundos, estado y brecha de cada modelo
 
 El VSP (Etapa 2) no se vuelve a correr: sus jornadas son un archivo.
 
-| corrida                                        | estado                        | brecha   |   segundos |
-|:-----------------------------------------------|:------------------------------|:---------|-----------:|
-| Caso base E0 (simulador reactivo)              | -                             | -        |       1.2  |
-| Caso base E1 (simulador reactivo)              | -                             | -        |       1.7  |
-| Etapa 3 h=0 (DP + flujo)                       | optimo (flujo entero)         | 0        |       3    |
-| Etapa 3 h=30 (DP + flujo)                      | optimo (flujo entero)         | 0        |       3.7  |
-| Etapa 3 h=60 (DP + flujo)                      | optimo (flujo entero)         | 0        |       2.2  |
-| Etapa 4 h=0 Delta=5: E2-FIFO                   | heuristica (sin optimizacion) | nan      |       0.73 |
-| Etapa 4 h=0 Delta=5: E2 agregado - LP (cota)   | optimo                        | 0.0      |       9.06 |
-| Etapa 4 h=0 Delta=5: E2 agregado - MILP        | optimo (brecha pedida)        | 0.001118 |     157.79 |
-| Etapa 4 h=0 Delta=15: E2-FIFO                  | heuristica (sin optimizacion) | nan      |       0.31 |
-| Etapa 4 h=0 Delta=15: E2 agregado - LP (cota)  | optimo                        | 0.0      |       4.04 |
-| Etapa 4 h=0 Delta=15: E2 agregado - MILP       | optimo (brecha pedida)        | 0.003176 |      29.12 |
-| Etapa 4 h=0 Delta=15: E2 detallado - MILP      | limite de tiempo              | 0.222871 |     900.33 |
-| Etapa 4 h=0 Delta=30: E2-FIFO                  | heuristica (sin optimizacion) | nan      |       0.29 |
-| Etapa 4 h=0 Delta=30: E2 agregado - LP (cota)  | optimo                        | 0.0      |       1.65 |
-| Etapa 4 h=0 Delta=30: E2 agregado - MILP       | optimo (brecha pedida)        | 0.004362 |       8.19 |
-| Etapa 4 h=0 Delta=30: E2 detallado - MILP      | limite de tiempo              | 0.037598 |     900.37 |
-| Etapa 4 h=30 Delta=15: E2-FIFO                 | heuristica (sin optimizacion) | nan      |       0.27 |
-| Etapa 4 h=30 Delta=15: E2 agregado - LP (cota) | optimo                        | 0.0      |       2.52 |
-| Etapa 4 h=30 Delta=15: E2 agregado - MILP      | optimo (brecha pedida)        | 0.001547 |      35.59 |
-| Etapa 4 h=60 Delta=15: E2-FIFO                 | heuristica (sin optimizacion) | nan      |       0.26 |
-| Etapa 4 h=60 Delta=15: E2 agregado - LP (cota) | optimo                        | 0.0      |       2.36 |
-| Etapa 4 h=60 Delta=15: E2 agregado - MILP      | optimo (brecha pedida)        | 0.003433 |      21.01 |
+| corrida                                        | estado                        | brecha   | fuente_brecha   |   segundos |
+|:-----------------------------------------------|:------------------------------|:---------|:----------------|-----------:|
+| Caso base E0 (simulador reactivo)              | -                             | -        | -               |       1.2  |
+| Caso base E1 (simulador reactivo)              | -                             | -        | -               |       1.7  |
+| Etapa 3 h=0 (DP + flujo)                       | optimo (flujo entero)         | 0        | flujo entero    |       3    |
+| Etapa 3 h=30 (DP + flujo)                      | optimo (flujo entero)         | 0        | flujo entero    |       3.7  |
+| Etapa 3 h=60 (DP + flujo)                      | optimo (flujo entero)         | 0        | flujo entero    |       2.2  |
+| Etapa 4 h=0 Delta=5: E2-FIFO                   | heuristica (sin optimizacion) | nan      | -               |       0.22 |
+| Etapa 4 h=0 Delta=5: E2 agregado - LP (cota)   | optimo                        | 0.0      | Gurobi          |       8.67 |
+| Etapa 4 h=0 Delta=5: E2 agregado - MILP        | optimo (brecha pedida)        | 0.003662 | Gurobi          |      93.65 |
+| Etapa 4 h=0 Delta=15: E2-FIFO                  | heuristica (sin optimizacion) | nan      | -               |       1.06 |
+| Etapa 4 h=0 Delta=15: E2 agregado - LP (cota)  | optimo                        | 0.0      | Gurobi          |       8.28 |
+| Etapa 4 h=0 Delta=15: E2 agregado - MILP       | optimo (brecha pedida)        | 0.003172 | Gurobi          |      89.4  |
+| Etapa 4 h=0 Delta=30: E2-FIFO                  | heuristica (sin optimizacion) | nan      | -               |       0.31 |
+| Etapa 4 h=0 Delta=30: E2 agregado - LP (cota)  | optimo                        | 0.0      | Gurobi          |       1.51 |
+| Etapa 4 h=0 Delta=30: E2 agregado - MILP       | optimo (brecha pedida)        | 0.003772 | Gurobi          |      13.34 |
+| Etapa 4 h=30 Delta=15: E2-FIFO                 | heuristica (sin optimizacion) | nan      | -               |       0.26 |
+| Etapa 4 h=30 Delta=15: E2 agregado - LP (cota) | optimo                        | 0.0      | Gurobi          |       2.38 |
+| Etapa 4 h=30 Delta=15: E2 agregado - MILP      | optimo (brecha pedida)        | 0.001547 | Gurobi          |      30.52 |
+| Etapa 4 h=60 Delta=15: E2-FIFO                 | heuristica (sin optimizacion) | nan      | -               |       0.35 |
+| Etapa 4 h=60 Delta=15: E2 agregado - LP (cota) | optimo                        | 0.0      | Gurobi          |       2.15 |
+| Etapa 4 h=60 Delta=15: E2 agregado - MILP      | optimo (brecha pedida)        | 0.003443 | Gurobi          |      23.77 |
 
 ## 11. Modelo detallado vs agregado
 
-El detallado agrega al agregado el enchufe por bloque (binaria), el costo de cada evento de carga en el objetivo y la carga continua a plena potencia dentro de cada evento; capacidad, reservas y deficit son los mismos. Energia + reservas: lo que optimiza el agregado. Total carga = energia + reservas + eventos (en el agregado, los eventos se cuentan despues de resolver). Minutos sobre los puestos: realizacion por minuto de cada solucion.
-
-|   holgura_min |   delta_min | modelo    | estado                 |   brecha |   segundos |   binarias |   variables |   energia_mas_reservas_usd |   eventos |   costo_eventos_usd |   total_carga_usd |   reservas_intermedias |   reservas_nocturnas |   costo_energia_usd |   minutos_sobre_puestos |   maximo_por_minuto |
-|--------------:|------------:|:----------|:-----------------------|---------:|-----------:|-----------:|------------:|---------------------------:|----------:|--------------------:|------------------:|-----------------------:|---------------------:|--------------------:|------------------------:|--------------------:|
-|             0 |          15 | agregado  | optimo (brecha pedida) | 0.003176 |      29.12 |       1640 |      163962 |                     100906 |      5894 |               29470 |            130376 |                      0 |                  218 |             46405.8 |                     138 |              126.21 |
-|             0 |          15 | detallado | limite de tiempo       | 0.222871 |     900.33 |     160720 |      482122 |                     126927 |      1687 |                8435 |            135362 |                      0 |                  322 |             46426.9 |                      23 |              110.47 |
-|             0 |          30 | agregado  | optimo (brecha pedida) | 0.004362 |       8.19 |       1640 |       85242 |                     100674 |      3782 |               18910 |            119584 |                      0 |                  217 |             46424   |                     155 |              150.93 |
-|             0 |          30 | detallado | limite de tiempo       | 0.037598 |     900.37 |      82000 |      245962 |                     101440 |      1653 |                8265 |            109705 |                      0 |                  220 |             46439.8 |                      46 |              128.66 |
+Pendiente (P2): correr 13- con --detallado.
 
 ## 12. Figuras
 

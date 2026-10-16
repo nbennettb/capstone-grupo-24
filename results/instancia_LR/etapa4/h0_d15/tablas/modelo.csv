@@ -1,5 +1,5 @@
-holgura_min;delta_min;modelo;estado;objetivo_usd;cota_usd;brecha;segundos;variables;binarias;restricciones;desempate_usd;eventos_usd
-0.0;15;E2-FIFO;heuristica (sin optimizacion);165004.72;;;0.31;;;;;
-0.0;15;E2 agregado - LP (cota);optimo;100128.94;100128.94;0.0;4.04;163962.0;0.0;3376.0;;
-0.0;15;E2 agregado - MILP;optimo (brecha pedida);100905.85;100591.29;0.003176;29.12;163962.0;1640.0;3376.0;5.9109;
-0.0;15;E2 detallado - MILP;limite de tiempo;135341.86;105182.64;0.222871;900.33;482122.0;160720.0;478938.0;5.9215;8415.0
+holgura_min;delta_min;modelo;estado;objetivo_usd;cota_usd;brecha;fuente_brecha;segundos;variables;binarias;restricciones;desempate_usd;cota_gurobi_usd;brecha_gurobi;cota_valida_usd;eventos_usd
+0.0;15;E2-FIFO;heuristica (sin optimizacion);165004.72;;;-;1.06;;;;;;;;
+0.0;15;E2 agregado - LP (cota);optimo;100128.94;100128.94;0.0;Gurobi;8.28;163962.0;0.0;3376.0;;;;;
+0.0;15;E2 agregado - MILP;optimo (brecha pedida);100905.49;100591.29;0.003172;Gurobi;89.4;163962.0;1640.0;3376.0;5.9113;;;;
+0.0;15;E2 detallado - MILP;limite de tiempo;173204.72;108328.94;0.374583;cota valida (LP del agregado + un evento por ventana);3600.9;482122.0;160720.0;478938.0;5.9603;-inf;inf;108328.94;8200.0

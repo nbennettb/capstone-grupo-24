@@ -39,6 +39,11 @@ Cada decisión tiene qué se decidió, por qué y su evidencia (medida o razonad
   - máximo 60 buses a la vez;
   - 163 reservas, contra 158 del relajado, que no es factible;
   - 4 min y 1,7 GB.
+- **Evidencia (La Reina completa: 1.640 ventanas, 100 puestos):**
+  - el plan queda a 2,05% de la cota inferior (102.674 contra 100.570 USD/día);
+  - máximo 100 buses a la vez;
+  - 225 reservas, contra 218 del relajado, que no es factible;
+  - 208 s y 2,3 GB, con 563 binarias. El detallado tenía 160.720 binarias y llegó al límite de 1 h.
 - **Dónde:** `scripts/13-etapa4_programacion_carga.py` (`--exacto`: `minutos_ventana`, `resolver_exacto`,
   `modo_exacto`), `parametros.TIEMPO_LIMITE_S["exacto"]` (1.800 s) y `parametros.GAP_EXACTO` (0,5%).
 
@@ -75,7 +80,10 @@ Cada decisión tiene qué se decidió, por qué y su evidencia (medida o razonad
 - **Evidencia (prueba chica, 3 puestos):**
   - eventos de 92 a 66;
   - el desempate cuadrático que se probó primero empataba cuando dos buses llegaban casi juntos;
-  - de los cortes que quedan, la mayoría los obligan las horas de salida, no el desempate.
+  - de los cortes que quedan, la mayoría los obligan las horas de salida, no el desempate;
+  - en La Reina, 2.274 eventos contra unos 1.675 del detallado, que tenía los eventos en el objetivo pero superaba los
+    puestos. Son unos 3.000 USD/día. Se acepta, porque meter los eventos en el objetivo exige binarias por bus y
+    minuto, y eso es lo que hacía lento al detallado.
 - **Dónde:** `resolver_exacto`, paso de pulido.
 
 ## J6. Asignación de puestos

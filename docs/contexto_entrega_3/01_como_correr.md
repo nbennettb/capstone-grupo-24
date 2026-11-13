@@ -17,7 +17,7 @@ Se corre desde la **raíz del repositorio**, la carpeta que contiene `scripts/`,
 3. **El repositorio completo**, con `data-processed/` (jornadas de la Etapa 2) y `results/caso_base/` (caso base de la
    red completa, contra el que se compara el caso base de cada terminal).
 
-## 2. Antes de correr La Reina (solo Nicolás, una vez)
+## 2. Antes de correr La Reina (ya hecho, queda como registro)
 
 Las corridas de la entrega 2 quedan guardadas en git y las carpetas viejas se apartan. Se hicieron con la Etapa 3
 anterior, así que ya no son comparables, y las sensibilidades de holgura y largo del bloque no se van a usar. En
@@ -45,19 +45,22 @@ Si un paso falla, el script dice cuál y cómo retomar (por ejemplo `--desde 4`)
 
 ## 4. Tiempos estimados
 
-Son estimaciones a partir de una prueba mediana: 3 a 5 min y 1,1 a 1,7 GB para 1.025 ventanas. Se ajustan después
-de la corrida de La Reina.
+La Reina es medida. Los demás se escalan según su tamaño respecto de La Reina (jornadas del caso base con
+interlining) y su carga (energía del día sobre la capacidad de los puestos en 24 h).
 
-| Terminal | `--terminal` | Tiempo total | Memoria | Quién |
-|---|---|---|---|---|
-| La Reina | 4 | ~15 min | ~2,5 GB | Nicolás (primero, para confirmar que todo funciona) |
-| Vespucio Norte | 1 | ~10 min | ~2 GB | cualquiera |
-| El Conquistador | 2 | ~30 min | ~4 GB | cualquiera |
-| Los Espinos + Santa Rosa | 3 | ~1 h | ~6 GB | idealmente un computador con 16 GB de RAM |
+| Terminal | `--terminal` | Tamaño vs La Reina | Carga | Tiempo total | Memoria | Quién |
+|---|---|---|---|---|---|---|
+| La Reina | 4 | 1,0 | 80% | 4,5 min (medido) | 2,3 GB (medido) | Nicolás (hecho) |
+| Vespucio Norte | 1 | 0,6 | 35% | ~3 min | ~1,5 GB | Nicolás |
+| El Conquistador | 2 | 1,8 | 83% | ~10 a 20 min | ~4,5 GB | Nicolás, con el resto de los programas cerrados |
+| Los Espinos + Santa Rosa | 3 | 2,8 | 86% | ~20 a 40 min | ~7 GB | un compañero con 16 GB de RAM |
 
 Lo que más demora es el paso 4 (plan exacto). Mientras corre no imprime nada; el avance de Gurobi queda en
 `results/instancia_<siglas>/etapa4/h0_d15/exacto/gurobi.log`. El modelo exacto tiene un límite de 30 min. Si llega a
 ese límite, igual entrega un plan factible y lo informa.
+
+Con 8 GB de RAM, Los Espinos + Santa Rosa puede quedarse sin memoria. Windows empieza a usar el disco y la corrida se
+vuelve muy lenta, o se cae con `MemoryError` u `Out of memory`. Por eso se corre en un computador de 16 GB.
 
 ## 5. Qué debe aparecer en pantalla
 

@@ -75,13 +75,27 @@ Siglas de las carpetas: `LR` La Reina, `VN` Vespucio Norte, `EC` El Conquistador
 | Qué | Estado |
 |---|---|
 | Código: cambio de la Etapa 3, plan exacto (`13- --exacto`), validador (`15-`), KPIs (`14-`) y `correr_terminal.py` | Listo y probado en pruebas chicas y medianas |
-| Corrida de La Reina | Pendiente (Nicolás) |
-| Corrida de los otros 3 electroterminales | Pendiente (en paralelo, ver `01_como_correr.md`) |
+| Corrida de La Reina | Lista, todas las validaciones OK |
+| Vespucio Norte y El Conquistador | Pendiente (Nicolás) |
+| Los Espinos + Santa Rosa | Pendiente (un compañero con 16 GB de RAM, ver `01_como_correr.md`) |
 | Tabla de la red completa (suma de los 4 terminales) | Pendiente, después de las corridas |
 
-Prueba mediana de referencia (17 rutas de La Reina, 1.025 ventanas, 60 puestos, más congestionada que La Reina):
-- plan a 2,0% de la cota inferior;
-- 60 buses como máximo a la vez, con 60 puestos;
-- 1,5 eventos de carga por ventana;
+Resultado de La Reina (1.640 ventanas, 100 puestos):
+- plan a 2,05% de la cota inferior: 102.674 USD/día en energía y reservas, contra una cota de 100.570;
+- 100 buses como máximo a la vez, con 100 puestos;
+- 225 reservas, contra 442 de la carga por orden de llegada;
+- 2.274 eventos de carga (1,39 por ventana);
 - las 6 validaciones OK;
-- 3 a 5 min de cómputo.
+- 4,5 min la corrida completa (3,5 min el plan exacto) y 2,3 GB de memoria.
+
+## 7. Por qué ahora tarda minutos y antes una hora
+
+El modelo detallado de la entrega 2 tenía 160.720 variables binarias, una por bus y bloque ("¿está enchufado en este
+bloque?"). Gurobi tiene que probar combinaciones de las binarias, y a la hora se detuvo sin terminar. El plan exacto
+tiene más variables (1,2 millones), pero solo 563 binarias: las de reserva de los buses candidatos. Cuando las reservas
+están decididas, repartir los minutos de carga es un problema de transporte, y el LP lo resuelve directamente con
+valores enteros, sin probar combinaciones.
+
+El precio de esto es que los eventos de carga no están en el objetivo; se mantienen bajos con la prioridad por orden
+de llegada. El detallado tenía unos 1.675 eventos y el plan exacto 2.274, unos 3.000 USD/día más. El detallado, en
+cambio, superaba los puestos y no se podía aplicar.

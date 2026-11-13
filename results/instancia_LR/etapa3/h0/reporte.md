@@ -13,7 +13,7 @@
 
 - Tramos: 1,640 (434 de 1,203 jornadas se cortan); km extra por los cortes: 5,227.3 km.
 - Energia: 343.29 MWh en los tramos (VSP: 335.97 MWh).
-- Ventanas de carga: 474 diurnas y 1,166 nocturnas. Holgura mediana de las diurnas: 71 min; de las nocturnas: 372 min.
+- Ventanas de carga: 474 diurnas y 1,166 nocturnas. Holgura mediana de las diurnas: 71 min; de las nocturnas: 373 min.
 - Ventanas nocturnas que no alcanzan la recarga completa ni con puesto libre: 53; de ellas 38 son cadenas de mas de 24 h (el flujo, como el VSP, es de un dia y no ciclico). La Etapa 4 las cubre con un bus de reserva, la misma regla del caso base.
 
 ## Validaciones (todas pasaron)
@@ -25,7 +25,7 @@
 - Balance de energia: tramos = VSP + km extra; ventanas = tramos.
 
 ## Tiempo y memoria
-- Corte: 1.14 s | flujo: 0.28 s | total: 3.0 s | pico de memoria: 161 MB.
+- Corte: 0.31 s | flujo: 0.17 s | total: 1.3 s | pico de memoria: 157 MB.
 
 ## Archivos
 - `tablas/tramos.csv`: un tramo por fila (bus, jornada del VSP, expediciones, km, kWh, salida, llegada y listo).

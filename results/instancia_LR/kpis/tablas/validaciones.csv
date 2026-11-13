@@ -6,27 +6,14 @@ Caso base con interlining: deficit de energia 0;OK;0.000 kWh
 Etapa 3 (holgura de recarga 0 min): cobertura exacta;OK;10,327 expediciones en 1,640 tramos
 Etapa 3 (holgura de recarga 0 min): todo tramo cabe en la bateria util;OK;maximo 314.9 kWh de 315
 Etapa 3 (holgura de recarga 0 min): flota = maximo de intervalos superpuestos;OK;flujo 1,166, intervalos 1,166
-Etapa 3 (holgura de recarga 30 min): cobertura exacta;OK;10,327 expediciones en 1,640 tramos
-Etapa 3 (holgura de recarga 30 min): todo tramo cabe en la bateria util;OK;maximo 314.9 kWh de 315
-Etapa 3 (holgura de recarga 30 min): flota = maximo de intervalos superpuestos;OK;flujo 1,196, intervalos 1,196
-Etapa 3 (holgura de recarga 60 min): cobertura exacta;OK;10,327 expediciones en 1,640 tramos
-Etapa 3 (holgura de recarga 60 min): todo tramo cabe en la bateria util;OK;maximo 314.9 kWh de 315
-Etapa 3 (holgura de recarga 60 min): flota = maximo de intervalos superpuestos;OK;flujo 1,219, intervalos 1,219
-Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): deficit 0;OK;orden de llegada 0.000 kWh, modelo agregado 0.000 kWh
-Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): ocupacion <= 100 por bloque (modelo agregado) y por minuto (orden de llegada);OK;"maximo del modelo agregado por bloque 100.00; orden de llegada por minuto 100; ejecucion minuto a minuto del modelo agregado: 124 min sobre 100 (informativo)"
-Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): modelo agregado <= orden de llegada (energia + reservas);OK;100,905.49 <= 165,004.72 USD
-Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): modelo detallado, deficit 0;OK;-0.000 kWh
-Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): modelo detallado <= orden de llegada (energia + reservas + eventos);OK;109,040.58 <= 173,204.72 USD
-Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): modelo detallado, ocupacion <= 100 por bloque;OK;"maximo por bloque 100.00; ejecucion minuto a minuto: 32 min sobre 100 (informativo)"
-Etapa 4 (holgura de recarga 0 min, largo del bloque 30 min): deficit 0;OK;orden de llegada 0.000 kWh, modelo agregado 0.000 kWh
-Etapa 4 (holgura de recarga 0 min, largo del bloque 30 min): ocupacion <= 100 por bloque (modelo agregado) y por minuto (orden de llegada);OK;"maximo del modelo agregado por bloque 100.00; orden de llegada por minuto 100; ejecucion minuto a minuto del modelo agregado: 101 min sobre 100 (informativo)"
-Etapa 4 (holgura de recarga 0 min, largo del bloque 30 min): modelo agregado <= orden de llegada (energia + reservas);OK;100,680.53 <= 165,004.72 USD
-Etapa 4 (holgura de recarga 0 min, largo del bloque 5 min): deficit 0;OK;orden de llegada 0.000 kWh, modelo agregado 0.000 kWh
-Etapa 4 (holgura de recarga 0 min, largo del bloque 5 min): ocupacion <= 100 por bloque (modelo agregado) y por minuto (orden de llegada);OK;"maximo del modelo agregado por bloque 100.00; orden de llegada por minuto 100; ejecucion minuto a minuto del modelo agregado: 146 min sobre 100 (informativo)"
-Etapa 4 (holgura de recarga 0 min, largo del bloque 5 min): modelo agregado <= orden de llegada (energia + reservas);OK;101,148.24 <= 165,004.72 USD
-Etapa 4 (holgura de recarga 30 min, largo del bloque 15 min): deficit 0;OK;orden de llegada 0.000 kWh, modelo agregado 0.000 kWh
-Etapa 4 (holgura de recarga 30 min, largo del bloque 15 min): ocupacion <= 100 por bloque (modelo agregado) y por minuto (orden de llegada);OK;"maximo del modelo agregado por bloque 100.00; orden de llegada por minuto 100; ejecucion minuto a minuto del modelo agregado: 112 min sobre 100 (informativo)"
-Etapa 4 (holgura de recarga 30 min, largo del bloque 15 min): modelo agregado <= orden de llegada (energia + reservas);OK;97,097.32 <= 157,004.72 USD
-Etapa 4 (holgura de recarga 60 min, largo del bloque 15 min): deficit 0;OK;orden de llegada 0.000 kWh, modelo agregado 0.000 kWh
-Etapa 4 (holgura de recarga 60 min, largo del bloque 15 min): ocupacion <= 100 por bloque (modelo agregado) y por minuto (orden de llegada);OK;"maximo del modelo agregado por bloque 100.00; orden de llegada por minuto 100; ejecucion minuto a minuto del modelo agregado: 131 min sobre 100 (informativo)"
-Etapa 4 (holgura de recarga 60 min, largo del bloque 15 min): modelo agregado <= orden de llegada (energia + reservas);OK;93,840.30 <= 155,754.72 USD
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): deficit 0;OK;orden de llegada 0.000 kWh, modelo relajado 0.000 kWh
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): ocupacion <= 100 por bloque (modelo relajado) y por minuto (orden de llegada);OK;"maximo del modelo relajado por bloque 100.00; orden de llegada por minuto 100; ejecucion minuto a minuto del modelo relajado: 108 min sobre 100 (informativo)"
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): modelo relajado <= orden de llegada (energia + reservas);OK;100,905.49 <= 157,504.72 USD
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): Propuesta completa, deficit 0;OK;0.000 kWh
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): Propuesta completa, buses cargando <= 100 en cada minuto;OK;maximo 100
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 1. Buses cargando por minuto <= puestos;OK;"maximo 100 de 100; puestos con dos buses a la vez en algun minuto: 0"
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 2. Cada carga: minutos enteros, puesto existente, <= 180 kW;OK;2,274 cargas en 100 puestos
+"Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 3. Toda carga con el bus en el patio; si termina despues de su salida, hay reserva";OK;"cargas fuera de [llegada, llegada + 24 h): 0; ventanas que terminan tarde: 225, sin reserva: 0"
+"Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 4. Cada ventana repone la energia de su tramo; ningun tramo supera la bateria util";OK;"diferencia maxima 5.68e-14 kWh; tramo mas largo 314.9 de 315 kWh"
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 5. Simulando 7 dias, cada salida tiene un bus cargado (buses de la Etapa 3 + reservas);OK;"1,166 buses + 225 reservas = 1,391 buses; salidas sin bus: 0"
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 6. Energia y reservas recalculadas = informadas;OK;"energia 46,423.54 USD (informada 46,423.54); reservas 225 (informadas 225)"

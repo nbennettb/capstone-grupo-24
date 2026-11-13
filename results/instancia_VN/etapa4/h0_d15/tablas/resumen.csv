@@ -1,0 +1,3 @@
+terminal;holgura_min;delta_min;puestos;prueba;politica;ventanas;kwh_necesarios;kwh_cargados;kwh_deficit;costo_energia_usd;reservas_intermedias;reservas_nocturnas;reservas;eventos;costo_eventos_usd;espera_patio_dia_min;espera_patio_noche_hasta_carga_min;uso_maximo_pct;minutos_saturados;minutos_sobre_puestos;segundos;energia_sobre_capacidad_pct;costo_medio_energia_usd_kwh;pct_energia_valle;segundos_total_script;memoria_mb
+Vespucio Norte;0.0;15;150;0;E2-FIFO;1038;221709.86;221709.86;0.0;30663.87;0;33;33;1038;5190.0;21997.2;27096.0;100.0;331;0;0.16;34.21;0.1383;64.49;5.5;529
+Vespucio Norte;0.0;15;150;0;E2;1038;221709.86;221709.86;0.0;24270.51;0;29;29;3343;16715.0;21997.2;143519.0;112.9;374;24;2.99;34.21;0.1095;85.45;5.5;529

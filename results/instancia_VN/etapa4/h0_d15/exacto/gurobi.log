@@ -1,0 +1,183 @@
+
+Gurobi 13.0.2 (win64) logging started Fri Nov 13 11:51:47 2026
+
+Set parameter OutputFlag to value 1
+Set parameter MIPGap to value 0.005
+Set parameter TimeLimit to value 1800
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: Intel(R) Core(TM) i5-1035G4 CPU @ 1.10GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+TimeLimit  1800
+MIPGap  0.005
+LogToConsole  0
+
+Optimize a model with 3516 rows, 427708 columns and 900260 nonzeros (Min)
+Model fingerprint: 0xf587464c
+Model has 427708 linear objective coefficients
+Variable types: 426670 continuous, 1038 integer (1038 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+02]
+  Objective range  [3e-01, 3e+04]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [9e+00, 2e+02]
+
+Loaded user MIP start with objective 31708
+
+Presolve removed 2306 rows and 212234 columns
+Presolve time: 2.46s
+Presolved: 1210 rows, 215474 columns, 432274 nonzeros
+Found heuristic solution: objective 691701.35001
+Variable types: 215464 continuous, 10 integer (10 binary)
+Deterministic concurrent LP optimizer: primal and dual simplex
+Showing primal log only...
+
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+   69578    3.1290130e+04   0.000000e+00   1.953210e+03      5s
+  100028    3.1176092e+04   0.000000e+00   0.000000e+00      8s
+Concurrent spin time: 0.00s
+
+Solved with primal simplex
+  100028    3.1176092e+04   0.000000e+00   0.000000e+00      8s
+
+Root relaxation: objective 3.117609e+04, 100028 iterations, 5.03 seconds (3.47 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 31176.0925    0    5 31707.9500 31176.0925  1.68%     -    7s
+     0     0          -    0      31707.9500 31557.3026  0.48%     -    7s
+
+Explored 1 nodes (100030 simplex iterations) in 7.91 seconds (5.53 work units)
+Thread count was 8 (of 8 available processors)
+
+Solution count 2: 31708 691701 
+
+Optimal solution found (tolerance 5.00e-03)
+Best objective 3.170795000000e+04, best bound 3.155730258876e+04, gap 0.4751%
+Set parameter MIPGap to value 0.0001
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: Intel(R) Core(TM) i5-1035G4 CPU @ 1.10GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+TimeLimit  1800
+DegenMoves  0
+LogToConsole  0
+
+Optimize a model with 3516 rows, 427708 columns and 900260 nonzeros (Min)
+Model fingerprint: 0x5c8e0adb
+Model has 427708 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+02]
+  Objective range  [3e-01, 3e+04]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [9e+00, 2e+02]
+
+Presolve removed 2046 rows and 69237 columns
+Presolve time: 0.72s
+Presolved: 1470 rows, 358471 columns, 733875 nonzeros
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Ordering time: 0.03s
+
+Barrier statistics:
+ AA' NZ     : 2.367e+05
+ Factor NZ  : 4.355e+05 (roughly 100 MB of memory)
+ Factor Ops : 1.950e+08 (less than 1 second per iteration)
+ Threads    : 3
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   4.52149515e+09 -1.31883288e+10  2.42e+04 4.39e+04  7.00e+06     1s
+   1   1.08080732e+09 -1.27555163e+10  2.77e+03 2.80e+04  8.21e+05     2s
+   2   2.90728043e+08 -1.07494178e+10  7.99e+02 2.72e+03  2.41e+05     2s
+   3   2.25699617e+08 -9.65903530e+09  6.32e+02 1.17e+03  1.86e+05     2s
+   4   8.27356930e+07 -7.72078057e+09  2.63e+02 1.16e-10  7.98e+04     2s
+   5   3.41276547e+07 -7.10983290e+09  1.16e+02 1.16e-10  4.22e+04     2s
+   6   2.54735728e+07 -7.01999857e+09  9.06e+01 1.16e-10  3.60e+04     2s
+   7   6.16868944e+06 -5.39369046e+09  2.45e+01 3.73e+00  1.66e+04     2s
+   8   2.17017204e+06 -2.04158021e+09  6.58e+00 5.82e-11  5.09e+03     2s
+   9   4.14377119e+05 -1.01180466e+08  6.69e-01 4.73e-11  2.30e+02     2s
+  10   3.47521373e+04 -4.35528336e+05  6.82e-13 2.91e-11  1.04e+00     2s
+  11   3.36992367e+04 -3.66027931e+04  5.12e-13 4.37e-11  1.56e-01     2s
+  12   3.31127112e+04  1.96003923e+04  1.91e-12 2.91e-11  3.00e-02     2s
+  13   3.26951298e+04  2.74340492e+04  4.58e-12 2.91e-11  1.17e-02     2s
+  14   3.19745735e+04  3.04749384e+04  5.10e-11 2.91e-11  3.33e-03     2s
+  15   3.18891185e+04  3.12120911e+04  3.02e-10 2.91e-11  1.50e-03     3s
+  16   3.17785644e+04  3.13908076e+04  1.21e-10 4.37e-11  8.60e-04     3s
+  17   3.17322640e+04  3.16151450e+04  2.07e-10 5.82e-11  2.60e-04     3s
+  18   3.17081677e+04  3.17065785e+04  2.29e-11 4.37e-11  3.52e-06     3s
+  19   3.17079500e+04  3.17079497e+04  1.93e-12 4.37e-11  6.56e-10     3s
+
+Barrier solved model in 19 iterations and 2.86 seconds (1.66 work units)
+Optimal objective 3.17079500e+04
+
+Crossover log...
+
+     353 DPushes remaining with DInf 0.0000000e+00                 4s
+       0 DPushes remaining with DInf 0.0000000e+00                 4s
+
+     151 PPushes remaining with PInf 9.2539030e-05                 4s
+       0 PPushes remaining with PInf 0.0000000e+00                 4s
+
+  Push phase complete: Pinf 0.0000000e+00, Dinf 3.3306691e-16      4s
+
+Crossover time: 0.04 seconds (0.01 work units)
+
+Solved with barrier
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+     501    3.1707950e+04   0.000000e+00   0.000000e+00      4s
+
+Use crossover to convert LP symmetric solution to basic solution...
+Crossover log...
+
+       0 DPushes remaining with DInf 0.0000000e+00                 4s
+
+    3122 PPushes remaining with PInf 0.0000000e+00                 4s
+       0 PPushes remaining with PInf 0.0000000e+00                 4s
+
+  Push phase complete: Pinf 0.0000000e+00, Dinf 0.0000000e+00      4s
+
+Crossover time: 0.05 seconds (0.03 work units)
+
+Extra simplex iterations after uncrush: 178
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+    4403    3.1707950e+04   0.000000e+00   0.000000e+00      4s
+
+Solved in 4403 iterations and 4.45 seconds (2.63 work units)
+Optimal objective  3.170795000e+04
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: Intel(R) Core(TM) i5-1035G4 CPU @ 1.10GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+TimeLimit  1800
+DegenMoves  0
+LogToConsole  0
+
+Optimize a model with 3516 rows, 427708 columns and 900260 nonzeros (Min)
+Model has 424594 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+02]
+  Objective range  [1e+00, 7e+05]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [9e+00, 2e+02]
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -7.4449970e+36   1.079000e+33   7.444997e+06      0s
+    7742    7.4671177e+09   0.000000e+00   0.000000e+00      3s
+
+Solved in 7742 iterations and 2.96 seconds (2.02 work units)
+Optimal objective  7.467117735e+09

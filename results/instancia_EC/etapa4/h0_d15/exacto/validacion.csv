@@ -1,0 +1,7 @@
+criterio;resultado;detalle
+1. Buses cargando por minuto <= puestos;OK;"maximo 180 de 180; puestos con dos buses a la vez en algun minuto: 0"
+2. Cada carga: minutos enteros, puesto existente, <= 180 kW;OK;3,996 cargas en 180 puestos
+"3. Toda carga con el bus en el patio; si termina despues de su salida, hay reserva";OK;"cargas fuera de [llegada, llegada + 24 h): 0; ventanas que terminan tarde: 505, sin reserva: 0"
+"4. Cada ventana repone la energia de su tramo; ningun tramo supera la bateria util";OK;"diferencia maxima 5.68e-14 kWh; tramo mas largo 315.0 de 315 kWh"
+5. Simulando 7 dias, cada salida tiene un bus cargado (buses de la Etapa 3 + reservas);OK;"2,137 buses + 505 reservas = 2,642 buses; salidas sin bus: 0"
+6. Energia y reservas recalculadas = informadas;OK;"energia 86,517.56 USD (informada 86,517.56); reservas 505 (informadas 505)"

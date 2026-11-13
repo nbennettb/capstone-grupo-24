@@ -1,0 +1,5 @@
+holgura_min;delta_min;modelo;estado;objetivo_usd;brecha;segundos;variables;reservas;binarias
+0.0;15;Modelo relajado, LP (cota inferior);optimo;31524.3;;;;;
+0.0;15;Programa exacto, arranque;factible;31707.95;;4.2;425632.0;29.0;
+0.0;15;Programa exacto, MILP;optimo (brecha pedida);31707.95;0.004751;7.9;425632.0;29.0;33.0
+0.0;15;Programa exacto, final (energia + reservas);entero y validado;31524.49;6e-06;22.4;;29.0;

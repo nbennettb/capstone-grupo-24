@@ -51,9 +51,9 @@ interlining) y su carga (energía del día sobre la capacidad de los puestos en 
 | Terminal | `--terminal` | Tamaño vs La Reina | Carga | Tiempo total | Memoria | Quién |
 |---|---|---|---|---|---|---|
 | La Reina | 4 | 1,0 | 80% | 4,5 min (medido) | 2,3 GB (medido) | Nicolás (hecho) |
-| Vespucio Norte | 1 | 0,6 | 35% | ~3 min | ~1,5 GB | Nicolás |
-| El Conquistador | 2 | 1,8 | 83% | ~10 a 20 min | ~4,5 GB | Nicolás, con el resto de los programas cerrados |
-| Los Espinos + Santa Rosa | 3 | 2,8 | 86% | ~20 a 40 min | ~7 GB | un compañero con 16 GB de RAM |
+| Vespucio Norte | 1 | 0,6 | 35% | 1 min (medido) | 0,8 GB (medido) | Nicolás (hecho) |
+| El Conquistador | 2 | 1,8 | 83% | 11,5 min (medido) | 3,6 GB (medido) | Nicolás (hecho) |
+| Los Espinos + Santa Rosa | 3 | 2,8 | 86% | ~25 a 45 min | ~6 GB | un compañero con 16 GB de RAM |
 
 Lo que más demora es el paso 4 (plan exacto). Mientras corre no imprime nada; el avance de Gurobi queda en
 `results/instancia_<siglas>/etapa4/h0_d15/exacto/gurobi.log`. El modelo exacto tiene un límite de 30 min. Si llega a

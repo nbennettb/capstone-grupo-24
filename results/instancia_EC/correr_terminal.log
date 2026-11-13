@@ -1,0 +1,270 @@
+
+===== El Conquistador (terminal 2), desde el paso 1 =====
+
+>>> Paso 1: Caso base: python scripts/10-caso_base_carga_reactiva.py --escenario E0 --terminal 2
+=== CASO BASE: carga reactiva (escenario=E0, nivel=100%) ===
+
+  Jornadas del VSP: 8,654 (jornadas_E0.csv) | terminal unido: ['3', '5']
+  Instancia: electroterminal El Conquistador (180 puestos) | jornadas del terminal: 2,643
+  [OK] Reconstruccion sin cargas calza con el VSP: kWh por jornada (diferencia maxima 1.09e-03), espera recalculada 8,059.2 h (sin resumen del VSP para comparar).
+
+--- Simulando la politica reactiva ---
+  Jornadas simuladas: 3,396 (VSP: 2,643) | particiones: {'sin_hueco': 753, 'sin_puesto': 0}
+  [OK] Cobertura intacta | SOC entre minimo y tope | balance de energia por jornada | ocupacion <= puestos.
+  [OK] Igual a la red completa filtrada a El Conquistador: 3,396 jornadas finales, 574 reservas, energia y costo de energia identicos.
+  -> C:\Users\nbenn\OneDrive\Desktop\8vo semestre\Proyecto Capstone\results\instancia_EC\caso_base\tablas/ (jornadas, eventos, ventanas, ocupacion, resumen_carga)
+  -> C:\Users\nbenn\OneDrive\Desktop\8vo semestre\Proyecto Capstone\results\instancia_EC\caso_base\graficos/ (ocupacion, soc_ejemplo) | C:\Users\nbenn\OneDrive\Desktop\8vo semestre\Proyecto Capstone\results\instancia_EC\caso_base\reporte_E0_soc100.md
+
+=== Resultado ===
+  buses_vsp                              2,643
+  buses_final                            3,396
+  jornadas_partidas                      753
+  por_sin_hueco                          753
+  por_sin_puesto                         0
+  pct_jornadas_con_recarga_intermedia    0.53
+  eventos_intermedios                    20
+  eventos_finales                        3,396
+  ciclos_no_cumplidos                    574
+  retraso_ciclo_max_min                  826.1
+  cargas_fragmentadas                    0
+  espera_cola_h                          17,205.9
+  espera_cola_max_min                    697.4
+  kwh_cargados                           654,134.8
+  costo_energia_usd                      90,680
+  costo_medio_energia_usd_kwh            0.1386
+  pct_energia_valle                      49.18
+  buses_reserva                          574
+  costo_reservas_usd                     143,500
+  costo_sin_reservas_usd                 1,041,665
+  costo_total_usd                        1,185,165
+  factible                               1
+  cota_lp_pct                            nan
+  costo_vsp_operacion_usd                707,253
+  uso maximo El Conquistador              100.0% | minutos saturados al dia: 1068
+
+  Tiempo: 2.4 s | pico de memoria: 168 MB
+
+=== FIN CASO BASE (carga reactiva) ===
+<<< Paso 1 terminado en 5 s (codigo 0)
+
+>>> Paso 1: Caso base con interlining: python scripts/10-caso_base_carga_reactiva.py --escenario E1 --terminal 2
+=== CASO BASE: carga reactiva (escenario=E1, nivel=100%) ===
+
+  Jornadas del VSP: 7,366 (jornadas_E1.csv) | terminal unido: ['3', '5']
+  Instancia: electroterminal El Conquistador (180 puestos) | jornadas del terminal: 2,166
+  [OK] Reconstruccion sin cargas calza con el VSP: kWh por jornada (diferencia maxima 6.43e-04), espera recalculada 6,470.7 h (sin resumen del VSP para comparar).
+
+--- Simulando la politica reactiva ---
+  Jornadas simuladas: 3,000 (VSP: 2,166) | particiones: {'sin_hueco': 834, 'sin_puesto': 0}
+  [OK] Cobertura intacta | SOC entre minimo y tope | balance de energia por jornada | ocupacion <= puestos.
+  [OK] Igual a la red completa filtrada a El Conquistador: 3,000 jornadas finales, 684 reservas, energia y costo de energia identicos.
+  -> C:\Users\nbenn\OneDrive\Desktop\8vo semestre\Proyecto Capstone\results\instancia_EC\caso_base\tablas/ (jornadas, eventos, ventanas, ocupacion, resumen_carga)
+  -> C:\Users\nbenn\OneDrive\Desktop\8vo semestre\Proyecto Capstone\results\instancia_EC\caso_base\graficos/ (ocupacion, soc_ejemplo) | C:\Users\nbenn\OneDrive\Desktop\8vo semestre\Proyecto Capstone\results\instancia_EC\caso_base\reporte_E1_soc100.md
+
+=== Resultado ===
+  buses_vsp                              2,166
+  buses_final                            3,000
+  jornadas_partidas                      834
+  por_sin_hueco                          834
+  por_sin_puesto                         0
+  pct_jornadas_con_recarga_intermedia    0.47
+  eventos_intermedios                    14
+  eventos_finales                        3,000
+  ciclos_no_cumplidos                    684
+  retraso_ciclo_max_min                  911.7
+  cargas_fragmentadas                    0
+  espera_cola_h                          17,960.1
+  espera_cola_max_min                    724.8
+  kwh_cargados                           645,022.0
+  costo_energia_usd                      89,514
+  costo_medio_energia_usd_kwh            0.1388
+  pct_energia_valle                      49.9
+  buses_reserva                          684
+  costo_reservas_usd                     171,000
+  costo_sin_reservas_usd                 934,736
+  costo_total_usd                        1,105,736
+  factible                               1
+  cota_lp_pct                            nan
+  costo_vsp_operacion_usd                581,220
+  uso maximo El Conquistador              100.0% | minutos saturados al dia: 1084
+
+  Tiempo: 2.6 s | pico de memoria: 168 MB
+
+=== FIN CASO BASE (carga reactiva) ===
+<<< Paso 1 terminado en 5 s (codigo 0)
+
+>>> Paso 2: Etapa 3: python scripts/12-etapa3_cortes_reencadenamiento.py --terminal 2 --escenario E1 --holgura 0
+=== ETAPA 3: cortes y re-encadenamiento (terminal El Conquistador, jornadas E1, holgura 0 min) ===
+
+  Jornadas del VSP en el terminal: 2,166 | expediciones: 16,386
+  [OK] Reconstruccion sin cargas calza con el VSP: kWh por jornada (diferencia maxima 6.43e-04), espera recalculada 6,470.7 h (sin resumen del VSP para comparar).
+
+--- 3a. Corte: 3,003 tramos desde 2,166 jornadas (835 jornadas cortadas; 10,765.0 km extra) en 1.00 s
+  [OK] Cobertura exacta de las 16,386 expediciones | todo tramo factible paso a paso (SOC >= 10% y puede volver) | energia de los tramos = VSP + km extra x 1.4 kWh/km.
+Set parameter Username
+Academic license - for non-commercial use only - expires 2027-05-11
+
+--- 3b. Re-encadenamiento: 2,137 buses en 0.23 s
+  [OK] Solucion entera | cadenas factibles en tiempo | flota del flujo = cadenas = maximo de intervalos superpuestos (2,137).
+  [OK] 3,003 ventanas (866 intermedias, 2,137 nocturnas): cada una repone su tramo; energia de las ventanas = energia de los tramos.
+  Nocturnas que no alcanzan la recarga completa ni con puesto libre: 108 (de ellas 71 son cadenas de mas de 24 h). Iran a reserva en la Etapa 4, como en el caso base.
+
+--- Diagnostico de flota ---
+  (i) VSP                               2,166
+  (ii) Reuso del patio sin bateria      2,045
+  (iii) Solo cortes                     3,003
+  (iv) Cortes + re-encadenamiento       2,137
+
+  -> C:\Users\nbenn\OneDrive\Desktop\8vo semestre\Proyecto Capstone\results\instancia_EC\etapa3\h0
+
+  Tiempo: 3.6 s | pico de memoria: 170 MB
+
+=== FIN ETAPA 3 ===
+<<< Paso 2 terminado en 8 s (codigo 0)
+
+>>> Paso 3: Etapa 4, modelo relajado: python scripts/13-etapa4_programacion_carga.py --terminal 2 --holgura 0 --delta 15
+=== ETAPA 4: programacion de la carga (terminal El Conquistador, 180 puestos, holgura 0 min, Delta 15 min) ===
+
+  Ventanas: 3,003 (866 intermedias, 2,137 nocturnas) | energia a reponer 636.7 MWh
+  Chequeo previo: energia / capacidad de 24 h = 81.9% (180 puestos x 180 kW x 24 h = 777.6 MWh)
+
+--- E2-FIFO (0.7 s): reservas 951 | energia 87,893 USD | deficit 0.0 kWh
+  [OK] FIFO: ocupacion <= puestos en cada minuto | energia cargada + deficit = consumida.
+  [OK] FIFO en la grilla de 15 min: factible para el modelo agregado y mismo costo de energia (energia + reservas: 325,642.81 USD).
+
+--- E2 agregado: 294,223 variables de energia, 3,003 binarias, 96 bloques ---
+Set parameter Username
+Academic license - for non-commercial use only - expires 2027-05-11
+  LP (cota): 208,547.52 USD en 5.8 s | MILP: 209,987.95 USD (+ desempate 12.46), optimo (brecha pedida), brecha 0.304%, 37.6 s
+  [OK] E2: energia cargada + deficit = consumida | ocupacion <= puestos en cada bloque | E2 <= E2-FIFO en la grilla (energia + reservas: 209,987.95 vs 325,642.81 USD).
+  Realizacion por minuto de E2 (1.3 s): maximo 217.65 buses; minutos sobre 180 puestos: 95 (solo pueden aparecer en bloques de borde).
+
+=== Resultado ===
+politica                                    E2-FIFO               E2
+terminal                            El Conquistador  El Conquistador
+holgura_min                                     0.0              0.0
+delta_min                                        15               15
+puestos                                         180              180
+prueba                                            0                0
+ventanas                                       3003             3003
+kwh_necesarios                            636654.09        636654.09
+kwh_cargados                              636654.09        636654.09
+kwh_deficit                                     0.0              0.0
+costo_energia_usd                          87892.81         86487.95
+reservas_intermedias                              0                2
+reservas_nocturnas                              951              492
+reservas                                        951              494
+eventos                                        3003            10863
+costo_eventos_usd                           15015.0          54315.0
+espera_patio_dia_min                        44110.1          44110.1
+espera_patio_noche_hasta_carga_min         691041.7         344053.3
+uso_maximo_pct                                100.0            120.9
+minutos_saturados                               977              998
+minutos_sobre_puestos                             0               95
+segundos                                       0.71            43.44
+energia_sobre_capacidad_pct                   81.87            81.87
+costo_medio_energia_usd_kwh                  0.1381           0.1358
+pct_energia_valle                             50.55            50.89
+segundos_total_script                          49.4             49.4
+memoria_mb                                     1022             1022
+
+  -> C:\Users\nbenn\OneDrive\Desktop\8vo semestre\Proyecto Capstone\results\instancia_EC\etapa4\h0_d15
+
+  Tiempo: 49.4 s | pico de memoria: 1,022 MB
+
+=== FIN ETAPA 4 ===
+<<< Paso 3 terminado en 53 s (codigo 0)
+
+>>> Paso 4: Etapa 4, plan de carga exacto: python scripts/13-etapa4_programacion_carga.py --terminal 2 --holgura 0 --delta 15 --exacto
+=== ETAPA 4: programacion de la carga (terminal El Conquistador, 180 puestos, holgura 0 min, Delta 15 min) ===
+
+  Ventanas: 3,003 (866 intermedias, 2,137 nocturnas) | energia a reponer 636.7 MWh
+  Chequeo previo: energia / capacidad de 24 h = 81.9% (180 puestos x 180 kW x 24 h = 777.6 MWh)
+
+--- E2-FIFO (0.5 s): reservas 951 | energia 87,893 USD | deficit 0.0 kWh
+  [OK] FIFO: ocupacion <= puestos en cada minuto | energia cargada + deficit = consumida.
+  [OK] FIFO en la grilla de 15 min: factible para el modelo agregado y mismo costo de energia (energia + reservas: 325,642.81 USD).
+
+--- Propuesta completa: programa exacto al minuto ---
+  Ventanas: 3,003; sin tiempo para cargar dentro de la ventana: 108; candidatas a reserva: 1109 (reservas del modelo relajado, de la carga por orden de llegada y sin tiempo).
+Set parameter Username
+Academic license - for non-commercial use only - expires 2027-05-11
+  Arranque, vuelta 1: 195 ventanas no caben sin reserva; pasan a reserva y se vuelve a resolver.
+  Arranque: 689 reservas, 256,947.68 USD (2 vuelta(s), 2,306,668 variables).
+  MILP: 213,422.53 USD, optimo (brecha pedida), brecha de Gurobi 0.343%, 459 s.
+  [OK] Programa exacto: maximo 180 buses cargando a la vez (180 puestos) | cada carga en un puesto (usados 180) | toda la energia repuesta | carga despues de la salida solo con reserva.
+  Energia + reservas: 212,767.56 USD (505 reservas); cota inferior del modelo relajado 209,361.17: brecha 1.60%.
+  Eventos de carga: 3,996 (1.33 por ventana).
+  [OK] Mejor que la carga por orden de llegada (232,747.56 <= 340,657.81 USD con eventos).
+
+  -> C:\Users\nbenn\OneDrive\Desktop\8vo semestre\Proyecto Capstone\results\instancia_EC\etapa4\h0_d15\exacto
+
+  Tiempo: 607.8 s | pico de memoria: 3,625 MB
+
+=== FIN ETAPA 4 (programa exacto) ===
+<<< Paso 4 terminado en 611 s (codigo 0)
+
+>>> Paso 5: Validacion del plan de carga: python scripts/15-validar_plan_carga.py --terminal 2
+=== Validacion del plan de carga: El Conquistador, 180 puestos, 3,003 ventanas, 3,996 cargas ===
+
+  [OK] 1. Buses cargando por minuto <= puestos: maximo 180 de 180; puestos con dos buses a la vez en algun minuto: 0
+  [OK] 2. Cada carga: minutos enteros, puesto existente, <= 180 kW: 3,996 cargas en 180 puestos
+  [OK] 3. Toda carga con el bus en el patio; si termina despues de su salida, hay reserva: cargas fuera de [llegada, llegada + 24 h): 0; ventanas que terminan tarde: 505, sin reserva: 0
+  [OK] 4. Cada ventana repone la energia de su tramo; ningun tramo supera la bateria util: diferencia maxima 5.68e-14 kWh; tramo mas largo 315.0 de 315 kWh
+  [OK] 5. Simulando 7 dias, cada salida tiene un bus cargado (buses de la Etapa 3 + reservas): 2,137 buses + 505 reservas = 2,642 buses; salidas sin bus: 0
+  [OK] 6. Energia y reservas recalculadas = informadas: energia 86,517.56 USD (informada 86,517.56); reservas 505 (informadas 505)
+
+  -> C:\Users\nbenn\OneDrive\Desktop\8vo semestre\Proyecto Capstone\results\instancia_EC\etapa4\h0_d15\exacto\validacion.csv
+
+=== PLAN DE CARGA FACTIBLE: TODAS LAS VALIDACIONES OK ===
+<<< Paso 5 terminado en 2 s (codigo 0)
+
+>>> Paso 6: KPIs y figuras: python scripts/14-kpis_instancia.py --terminal 2
+=== KPIs de la instancia El Conquistador ===
+
+  Etapa 3 corrida con holgura: [0.0] | Etapa 4 con (holgura, Delta): [(0.0, 15)]
+  [aviso] Figura F2 omitida: No hay una jornada de ejemplo que cumpla los criterios de la figura F2.
+
+--- Validaciones ---
+  [OK] Caso base: igual a la red completa filtrada: 3,396 jornadas finales y 574 reservas (red completa filtrada: 3,396 y 574)
+  [OK] Caso base: deficit de energia 0: 0.000 kWh
+  [OK] Caso base con interlining: igual a la red completa filtrada: 3,000 jornadas finales y 684 reservas (red completa filtrada: 3,000 y 684)
+  [OK] Caso base con interlining: deficit de energia 0: 0.000 kWh
+  [OK] Etapa 3 (holgura de recarga 0 min): cobertura exacta: 16,386 expediciones en 3,003 tramos
+  [OK] Etapa 3 (holgura de recarga 0 min): todo tramo cabe en la bateria util: maximo 315.0 kWh de 315
+  [OK] Etapa 3 (holgura de recarga 0 min): flota = maximo de intervalos superpuestos: flujo 2,137, intervalos 2,137
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): deficit 0: orden de llegada 0.000 kWh, modelo relajado 0.000 kWh
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): ocupacion <= 180 por bloque (modelo relajado) y por minuto (orden de llegada): maximo del modelo relajado por bloque 180.00; orden de llegada por minuto 180; ejecucion minuto a minuto del modelo relajado: 95 min sobre 180 (informativo)
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): modelo relajado <= orden de llegada (energia + reservas): 209,987.95 <= 325,642.81 USD
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): Propuesta completa, deficit 0: 0.000 kWh
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): Propuesta completa, buses cargando <= 180 en cada minuto: maximo 180
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 1. Buses cargando por minuto <= puestos: maximo 180 de 180; puestos con dos buses a la vez en algun minuto: 0
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 2. Cada carga: minutos enteros, puesto existente, <= 180 kW: 3,996 cargas en 180 puestos
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 3. Toda carga con el bus en el patio; si termina despues de su salida, hay reserva: cargas fuera de [llegada, llegada + 24 h): 0; ventanas que terminan tarde: 505, sin reserva: 0
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 4. Cada ventana repone la energia de su tramo; ningun tramo supera la bateria util: diferencia maxima 5.68e-14 kWh; tramo mas largo 315.0 de 315 kWh
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 5. Simulando 7 dias, cada salida tiene un bus cargado (buses de la Etapa 3 + reservas): 2,137 buses + 505 reservas = 2,642 buses; salidas sin bus: 0
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 6. Energia y reservas recalculadas = informadas: energia 86,517.56 USD (informada 86,517.56); reservas 505 (informadas 505)
+
+--- KPIs (escenarios base) ---
+escenario                       E0          E1    E2-FIFO         E2
+costo_total_original    1185165.00  1105736.00  941496.88  831746.67
+costo_total_comparable  1154194.67  1073408.02  920765.63  812855.38
+buses_vsp                  2643.00     2166.00    2166.00    2166.00
+buses_operativos           3396.00     3000.00    2137.00    2137.00
+reservas                    574.00      684.00     951.00     505.00
+buses_totales              3970.00     3684.00    3088.00    2642.00
+buses_extra_bateria        1327.00     1518.00     922.00     476.00
+pct_km_vacios                16.99       15.82      14.71      14.71
+usd_kwh                       0.14        0.14       0.14       0.14
+pct_valle                    49.18       49.90      50.55      50.53
+uso_max_pct                 100.00      100.00     100.00     100.00
+horas_saturadas              17.80       18.07      16.28      18.03
+
+  -> C:\Users\nbenn\OneDrive\Desktop\8vo semestre\Proyecto Capstone\results\instancia_EC\kpis\tablas
+  -> C:\Users\nbenn\OneDrive\Desktop\8vo semestre\Proyecto Capstone\results\instancia_EC\informe
+  -> C:\Users\nbenn\OneDrive\Desktop\8vo semestre\Proyecto Capstone\results\instancia_EC\resumen_para_analisis.md
+
+  TODAS LAS VALIDACIONES OK
+
+=== FIN KPIs ===
+<<< Paso 6 terminado en 8 s (codigo 0)

@@ -76,7 +76,7 @@ Siglas de las carpetas: `LR` La Reina, `VN` Vespucio Norte, `EC` El Conquistador
 |---|---|
 | Código: cambio de la Etapa 3, plan exacto (`13- --exacto`), validador (`15-`), KPIs (`14-`) y `correr_terminal.py` | Listo y probado en pruebas chicas y medianas |
 | Corrida de La Reina | Lista, todas las validaciones OK |
-| Vespucio Norte y El Conquistador | Pendiente (Nicolás) |
+| Vespucio Norte y El Conquistador | Listas, todas las validaciones OK (brecha 0,0% y 1,6%) |
 | Los Espinos + Santa Rosa | Pendiente (un compañero con 16 GB de RAM, ver `01_como_correr.md`) |
 | Tabla de la red completa (suma de los 4 terminales) | Pendiente, después de las corridas |
 

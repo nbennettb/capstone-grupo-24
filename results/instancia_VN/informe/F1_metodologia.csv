@@ -1,0 +1,7 @@
+bloque;nombre;produce
+Etapa 0;Preproceso;viajes, terminales y distancias
+Etapa 1;Rutas a electroterminal;cada ruta a un electroterminal
+Etapa 2;Jornadas sin batería;qué bus hace qué viajes (flujo)
+Etapa 3;Cortes y re-encadenamiento;tramos con recarga y ventanas de carga
+Etapa 4;Programación de la carga;cuándo carga cada bus (puestos y tarifa)
+Caso base (no es una etapa);jornadas de la Etapa 2 + carga reactiva;línea base de comparación

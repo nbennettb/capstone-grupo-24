@@ -1,0 +1,5 @@
+escenario;buses_operativos;reservas_diurnas;reservas_nocturnas;buses_totales
+Caso base;5034;0;1088;6122
+Caso base con interlining;4622;0;1205;5827
+Propuesta con carga por orden de llegada;3280;0;1533;4813
+Propuesta completa;3280;0;880;4160

@@ -1,0 +1,316 @@
+
+===== Los Espinos + Santa Rosa (terminal 3), desde el paso 1 =====
+
+>>> Paso 1: Caso base: python scripts/10-caso_base_carga_reactiva.py --escenario E0 --terminal 3
+=== CASO BASE: carga reactiva (escenario=E0, nivel=100%) ===
+
+  Jornadas del VSP: 8,654 (jornadas_E0.csv) | terminal unido: ['3', '5']
+  Instancia: electroterminal Los Espinos + Santa Rosa (270 puestos) | jornadas del terminal: 3,789
+  [OK] Reconstruccion sin cargas calza con el VSP: kWh por jornada (diferencia maxima 1.10e-03), espera recalculada 10,879.2 h (sin resumen del VSP para comparar).
+
+--- Simulando la politica reactiva ---
+  Jornadas simuladas: 5,034 (VSP: 3,789) | particiones: {'sin_hueco': 1237, 'sin_puesto': 8}
+  [OK] Cobertura intacta | SOC entre minimo y tope | balance de energia por jornada | ocupacion <= puestos.
+  [OK] Igual a la red completa filtrada a Los Espinos + Santa Rosa: 5,034 jornadas finales, 1,088 reservas, energia y costo de energia identicos.
+Traceback (most recent call last):
+  File "C:\Users\mbenn\AppData\Local\Programs\Python\Python311\Lib\site-packages\pandas\compat\_optional.py", line 135, in import_optional_dependency
+    module = importlib.import_module(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mbenn\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1140, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'tabulate'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\mbenn\OneDrive\Escritorio\capstone-grupo-24\scripts\10-caso_base_carga_reactiva.py", line 1025, in <module>
+    main()
+  File "C:\Users\mbenn\OneDrive\Escritorio\capstone-grupo-24\scripts\10-caso_base_carga_reactiva.py", line 969, in main
+    escribir_reporte(sim, fila, ev, jornadas, costos, sufijo, args.soc, vsp_pct)
+  File "C:\Users\mbenn\OneDrive\Escritorio\capstone-grupo-24\scripts\10-caso_base_carga_reactiva.py", line 797, in escribir_reporte
+    por_tipo.to_markdown(),
+    ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mbenn\AppData\Local\Programs\Python\Python311\Lib\site-packages\pandas\util\_decorators.py", line 333, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mbenn\AppData\Local\Programs\Python\Python311\Lib\site-packages\pandas\core\frame.py", line 2983, in to_markdown
+    tabulate = import_optional_dependency("tabulate")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mbenn\AppData\Local\Programs\Python\Python311\Lib\site-packages\pandas\compat\_optional.py", line 138, in import_optional_dependency
+    raise ImportError(msg)
+ImportError: Missing optional dependency 'tabulate'.  Use pip or conda to install tabulate.
+<<< Paso 1 terminado en 5 s (codigo 1)
+
+===== Los Espinos + Santa Rosa (terminal 3), desde el paso 1 =====
+
+>>> Paso 1: Caso base: python scripts/10-caso_base_carga_reactiva.py --escenario E0 --terminal 3
+=== CASO BASE: carga reactiva (escenario=E0, nivel=100%) ===
+
+  Jornadas del VSP: 8,654 (jornadas_E0.csv) | terminal unido: ['3', '5']
+  Instancia: electroterminal Los Espinos + Santa Rosa (270 puestos) | jornadas del terminal: 3,789
+  [OK] Reconstruccion sin cargas calza con el VSP: kWh por jornada (diferencia maxima 1.10e-03), espera recalculada 10,879.2 h (sin resumen del VSP para comparar).
+
+--- Simulando la politica reactiva ---
+  Jornadas simuladas: 5,034 (VSP: 3,789) | particiones: {'sin_hueco': 1237, 'sin_puesto': 8}
+  [OK] Cobertura intacta | SOC entre minimo y tope | balance de energia por jornada | ocupacion <= puestos.
+  [OK] Igual a la red completa filtrada a Los Espinos + Santa Rosa: 5,034 jornadas finales, 1,088 reservas, energia y costo de energia identicos.
+  -> C:\Users\mbenn\OneDrive\Escritorio\capstone-grupo-24\results\instancia_LESR\caso_base\tablas/ (jornadas, eventos, ventanas, ocupacion, resumen_carga)
+  -> C:\Users\mbenn\OneDrive\Escritorio\capstone-grupo-24\results\instancia_LESR\caso_base\graficos/ (ocupacion, soc_ejemplo) | C:\Users\mbenn\OneDrive\Escritorio\capstone-grupo-24\results\instancia_LESR\caso_base\reporte_E0_soc100.md
+
+=== Resultado ===
+  buses_vsp                              3,789
+  buses_final                            5,034
+  jornadas_partidas                      1,245
+  por_sin_hueco                          1,237
+  por_sin_puesto                         8
+  pct_jornadas_con_recarga_intermedia    0.26
+  eventos_intermedios                    15
+  eventos_finales                        5,034
+  ciclos_no_cumplidos                    1,088
+  retraso_ciclo_max_min                  981.2
+  cargas_fragmentadas                    0
+  espera_cola_h                          29,364.1
+  espera_cola_max_min                    788.2
+  kwh_cargados                           1,017,571.0
+  costo_energia_usd                      144,781
+  costo_medio_energia_usd_kwh            0.1423
+  pct_energia_valle                      47.45
+  buses_reserva                          1,088
+  costo_reservas_usd                     272,000
+  costo_sin_reservas_usd                 1,561,963
+  costo_total_usd                        1,833,963
+  factible                               1
+  cota_lp_pct                            nan
+  costo_vsp_operacion_usd                1,014,870
+  uso maximo Los Espinos + Santa Rosa     100.0% | minutos saturados al dia: 1127
+
+  Tiempo: 1.8 s | pico de memoria: 177 MB
+
+=== FIN CASO BASE (carga reactiva) ===
+<<< Paso 1 terminado en 3 s (codigo 0)
+
+>>> Paso 1: Caso base con interlining: python scripts/10-caso_base_carga_reactiva.py --escenario E1 --terminal 3
+=== CASO BASE: carga reactiva (escenario=E1, nivel=100%) ===
+
+  Jornadas del VSP: 7,366 (jornadas_E1.csv) | terminal unido: ['3', '5']
+  Instancia: electroterminal Los Espinos + Santa Rosa (270 puestos) | jornadas del terminal: 3,204
+  [OK] Reconstruccion sin cargas calza con el VSP: kWh por jornada (diferencia maxima 7.40e-04), espera recalculada 9,155.4 h (sin resumen del VSP para comparar).
+
+--- Simulando la politica reactiva ---
+  Jornadas simuladas: 4,622 (VSP: 3,204) | particiones: {'sin_hueco': 1415, 'sin_puesto': 3}
+  [OK] Cobertura intacta | SOC entre minimo y tope | balance de energia por jornada | ocupacion <= puestos.
+  [OK] Igual a la red completa filtrada a Los Espinos + Santa Rosa: 4,622 jornadas finales, 1,205 reservas, energia y costo de energia identicos.
+  -> C:\Users\mbenn\OneDrive\Escritorio\capstone-grupo-24\results\instancia_LESR\caso_base\tablas/ (jornadas, eventos, ventanas, ocupacion, resumen_carga)
+  -> C:\Users\mbenn\OneDrive\Escritorio\capstone-grupo-24\results\instancia_LESR\caso_base\graficos/ (ocupacion, soc_ejemplo) | C:\Users\mbenn\OneDrive\Escritorio\capstone-grupo-24\results\instancia_LESR\caso_base\reporte_E1_soc100.md
+
+=== Resultado ===
+  buses_vsp                              3,204
+  buses_final                            4,622
+  jornadas_partidas                      1,418
+  por_sin_hueco                          1,415
+  por_sin_puesto                         3
+  pct_jornadas_con_recarga_intermedia    0.52
+  eventos_intermedios                    26
+  eventos_finales                        4,622
+  ciclos_no_cumplidos                    1,205
+  retraso_ciclo_max_min                  765.6
+  cargas_fragmentadas                    0
+  espera_cola_h                          31,291.6
+  espera_cola_max_min                    817.1
+  kwh_cargados                           1,005,897.5
+  costo_energia_usd                      142,843
+  costo_medio_energia_usd_kwh            0.142
+  pct_energia_valle                      48.04
+  buses_reserva                          1,205
+  costo_reservas_usd                     301,250
+  costo_sin_reservas_usd                 1,451,180
+  costo_total_usd                        1,752,430
+  factible                               1
+  cota_lp_pct                            nan
+  costo_vsp_operacion_usd                859,183
+  uso maximo Los Espinos + Santa Rosa     100.0% | minutos saturados al dia: 1138
+
+  Tiempo: 1.9 s | pico de memoria: 179 MB
+
+=== FIN CASO BASE (carga reactiva) ===
+<<< Paso 1 terminado en 3 s (codigo 0)
+
+>>> Paso 2: Etapa 3: python scripts/12-etapa3_cortes_reencadenamiento.py --terminal 3 --escenario E1 --holgura 0
+=== ETAPA 3: cortes y re-encadenamiento (terminal Los Espinos + Santa Rosa, jornadas E1, holgura 0 min) ===
+
+  Jornadas del VSP en el terminal: 3,204 | expediciones: 30,560
+  [OK] Reconstruccion sin cargas calza con el VSP: kWh por jornada (diferencia maxima 7.40e-04), espera recalculada 9,155.4 h (sin resumen del VSP para comparar).
+
+--- 3a. Corte: 4,623 tramos desde 3,204 jornadas (1,413 jornadas cortadas; 19,164.3 km extra) en 0.94 s
+  [OK] Cobertura exacta de las 30,560 expediciones | todo tramo factible paso a paso (SOC >= 10% y puede volver) | energia de los tramos = VSP + km extra x 1.4 kWh/km.
+Set parameter Username
+Academic license - for non-commercial use only - expires 2027-05-11
+
+--- 3b. Re-encadenamiento: 3,280 buses en 0.23 s
+  [OK] Solucion entera | cadenas factibles en tiempo | flota del flujo = cadenas = maximo de intervalos superpuestos (3,280).
+  [OK] 4,623 ventanas (1,343 intermedias, 3,280 nocturnas): cada una repone su tramo; energia de las ventanas = energia de los tramos.
+  Nocturnas que no alcanzan la recarga completa ni con puesto libre: 194 (de ellas 151 son cadenas de mas de 24 h). Iran a reserva en la Etapa 4, como en el caso base.
+
+--- Diagnostico de flota ---
+  (i) VSP                               3,204
+  (ii) Reuso del patio sin bateria      3,157
+  (iii) Solo cortes                     4,623
+  (iv) Cortes + re-encadenamiento       3,280
+
+  -> C:\Users\mbenn\OneDrive\Escritorio\capstone-grupo-24\results\instancia_LESR\etapa3\h0
+
+  Tiempo: 2.5 s | pico de memoria: 192 MB
+
+=== FIN ETAPA 3 ===
+<<< Paso 2 terminado en 7 s (codigo 0)
+
+>>> Paso 3: Etapa 4, modelo relajado: python scripts/13-etapa4_programacion_carga.py --terminal 3 --holgura 0 --delta 15
+=== ETAPA 4: programacion de la carga (terminal Los Espinos + Santa Rosa, 270 puestos, holgura 0 min, Delta 15 min) ===
+
+  Ventanas: 4,623 (1,343 intermedias, 3,280 nocturnas) | energia a reponer 989.4 MWh
+  Chequeo previo: energia / capacidad de 24 h = 84.8% (270 puestos x 180 kW x 24 h = 1,166.4 MWh)
+
+--- E2-FIFO (0.5 s): reservas 1,533 | energia 138,819 USD | deficit 0.0 kWh
+  [OK] FIFO: ocupacion <= puestos en cada minuto | energia cargada + deficit = consumida.
+  [OK] FIFO en la grilla de 15 min: factible para el modelo agregado y mismo costo de energia (energia + reservas: 522,068.98 USD).
+
+--- E2 agregado: 452,903 variables de energia, 4,623 binarias, 96 bloques ---
+Set parameter Username
+Academic license - for non-commercial use only - expires 2027-05-11
+  LP (cota): 347,574.31 USD en 11.9 s | MILP: 349,843.22 USD (+ desempate 20.30), optimo (brecha pedida), brecha 0.284%, 46.8 s
+  [OK] E2: energia cargada + deficit = consumida | ocupacion <= puestos en cada bloque | E2 <= E2-FIFO en la grilla (energia + reservas: 349,843.22 vs 522,068.98 USD).
+  Realizacion por minuto de E2 (1.7 s): maximo 335.06 buses; minutos sobre 270 puestos: 106 (solo pueden aparecer en bloques de borde).
+
+=== Resultado ===
+politica                                             E2-FIFO                        E2
+terminal                            Los Espinos + Santa Rosa  Los Espinos + Santa Rosa
+holgura_min                                              0.0                       0.0
+delta_min                                                 15                        15
+puestos                                                  270                       270
+prueba                                                     0                         0
+ventanas                                                4623                      4623
+kwh_necesarios                                     989351.02                 989351.02
+kwh_cargados                                       989351.02                 989351.02
+kwh_deficit                                              0.0                       0.0
+costo_energia_usd                                  138818.98                 133093.22
+reservas_intermedias                                       0                         0
+reservas_nocturnas                                      1533                       867
+reservas                                                1533                       867
+eventos                                                 4623                     16914
+costo_eventos_usd                                    23115.0                   84570.0
+espera_patio_dia_min                                154863.8                  154863.8
+espera_patio_noche_hasta_carga_min                 1073319.3                  540915.4
+uso_maximo_pct                                         100.0                     124.1
+minutos_saturados                                       1000                      1064
+minutos_sobre_puestos                                      0                       106
+segundos                                                0.48                     58.67
+energia_sobre_capacidad_pct                            84.82                     84.82
+costo_medio_energia_usd_kwh                           0.1403                    0.1345
+pct_energia_valle                                      48.83                     49.12
+segundos_total_script                                   65.3                      65.3
+memoria_mb                                              1481                      1481
+
+  -> C:\Users\mbenn\OneDrive\Escritorio\capstone-grupo-24\results\instancia_LESR\etapa4\h0_d15
+
+  Tiempo: 65.3 s | pico de memoria: 1,481 MB
+
+=== FIN ETAPA 4 ===
+<<< Paso 3 terminado en 70 s (codigo 0)
+
+>>> Paso 4: Etapa 4, plan de carga exacto: python scripts/13-etapa4_programacion_carga.py --terminal 3 --holgura 0 --delta 15 --exacto
+=== ETAPA 4: programacion de la carga (terminal Los Espinos + Santa Rosa, 270 puestos, holgura 0 min, Delta 15 min) ===
+
+  Ventanas: 4,623 (1,343 intermedias, 3,280 nocturnas) | energia a reponer 989.4 MWh
+  Chequeo previo: energia / capacidad de 24 h = 84.8% (270 puestos x 180 kW x 24 h = 1,166.4 MWh)
+
+--- E2-FIFO (0.6 s): reservas 1,533 | energia 138,819 USD | deficit 0.0 kWh
+  [OK] FIFO: ocupacion <= puestos en cada minuto | energia cargada + deficit = consumida.
+  [OK] FIFO en la grilla de 15 min: factible para el modelo agregado y mismo costo de energia (energia + reservas: 522,068.98 USD).
+
+--- Propuesta completa: programa exacto al minuto ---
+  Ventanas: 4,623; sin tiempo para cargar dentro de la ventana: 194; candidatas a reserva: 1859 (reservas del modelo relajado, de la carga por orden de llegada y sin tiempo).
+Set parameter Username
+Academic license - for non-commercial use only - expires 2027-05-11
+  Arranque, vuelta 1: 217 ventanas no caben sin reserva; pasan a reserva y se vuelve a resolver.
+  Arranque: 1084 reservas, 405,598.90 USD (2 vuelta(s), 3,688,387 variables).
+  MILP: 354,598.90 USD, optimo (brecha pedida), brecha de Gurobi 0.218%, 1185 s.
+  [OK] Programa exacto: maximo 270 buses cargando a la vez (270 puestos) | cada carga en un puesto (usados 270) | toda la energia repuesta | carga despues de la salida solo con reserva.
+  Energia + reservas: 353,690.30 USD (880 reservas); cota inferior del modelo relajado 348,869.63: brecha 1.36%.
+  Eventos de carga: 5,983 (1.29 por ventana).
+  [OK] Mejor que la carga por orden de llegada (383,605.30 <= 545,183.98 USD con eventos).
+
+  -> C:\Users\mbenn\OneDrive\Escritorio\capstone-grupo-24\results\instancia_LESR\etapa4\h0_d15\exacto
+
+  Tiempo: 1,540.1 s | pico de memoria: 3,629 MB
+
+=== FIN ETAPA 4 (programa exacto) ===
+<<< Paso 4 terminado en 1,542 s (codigo 0)
+
+>>> Paso 5: Validacion del plan de carga: python scripts/15-validar_plan_carga.py --terminal 3
+=== Validacion del plan de carga: Los Espinos + Santa Rosa, 270 puestos, 4,623 ventanas, 5,983 cargas ===
+
+  [OK] 1. Buses cargando por minuto <= puestos: maximo 270 de 270; puestos con dos buses a la vez en algun minuto: 0
+  [OK] 2. Cada carga: minutos enteros, puesto existente, <= 180 kW: 5,983 cargas en 270 puestos
+  [OK] 3. Toda carga con el bus en el patio; si termina despues de su salida, hay reserva: cargas fuera de [llegada, llegada + 24 h): 0; ventanas que terminan tarde: 880, sin reserva: 0
+  [OK] 4. Cada ventana repone la energia de su tramo; ningun tramo supera la bateria util: diferencia maxima 5.68e-14 kWh; tramo mas largo 315.0 de 315 kWh
+  [OK] 5. Simulando 7 dias, cada salida tiene un bus cargado (buses de la Etapa 3 + reservas): 3,280 buses + 880 reservas = 4,160 buses; salidas sin bus: 0
+  [OK] 6. Energia y reservas recalculadas = informadas: energia 133,690.30 USD (informada 133,690.30); reservas 880 (informadas 880)
+
+  -> C:\Users\mbenn\OneDrive\Escritorio\capstone-grupo-24\results\instancia_LESR\etapa4\h0_d15\exacto\validacion.csv
+
+=== PLAN DE CARGA FACTIBLE: TODAS LAS VALIDACIONES OK ===
+<<< Paso 5 terminado en 3 s (codigo 0)
+
+>>> Paso 6: KPIs y figuras: python scripts/14-kpis_instancia.py --terminal 3
+=== KPIs de la instancia Los Espinos + Santa Rosa ===
+
+  Etapa 3 corrida con holgura: [0.0] | Etapa 4 con (holgura, Delta): [(0.0, 15)]
+  [aviso] Figura F2 omitida: No hay una jornada de ejemplo que cumpla los criterios de la figura F2.
+
+--- Validaciones ---
+  [OK] Caso base: igual a la red completa filtrada: 5,034 jornadas finales y 1,088 reservas (red completa filtrada: 5,034 y 1,088)
+  [OK] Caso base: deficit de energia 0: 0.000 kWh
+  [OK] Caso base con interlining: igual a la red completa filtrada: 4,622 jornadas finales y 1,205 reservas (red completa filtrada: 4,622 y 1,205)
+  [OK] Caso base con interlining: deficit de energia 0: 0.000 kWh
+  [OK] Etapa 3 (holgura de recarga 0 min): cobertura exacta: 30,560 expediciones en 4,623 tramos
+  [OK] Etapa 3 (holgura de recarga 0 min): todo tramo cabe en la bateria util: maximo 315.0 kWh de 315
+  [OK] Etapa 3 (holgura de recarga 0 min): flota = maximo de intervalos superpuestos: flujo 3,280, intervalos 3,280
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): deficit 0: orden de llegada 0.000 kWh, modelo relajado 0.000 kWh
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): ocupacion <= 270 por bloque (modelo relajado) y por minuto (orden de llegada): maximo del modelo relajado por bloque 270.00; orden de llegada por minuto 270; ejecucion minuto a minuto del modelo relajado: 106 min sobre 270 (informativo)
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): modelo relajado <= orden de llegada (energia + reservas): 349,843.22 <= 522,068.98 USD
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): Propuesta completa, deficit 0: 0.000 kWh
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): Propuesta completa, buses cargando <= 270 en cada minuto: maximo 270
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 1. Buses cargando por minuto <= puestos: maximo 270 de 270; puestos con dos buses a la vez en algun minuto: 0
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 2. Cada carga: minutos enteros, puesto existente, <= 180 kW: 5,983 cargas en 270 puestos
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 3. Toda carga con el bus en el patio; si termina despues de su salida, hay reserva: cargas fuera de [llegada, llegada + 24 h): 0; ventanas que terminan tarde: 880, sin reserva: 0
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 4. Cada ventana repone la energia de su tramo; ningun tramo supera la bateria util: diferencia maxima 5.68e-14 kWh; tramo mas largo 315.0 de 315 kWh
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 5. Simulando 7 dias, cada salida tiene un bus cargado (buses de la Etapa 3 + reservas): 3,280 buses + 880 reservas = 4,160 buses; salidas sin bus: 0
+  [OK] Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 6. Energia y reservas recalculadas = informadas: energia 133,690.30 USD (informada 133,690.30); reservas 880 (informadas 880)
+
+--- KPIs (escenarios base) ---
+escenario                       E0          E1     E2-FIFO          E2
+costo_total_original    1833963.00  1752429.00  1468869.39  1304278.20
+costo_total_comparable  1781107.84  1696104.52  1436669.82  1275091.14
+buses_vsp                  3789.00     3204.00     3204.00     3204.00
+buses_operativos           5034.00     4622.00     3280.00     3280.00
+reservas                   1088.00     1205.00     1533.00      880.00
+buses_totales              6122.00     5827.00     4813.00     4160.00
+buses_extra_bateria        2333.00     2623.00     1609.00      956.00
+pct_km_vacios                16.89       15.92       14.51       14.51
+usd_kwh                       0.14        0.14        0.14        0.14
+pct_valle                    47.45       48.04       48.83       48.79
+uso_max_pct                 100.00      100.00      100.00      100.00
+horas_saturadas              18.78       18.97       16.67       19.53
+
+  -> C:\Users\mbenn\OneDrive\Escritorio\capstone-grupo-24\results\instancia_LESR\kpis\tablas
+  -> C:\Users\mbenn\OneDrive\Escritorio\capstone-grupo-24\results\instancia_LESR\informe
+  -> C:\Users\mbenn\OneDrive\Escritorio\capstone-grupo-24\results\instancia_LESR\resumen_para_analisis.md
+
+  TODAS LAS VALIDACIONES OK
+
+=== FIN KPIs ===
+<<< Paso 6 terminado en 5 s (codigo 0)

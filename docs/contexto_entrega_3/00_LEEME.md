@@ -68,6 +68,10 @@ Por cada electroterminal, en `results/instancia_<siglas>/`:
   - `validacion.csv`: las 6 validaciones.
 - `informe/`: las figuras F0-F5 actualizadas.
 
+Para la red completa, en `results/red_completa/`:
+- **`resumen_para_analisis.md`**: tabla de KPIs por escenario, costo por terminal y plan de carga por terminal;
+- `graficos/`: costo diario de la red, buses necesarios y costo por terminal.
+
 Siglas de las carpetas: `LR` La Reina, `VN` Vespucio Norte, `EC` El Conquistador, `LESR` Los Espinos + Santa Rosa.
 
 ## 6. Estado
@@ -77,8 +81,14 @@ Siglas de las carpetas: `LR` La Reina, `VN` Vespucio Norte, `EC` El Conquistador
 | Código: cambio de la Etapa 3, plan exacto (`13- --exacto`), validador (`15-`), KPIs (`14-`) y `correr_terminal.py` | Listo y probado en pruebas chicas y medianas |
 | Corrida de La Reina | Lista, todas las validaciones OK |
 | Vespucio Norte y El Conquistador | Listas, todas las validaciones OK (brecha 0,0% y 1,6%) |
-| Los Espinos + Santa Rosa | Pendiente (un compañero con 16 GB de RAM, ver `01_como_correr.md`) |
-| Tabla de la red completa (suma de los 4 terminales) | Pendiente, después de las corridas |
+| Los Espinos + Santa Rosa | Lista, todas las validaciones OK (brecha 1,4%) |
+| Tabla de la red completa (suma de los 4 terminales, `17-red_completa.py`) | Lista, en `results/red_completa/` |
+
+Red completa, contra el caso base con interlining:
+- costo de 3,64 a **2,76 millones de USD/día (−24,3%)**;
+- buses de 12.502 a **8.995**, de los cuales 1.639 son de reserva;
+- plan de carga a **1,5%** de la cota inferior, sumando los cuatro terminales;
+- los casos base sumados por terminal son iguales al de la red completa (comprobado por `17-`).
 
 Resultado de La Reina (1.640 ventanas, 100 puestos):
 - plan a 2,05% de la cota inferior: 102.674 USD/día en energía y reservas, contra una cota de 100.570;

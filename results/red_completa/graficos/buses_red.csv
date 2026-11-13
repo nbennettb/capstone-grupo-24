@@ -1,0 +1,5 @@
+escenario;buses_operativos;reservas;buses_totales
+Caso base;11259;1988;13247
+Caso base con interlining;10295;2207;12502
+Propuesta con carga por orden de llegada;7356;2959;10315
+Propuesta completa;7356;1639;8995

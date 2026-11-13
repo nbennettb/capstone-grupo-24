@@ -43,6 +43,14 @@ python scripts/correr_terminal.py --terminal 3      # Los Espinos + Santa Rosa
 
 Si un paso falla, el script dice cuál y cómo retomar (por ejemplo `--desde 4`), sin repetir lo anterior.
 
+Con los cuatro terminales corridos, se arma la red completa (segundos):
+```
+python scripts/17-red_completa.py
+```
+Suma los cuatro terminales, comprueba que cada plan de carga esté validado y que los casos base sumados sean iguales
+al de la red completa (`results/caso_base/`). Deja `results/red_completa/`, con `resumen_para_analisis.md`, tablas y
+tres figuras. Debe terminar con `TODAS LAS VALIDACIONES OK`.
+
 ## 4. Tiempos estimados
 
 La Reina es medida. Los demás se escalan según su tamaño respecto de La Reina (jornadas del caso base con
@@ -53,14 +61,14 @@ interlining) y su carga (energía del día sobre la capacidad de los puestos en 
 | La Reina | 4 | 1,0 | 80% | 4,5 min (medido) | 2,3 GB (medido) | Nicolás (hecho) |
 | Vespucio Norte | 1 | 0,6 | 35% | 1 min (medido) | 0,8 GB (medido) | Nicolás (hecho) |
 | El Conquistador | 2 | 1,8 | 83% | 11,5 min (medido) | 3,6 GB (medido) | Nicolás (hecho) |
-| Los Espinos + Santa Rosa | 3 | 2,8 | 86% | ~25 a 45 min | ~6 GB | un compañero con 16 GB de RAM |
+| Los Espinos + Santa Rosa | 3 | 2,8 | 86% | 27 min (medido) | 3,6 GB (medido) | compañero (hecho) |
 
 Lo que más demora es el paso 4 (plan exacto). Mientras corre no imprime nada; el avance de Gurobi queda en
 `results/instancia_<siglas>/etapa4/h0_d15/exacto/gurobi.log`. El modelo exacto tiene un límite de 30 min. Si llega a
 ese límite, igual entrega un plan factible y lo informa.
 
-Con 8 GB de RAM, Los Espinos + Santa Rosa puede quedarse sin memoria. Windows empieza a usar el disco y la corrida se
-vuelve muy lenta, o se cae con `MemoryError` u `Out of memory`. Por eso se corre en un computador de 16 GB.
+Los Espinos + Santa Rosa usó 3,6 GB, menos de lo estimado, así que también corre en un computador de 8 GB con los
+demás programas cerrados.
 
 ## 5. Qué debe aparecer en pantalla
 
@@ -86,7 +94,7 @@ Comprimir y enviar la carpeta del terminal: `results/instancia_<siglas>/` (`VN`,
 2. Correr la Etapa 2 (`6-vsp_asignacion_buses.py`) para los escenarios E0 y E1.
 3. Correr el caso base de la red completa (`10-caso_base_carga_reactiva.py --escenario E0` y `--escenario E1`, sin
    `--terminal`), que deja `results/caso_base/`.
-4. Repetir la sección 3 para los cuatro terminales.
+4. Repetir la sección 3 para los cuatro terminales y luego `17-red_completa.py`.
 
 Los comandos exactos de los pasos 1 a 3 se agregan aquí cuando el compañero cierre el clustering.
 

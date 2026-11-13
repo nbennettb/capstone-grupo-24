@@ -1,0 +1,17 @@
+terminal;escenario;costo_total
+Vespucio Norte;Caso base;327231.9518
+Vespucio Norte;Caso base con interlining;307217.3493
+Vespucio Norte;Propuesta con carga por orden de llegada;249431.731
+Vespucio Norte;Propuesta completa;243242.351
+El Conquistador;Caso base;1154194.6739
+El Conquistador;Caso base con interlining;1073408.0161
+El Conquistador;Propuesta con carga por orden de llegada;920765.625
+El Conquistador;Propuesta completa;812855.375
+Los Espinos + Santa Rosa;Caso base;1781107.836
+Los Espinos + Santa Rosa;Caso base con interlining;1696104.519
+Los Espinos + Santa Rosa;Propuesta con carga por orden de llegada;1436669.815
+Los Espinos + Santa Rosa;Propuesta completa;1275091.135
+La Reina;Caso base;594601.7355
+La Reina;Caso base con interlining;567806.9289
+La Reina;Propuesta con carga por orden de llegada;480964.54
+La Reina;Propuesta completa;429303.36

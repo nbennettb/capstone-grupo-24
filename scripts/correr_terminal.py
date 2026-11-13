@@ -1,6 +1,6 @@
 """
 Corre toda la propuesta en un electroterminal, en orden, y guarda lo que imprime cada paso en un log
-(ver docs/contexto_entrega_3/03_como_correr.md).
+(ver docs/contexto_entrega_3/01_como_correr.md).
 
   1. Caso base y caso base con interlining en el terminal        (10-)
   2. Etapa 3: cortes y re-encadenamiento                          (12-)
@@ -10,7 +10,8 @@ Corre toda la propuesta en un electroterminal, en orden, y guarda lo que imprime
   6. KPIs, figuras y resumen para el analisis                     (14-)
 
 Se detiene en el primer paso que falla. Los resultados quedan en results/instancia_<siglas>/ y el log en
-results/instancia_<siglas>/correr_terminal.log.
+results/instancia_<siglas>/correr_terminal.log. Con los cuatro terminales corridos, scripts/17-red_completa.py arma
+la tabla de la red completa.
 
 Uso (desde la raiz del repositorio):
     python scripts/correr_terminal.py --terminal 4          # La Reina

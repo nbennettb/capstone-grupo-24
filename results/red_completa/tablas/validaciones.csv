@@ -1,0 +1,11 @@
+criterio;ok;detalle
+Vespucio Norte: plan de carga validado (15-);True;6 de 6 criterios OK
+Vespucio Norte: Propuesta completa sin deficit y con buses cargando <= puestos;True;"maximo 150 de 150 puestos; deficit maximo 0.000 kWh"
+El Conquistador: plan de carga validado (15-);True;6 de 6 criterios OK
+El Conquistador: Propuesta completa sin deficit y con buses cargando <= puestos;True;"maximo 180 de 180 puestos; deficit maximo 0.000 kWh"
+Los Espinos + Santa Rosa: plan de carga validado (15-);True;6 de 6 criterios OK
+Los Espinos + Santa Rosa: Propuesta completa sin deficit y con buses cargando <= puestos;True;"maximo 270 de 270 puestos; deficit maximo 0.000 kWh"
+La Reina: plan de carga validado (15-);True;6 de 6 criterios OK
+La Reina: Propuesta completa sin deficit y con buses cargando <= puestos;True;"maximo 100 de 100 puestos; deficit maximo 0.000 kWh"
+Caso base: suma de los terminales = red completa;True;"jornadas finales 11,259 (red 11,259); reservas 1,988 (red 1,988); kWh cargados 2,247,102 (red 2,247,102); costo total (USD) 3,958,063 (red 3,958,063)"
+Caso base con interlining: suma de los terminales = red completa;True;"jornadas finales 10,295 (red 10,295); reservas 2,207 (red 2,207); kWh cargados 2,221,448 (red 2,221,448); costo total (USD) 3,751,250 (red 3,751,250)"

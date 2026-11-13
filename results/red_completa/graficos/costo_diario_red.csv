@@ -1,0 +1,5 @@
+escenario;costo_total_usd;variacion_vs_referencia_pct
+Caso base;3857136.1972;5.833371832715795
+Caso base con interlining;3644536.8133;0.0
+Propuesta con carga por orden de llegada;3087831.7109999997;-15.275057732121622
+Propuesta completa;2760492.221;-24.256706341224444

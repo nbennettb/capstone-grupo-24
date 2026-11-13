@@ -1,0 +1,7 @@
+tramo horario;precio_usd_kwh;kWh Propuesta con carga por orden de llegada;kWh Propuesta completa;USD Propuesta con carga por orden de llegada;USD Propuesta completa
+00-08 h;0.1;85764.38;85770.7;8576.44;8577.07
+08-14 h;0.15;63673.37;64333.86;9551.0;9650.08
+14-17 h;0.22;12229.71;3448.35;2690.54;758.64
+17-19 h;0.15;5407.11;13698.95;811.07;2054.84
+19-22 h;0.22;30496.12;30315.46;6709.15;6669.4
+22-24 h;0.11;21466.27;21469.65;2361.29;2361.66

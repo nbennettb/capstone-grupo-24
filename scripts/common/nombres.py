@@ -4,6 +4,8 @@ linea de comandos y los nombres de archivo. Equivalencias en docs/context/01_com
 
 import re
 
+import pandas as pd
+
 ESCENARIO = {"E0": "Caso base", "E1": "Caso base con interlining",
              "E2-FIFO": "Propuesta con carga por orden de llegada", "E2": "Propuesta completa"}
 CORTO = {"E0": "Caso base", "E1": "Caso base + interlining", "E2-FIFO": "Propuesta, carga por llegada",
@@ -30,6 +32,7 @@ _REGLAS = [
     (r"E2 detallado - fase 1 \(reservas fijas\)", "Modelo detallado, fase 1 (reservas fijas)"),
     (r"E2 detallado - MILP", "Modelo detallado (MILP)"),
     (r"\bE2-detallado\b", "Propuesta completa (modelo detallado)"),
+    (r"\bE2-exacto\b", "Propuesta completa"),
     (r"\bE2-FIFO\b", "Propuesta con carga por orden de llegada"),
     (r"\bE2\b", "Propuesta completa"),
     (r"\bE1_sep\b", "Caso base con interlining con terminales separados"),
@@ -52,6 +55,10 @@ _REGLAS = [
     (r"[Cc]osto total comparable", "Costo total"),
     (r"[Cc]osto total original", "Costo total con espera nocturna"),
     (r"total original", "total con espera nocturna"),
+    # El modelo agregado se presenta como "modelo relajado": permite repartir la carga dentro de cada bloque de 15 min
+    # sin mirar minuto a minuto; sirve para elegir las reservas y como cota inferior del programa exacto.
+    (r"Modelo agregado", "Modelo relajado"),
+    (r"modelo agregado", "modelo relajado"),
 ]
 
 
@@ -77,7 +84,7 @@ def presentar(df):
     """Copia de una tabla lista para una persona: encabezados con los nombres y celdas de texto renombradas."""
     out = df.rename(columns=COLUMNAS).copy()
     for c in out.columns:
-        if out[c].dtype == object:
+        if out[c].dtype == object or pd.api.types.is_string_dtype(out[c]):
             out[c] = out[c].map(lambda x: renombrar_texto(x) if isinstance(x, str) else x)
     return out
 

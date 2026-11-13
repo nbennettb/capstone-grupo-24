@@ -1,0 +1,5 @@
+paso;buses;que_mide
+(i) VSP;735;Punto de partida: una jornada = un bus
+(ii) Reuso del patio sin bateria;707;Jornadas enteras re-encadenadas por el patio, sin tiempo de recarga
+(iii) Solo cortes;1025;Cada tramo un bus
+(iv) Cortes + re-encadenamiento;735;La Etapa 3 completa (recarga completa + holgura 0 min)

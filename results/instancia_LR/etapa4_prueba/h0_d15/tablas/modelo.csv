@@ -1,0 +1,4 @@
+holgura_min;delta_min;modelo;estado;objetivo_usd;cota_usd;brecha;fuente_brecha;segundos;variables;binarias;restricciones;desempate_usd
+0;15;E2-FIFO;heuristica (sin optimizacion);107949.48;;;-;0.74;;;;
+0;15;E2 agregado - LP (cota);optimo;68859.05;68859.05;0.0;Gurobi;3.35;102468.0;0.0;2146.0;
+0;15;E2 agregado - MILP;optimo (brecha pedida);69564.31;69384.37;0.002646;Gurobi;30.45;102468.0;1025.0;2146.0;4.1247

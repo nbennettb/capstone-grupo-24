@@ -27,6 +27,9 @@ CAPAS_COSTO = [("costo_flota", "flota", "#4b4b4b"), ("costo_reservas_intermedias
                ("costo_eventos", "eventos de carga", "#e34948")]
 
 
+TERMINAL = "La Reina"          # nombre del electroterminal en los captions; 14- lo fija
+
+
 def estilo():
     plt.rcParams.update({"font.size": 9, "axes.labelsize": 9, "xtick.labelsize": 9, "ytick.labelsize": 9,
                          "legend.fontsize": 9, "legend.title_fontsize": 9, "pdf.fonttype": 42, "ps.fonttype": 42,
@@ -272,7 +275,7 @@ def f2_gantt(cb_j, cb_ev, tramos, prog, carpeta):
 
 
 # --------------------------------------------------------------------------- #
-# F3-F6. Instancia La Reina
+# F3-F6. Instancia (un electroterminal)
 # --------------------------------------------------------------------------- #
 
 def f3_escalera(kb, carpeta):
@@ -299,8 +302,8 @@ def f3_escalera(kb, carpeta):
                           "reservas_nocturnas": rn, "buses_totales": op + rd + rn})
     guardar(fig, carpeta, "F3_escalera_buses", datos)
     cifra = "; ".join(f"{ESCENARIO[e]} {num(t)}" for e, t in zip(escs, op + rd + rn))
-    return ("F3_escalera_buses", "Buses de cada escenario en La Reina: operativos más reservas diurnas y nocturnas. La "
-            "Propuesta completa es el modelo detallado con bloques de 15 min.", f"buses totales: {cifra}")
+    return ("F3_escalera_buses", f"Buses de cada escenario en {TERMINAL}: operativos más reservas diurnas y nocturnas. "
+            "La Propuesta completa es el plan de carga exacto al minuto.", f"buses totales: {cifra}")
 
 
 def f4_costo(kb, carpeta):
@@ -332,7 +335,7 @@ def f4_costo(kb, carpeta):
     guardar(fig, carpeta, "F4_costo_total", datos)
     cifra = "; ".join(f"{ESCENARIO[e]} {num(t * 1000)} USD/día (con espera nocturna {num(o * 1000)})"
                       for e, t, o in zip(escs, base, orig))
-    return ("F4_costo_total", "Costo total por componente en La Reina (cifra sobre cada barra, en miles de USD por día); "
+    return ("F4_costo_total", f"Costo total por componente en {TERMINAL} (cifra sobre cada barra, en miles de USD por día); "
             "el rombo marca el costo total con espera nocturna.", f"costo total: {cifra}")
 
 
@@ -362,10 +365,10 @@ def f5_ocupacion(series, kappa, tarifa, carpeta):
     guardar(fig, carpeta, "F5_ocupacion_24h", datos)
     sat = {e: (series[e] >= kappa - 1e-6).sum() / 60 for e in escs}
     cifra = ("horas con todos los puestos ocupados: " + "; ".join(f"{ESCENARIO[e]} {num(sat[e], 1)} h" for e in escs)
-             + (f"; máximo de la Propuesta completa en la ejecución minuto a minuto: {num(series['E2'].max(), 0)} buses"
+             + (f"; máximo de buses cargando a la vez en la Propuesta completa:{num(series['E2'].max(), 0)} buses"
                 if "E2" in series else ""))
-    return ("F5_ocupacion_24h", "Buses cargando a lo largo del día en La Reina frente a los 100 puestos; en gris, los "
-            "tramos de tarifa punta. La Propuesta completa es la ejecución minuto a minuto del modelo detallado.", cifra)
+    return ("F5_ocupacion_24h", f"Buses cargando a lo largo del día en {TERMINAL} frente a los {kappa} puestos; en gris, "
+            "los tramos de tarifa punta.", cifra)
 
 
 def f6_sensibilidades(sens_h, sens_d, carpeta):

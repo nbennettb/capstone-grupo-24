@@ -12,7 +12,8 @@ cumpla con su bateria, con la menor flota. Trabaja sobre un electroterminal comp
 
 3b. RE-ENCADENAMIENTO (flujo de costo minimo, la misma red espacio-tiempo de la Etapa 2). Nodos = tramos; una
     linea de tiempo = el patio. El bus que termina el tramo k llega al patio en a_k y queda listo en
-    rho_k = a_k + E_k / P + h (recarga completa de lo consumido a charge_power_kw, mas la holgura h). Despues puede
+    rho_k = ceil(a_k) + E_k / P + h (recarga completa de lo consumido a charge_power_kw desde el primer minuto entero
+    tras llegar, como la carga del caso base y de la Etapa 4, mas la holgura h). Despues puede
     tomar cualquier tramo que salga del patio en s_l >= rho_k. Costo: vehicle_fixed_cost por bus (los km de cada
     tramo no dependen del encadenamiento). Es una matriz de red: la LP entrega la solucion entera.
     Las cadenas se arman con la regla "sale primero el bus que lleva mas tiempo en el patio" (entre los listos,
@@ -41,6 +42,7 @@ Uso:
 import argparse
 import heapq
 import importlib.util
+import math
 import sys
 import time
 from pathlib import Path
@@ -150,8 +152,11 @@ def datos_tramo(ctx, bus, i, j, h):
     espera = sum(sim.dep[rows[k]] - sim.arr[rows[k - 1]] - ctx.layover - bus.conn[k - 1] / ctx.v * 60
                  for k in range(i + 1, j + 1))
     servicio = sum(sim.arr[r] - sim.dep[r] for r in rows[i:j + 1])
+    # La carga parte en el primer minuto entero despues de llegar (misma regla que la carga reactiva y la Etapa 4):
+    # contar el listo desde la llegada exacta dejaria ventanas con menos de un minuto de holgura que no alcanzan.
+    listo = math.ceil(a - 1e-9) + energia / ctx.P * 60 + h
     return dict(km_pullout=km_out, km_conexion=km_conn, km_pullin=km_in, kwh=energia, kwh_expediciones=kwh_exp,
-                salida_patio_min=s, llegada_patio_min=a, listo_min=a + energia / ctx.P * 60 + h,
+                salida_patio_min=s, llegada_patio_min=a, listo_min=listo,
                 espera_entre_viajes_min=espera, minutos_con_pasajeros=servicio)
 
 
@@ -424,6 +429,9 @@ def main():
     cadenas_df = pd.DataFrame(fil_c)
     vi = ventanas[ventanas["tipo"] == "intermedia"]
     assert (vi["holgura_min"] >= h - 1e-6).all(), "Una ventana intermedia no alcanza la recarga completa mas la holgura."
+    desde_minuto = vi["limite_min"] - np.ceil(vi["llegada_min"] - 1e-9) - vi["minutos_carga_plena"]
+    assert (desde_minuto >= h - 1e-6).all(), (
+        "Una ventana intermedia no alcanza la recarga completa partiendo en el primer minuto entero tras llegar.")
     assert abs(ventanas["kwh"].sum() - tramos["kwh"].sum()) < 1e-6, "La energia de las ventanas no calza con la de los tramos."
     vn = ventanas[ventanas["tipo"] == "nocturna"]
     n_mas_24h = int((vn["limite_min"] <= vn["llegada_min"]).sum())

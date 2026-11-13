@@ -49,8 +49,8 @@ from common.rutas import DATA_FILTRADO, DATA_PROCESSED, CSV_SEP, RESULTS_DIR   #
 
 DIA_MIN = 1440
 ESCENARIOS = ["E0", "E1", "E2-FIFO", "E2"]
-COLUMNA_OCUPACION = {"E2-FIFO": "fifo", "E2": "e2", "E2-detallado": "e2_detallado"}
-MODELO = {"E2-FIFO": "-", "E2": "agregado", "E2-detallado": "detallado"}
+COLUMNA_OCUPACION = {"E2-FIFO": "fifo", "E2": "e2", "E2-detallado": "e2_detallado", "E2-exacto": "e2_exacto"}
+MODELO = {"E2-FIFO": "-", "E2": "agregado", "E2-detallado": "detallado", "E2-exacto": "exacto"}
 
 
 def leer(path, **kw):
@@ -86,8 +86,25 @@ class Corridas:
 def carpeta_detallado(t4):
     """Carpeta del modelo detallado de una corrida de la Etapa 4 (o None si no se ha corrido). Las filas de detallado que
     pudieran quedar en las tablas principales de una version anterior se ignoran."""
+    if carpeta_exacto(t4) is not None:
+        return None                     # con el programa exacto, el detallado (de una version anterior) no se usa
     d = t4.parent / "detallado"
     return d if (d / "resumen.csv").exists() and (d / "modelo.csv").exists() else None
+
+
+def carpeta_exacto(t4):
+    """Carpeta del programa exacto al minuto (la Propuesta completa) de una corrida de la Etapa 4, o None."""
+    d = t4.parent / "exacto"
+    return d if (d / "resumen.csv").exists() and (d / "modelo.csv").exists() else None
+
+
+def carpeta_propuesta(t4):
+    """(politica, carpeta) de la Propuesta completa que se reporta: el programa exacto si existe; si no, el detallado."""
+    if carpeta_exacto(t4) is not None:
+        return "E2-exacto", carpeta_exacto(t4)
+    if carpeta_detallado(t4) is not None:
+        return "E2-detallado", carpeta_detallado(t4)
+    return None, None
 
 
 def ocupacion_caso_base(cb, esc):
@@ -242,6 +259,22 @@ def validaciones(corr, nombre, patios, prueba, costos):
         o2, of = mo.loc["E2 agregado - MILP", "objetivo_usd"], mo.loc["E2-FIFO", "objetivo_usd"]
         anotar(f"Etapa 4 (h={h:g}, Delta={d}): modelo agregado <= orden de llegada (energia + reservas)", o2 <= of + 0.01,
                f"{fmt(o2, 2)} <= {fmt(of, 2)} USD")
+        ex_dir = carpeta_exacto(t4)
+        if ex_dir is not None:
+            rx = leer(ex_dir / "resumen.csv").iloc[0]
+            ox = leer(ex_dir / "ocupacion_minutos.csv")
+            anotar(f"Etapa 4 (h={h:g}, Delta={d}): Propuesta completa, deficit 0", float(rx["kwh_deficit"]) < 1e-3,
+                   f"{rx['kwh_deficit']:.3f} kWh")
+            anotar(f"Etapa 4 (h={h:g}, Delta={d}): Propuesta completa, buses cargando <= {k} en cada minuto",
+                   bool((ox["e2_exacto"] <= k).all()), f"maximo {ox['e2_exacto'].max():.0f}")
+            vx = leer(ex_dir / "validacion.csv")
+            if vx is None:
+                filas.append(dict(validacion=f"Etapa 4 (h={h:g}, Delta={d}): validacion independiente del plan de carga",
+                                  resultado="NO CORRIDO", detalle="falta correr 15-validar_plan_carga.py"))
+            else:
+                for r in vx.itertuples():
+                    filas.append(dict(validacion=f"Etapa 4 (h={h:g}, Delta={d}): plan de carga, {r.criterio}",
+                                      resultado=r.resultado, detalle=r.detalle))
         det_dir = carpeta_detallado(t4)
         if det_dir is not None:
             md = leer(det_dir / "modelo.csv").set_index("modelo").loc["E2 detallado - MILP"]
@@ -283,6 +316,7 @@ def main():
     for d in (tablas,):
         d.mkdir(parents=True, exist_ok=True)
     corr = Corridas(carpeta, sufijo)
+    fi.TERMINAL = nombre
     h0, d0 = float(parametros.HOLGURAS_RECARGA_MIN[0]), parametros.DELTA_MIN
     print(f"=== KPIs de la instancia {nombre}{' (PRUEBA)' if args.prueba else ''} ===\n")
     print(f"  Etapa 3 corrida con holgura: {sorted(corr.e3)} | Etapa 4 con (holgura, Delta): {sorted(corr.e4)}")
@@ -305,13 +339,15 @@ def main():
     for (h, d), t4 in sorted(corr.e4.items()):
         if h not in corr.e3:
             continue
-        det_dir = carpeta_detallado(t4)
-        for pol in ("E2-FIFO", "E2") + (("E2-detallado",) if det_dir is not None else ()):
+        pol_p, dir_p = carpeta_propuesta(t4)
+        for pol in ("E2-FIFO", "E2") + ((pol_p,) if dir_p is not None else ()):
             if pol == "E2-FIFO" and d != d0:
                 continue                      # la FIFO es al minuto: no depende de Delta
-            f = fila_propuesta(corr.e3[h], det_dir if pol == "E2-detallado" else t4, pol, h, d, costos)
-            if pol == "E2-detallado":
-                f["escenario"], f["variante"] = "E2", f"modelo detallado, h={h:g}, Delta={d}"
+            f = fila_propuesta(corr.e3[h], dir_p if pol == pol_p else t4, pol, h, d, costos)
+            if pol == "E2-exacto":            # su tiempo incluye el del modelo relajado, del que parte
+                f["segundos"] += float(leer(t4 / "resumen.csv").set_index("politica").loc["E2", "segundos"])
+            if pol == pol_p:
+                f["escenario"], f["variante"] = "E2", f"{MODELO[pol]}, h={h:g}, Delta={d}"
             else:
                 f["variante"] = "base" if (h == h0 and d == d0) else (f"h={h:g}" if d == d0 else f"Delta={d}")
             f["modelo"] = MODELO[pol]
@@ -321,12 +357,15 @@ def main():
     k["modelo"] = k["modelo"].fillna("-")
     # La Propuesta completa de la tabla principal y de las figuras es el modelo detallado con el largo del bloque base;
     # el agregado queda como variante (validacion y sensibilidades).
-    det_base = (k["escenario"] == "E2") & (k["modelo"] == "detallado") & (k["holgura_min"] == h0) & (k["delta_min"] == d0)
+    pol_base, det_dir_base = carpeta_propuesta(corr.e4[(h0, d0)]) if (h0, d0) in corr.e4 else (None, None)
+    det_base = (k["escenario"] == "E2") & (k["modelo"] == MODELO.get(pol_base)) & (k["holgura_min"] == h0) \
+        & (k["delta_min"] == d0)
     if det_base.any():
         k.loc[(k["escenario"] == "E2") & (k["modelo"] == "agregado") & (k["variante"] == "base"), "variante"] = \
             "modelo agregado"
         k.loc[det_base, "variante"] = "base"
-    det_dir_base = carpeta_detallado(corr.e4[(h0, d0)]) if (h0, d0) in corr.e4 and det_base.any() else None
+    else:
+        det_dir_base = None
     nombres.presentar(k.round(4)).to_csv(tablas / "kpis_escenarios.csv", index=False, sep=CSV_SEP)
     kb = k[k["variante"] == "base"].set_index("escenario").reindex([e for e in ESCENARIOS if e in set(k["escenario"])]) \
         .reset_index()
@@ -369,7 +408,7 @@ def main():
     if base4 is not None:
         om = leer(base4 / "ocupacion_minutos.csv")
         series["E2-FIFO"] = om["fifo"].values
-        series["E2"] = (leer(det_dir_base / "ocupacion_minutos.csv")["e2_detallado"].values
+        series["E2"] = (leer(det_dir_base / "ocupacion_minutos.csv")[COLUMNA_OCUPACION[pol_base]].values
                         if det_dir_base is not None else om["e2"].values)
     kappa = int(kb["puestos"].iloc[0])
     ocup_h = pd.DataFrame({"hora": range(24)})
@@ -436,9 +475,10 @@ def main():
     for (h, d), t4 in sorted(corr.e4.items()):
         mo = leer(t4 / "modelo.csv").set_index("modelo")
         mo = mo[~mo.index.str.startswith("E2 detallado")]
-        det_dir = carpeta_detallado(t4)
-        if det_dir is not None:
-            mo = pd.concat([mo, leer(det_dir / "modelo.csv").set_index("modelo")])
+        _, dir_p = carpeta_propuesta(t4)
+        if dir_p is not None:
+            extra = leer(dir_p / "modelo.csv").set_index("modelo")
+            mo = pd.concat([mo, extra[~extra.index.str.startswith("Modelo relajado")]])
         for nombre_mo, r in mo.iterrows():
             fuente = r["fuente_brecha"] if "fuente_brecha" in r and isinstance(r["fuente_brecha"], str) else (
                 "Gurobi" if r["brecha"] == r["brecha"] else "-")
@@ -539,6 +579,35 @@ def conclusion_detallado(det):
             f"y el modelo detallado en {fmt(b['segundos'])} s, con brecha {b['brecha']:.2%}.")
 
 
+def seccion_propuesta(corr, det):
+    """Resumen del plan exacto (o, si no existe, la comparacion detallado / agregado de la version anterior)."""
+    t4 = corr.e4.get((float(parametros.HOLGURAS_RECARGA_MIN[0]), parametros.DELTA_MIN))
+    ex_dir = carpeta_exacto(t4) if t4 is not None else None
+    if ex_dir is None:
+        if det is None:
+            return "Pendiente: correr 13- con --exacto y luego 15-."
+        return tabla_detallado(det) + "\n\n" + conclusion_detallado(det)
+    mo = leer(ex_dir / "modelo.csv").set_index("modelo")
+    rx = leer(ex_dir / "resumen.csv").iloc[0]
+    cota = float(mo.loc["Modelo relajado, LP (cota inferior)", "objetivo_usd"])
+    final = mo.loc["Programa exacto, final (energia + reservas)"]
+    milp = mo.loc["Programa exacto, MILP"]
+    return "\n".join([
+        "Como se obtiene: (1) el modelo relajado (bloques de 15 min, sin mirar minuto a minuto) elige las reservas de "
+        "partida y da una cota inferior del costo; (2) un MILP al minuto decide las reservas y cuando carga cada bus, sin "
+        "superar nunca los puestos; (3) a cada carga se le asigna un puesto; (4) 15- valida el plan por separado.",
+        "",
+        f"- Energia + reservas: {fmt(final['objetivo_usd'])} USD/dia, con {int(final['reservas'])} reservas.",
+        f"- Cota inferior (modelo relajado): {fmt(cota)} USD/dia. El plan esta a lo mas a {final['brecha']:.2%} del "
+        "optimo (en energia + reservas).",
+        f"- MILP al minuto: {milp['estado']}, brecha de Gurobi {float(milp['brecha']):.2%}, "
+        f"{fmt(float(milp['segundos']))} s; {fmt(int(milp['variables']))} variables.",
+        f"- Maximo de buses cargando a la vez: {int(rx['maximo_buses_cargando'])} de {int(rx['puestos'])}; "
+        f"eventos de carga: {fmt(int(rx['eventos']))} ({int(rx['eventos']) / int(rx['ventanas']):.2f} por ventana).",
+        f"- Tiempo total de la Etapa 4 (relajado + exacto): ver seccion 10.",
+    ])
+
+
 def figuras_del_informe(destino, corr, kb, series, kappa, tarifa, sens_h, sens_d, h0, det_dir):
     """Figuras finales del informe (F0-F6) en destino/: PDF, PNG y CSV. Devuelve (archivo, caption, cifra)."""
     fi.estilo()
@@ -551,8 +620,12 @@ def figuras_del_informe(destino, corr, kb, series, kappa, tarifa, sens_h, sens_d
         cb_j = leer(corr.cb / "jornadas_E1_soc100.csv", dtype={"jornada_id": str, "bus_origen": str})
         cb_ev = leer(corr.cb / "eventos_E1_soc100.csv", dtype={"jornada_id": str})
         tramos = leer(corr.e3[h0] / "tramos.csv", dtype={"jornada_vsp": str, "tramo_id": str})
-        prog = leer(det_dir / "programa_E2_detallado.csv", dtype={"tramo_id": str})
-        figuras.append(fi.f2_gantt(cb_j, cb_ev, tramos, prog, destino))
+        archivo = "programa_E2_exacto.csv" if (det_dir / "programa_E2_exacto.csv").exists() else "programa_E2_detallado.csv"
+        prog = leer(det_dir / archivo, dtype={"tramo_id": str})
+        try:
+            figuras.append(fi.f2_gantt(cb_j, cb_ev, tramos, prog, destino))
+        except AssertionError as error:           # en otro terminal puede no haber una jornada de ejemplo
+            print(f"  [aviso] Figura F2 omitida: {error}")
     figuras.append(fi.f3_escalera(kb, destino))
     figuras.append(fi.f4_costo(kb, destino))
     figuras.append(fi.f5_ocupacion(series, kappa, tarifa, destino))
@@ -650,14 +723,16 @@ def resumen_md(nombre, kappa, prueba, costos, corr, k, kb, val, diag, tab_tarifa
     diag_p = None
     if diag is not None:
         diag_p = nombres.presentar(diag)
-    texto_e2 = {"detallado": "modelo detallado", "agregado": "modelo agregado"}.get(modelo_e2, modelo_e2)
+    texto_e2 = {"detallado": f"modelo detallado con bloques de {d0} min",
+                "agregado": f"modelo agregado con bloques de {d0} min",
+                "exacto": "programa de carga exacto al minuto"}.get(modelo_e2, modelo_e2)
     lineas = [
         f"# Resumen para analisis: instancia {nombre}" + (" (PRUEBA CHICA: no son resultados)" if prueba else ""),
         "",
         "Archivo generado por `scripts/14-kpis_instancia.py`. Todas las cifras salen de los CSV de "
         f"`{carpeta.relative_to(RESULTS_DIR.parent).as_posix()}/`. Escenarios: **{N['E0']}** (jornadas por linea + carga "
         f"reactiva); **{N['E1']}** (lo mismo, con interlining en las jornadas); **{N['E2-FIFO']}** (Etapa 3 + carga por "
-        f"orden de llegada); **{N['E2']}** (Etapa 3 + Etapa 4, {texto_e2} con bloques de {d0} min). Cada escalon cambia "
+        f"orden de llegada); **{N['E2']}** (Etapa 3 + Etapa 4, {texto_e2}). Cada escalon cambia "
         "una sola cosa.",
         "",
         "## 1. Instancia y parametros",
@@ -692,7 +767,7 @@ def resumen_md(nombre, kappa, prueba, costos, corr, k, kb, val, diag, tab_tarifa
         f"Costo total = sin la espera nocturna en el patio (la metrica principal). Costo total con espera nocturna = la "
         f"espera como la cobra el caso base (incluye la espera nocturna hasta empezar a cargar). En los casos base todas "
         f"las reservas son nocturnas: si una carga diurna no alcanza, la jornada se parte y el bus nuevo queda en "
-        f"'operativos'. La {N['E2']} es el {texto_e2} con bloques de {d0} min.",
+        f"'operativos'. La {N['E2']} es el {texto_e2}.",
         "",
         tabla_md(tabla_kpi),
         "",
@@ -744,10 +819,9 @@ def resumen_md(nombre, kappa, prueba, costos, corr, k, kb, val, diag, tab_tarifa
         "",
         tabla_md(modelos),
         "",
-        "## 11. Modelo detallado frente al modelo agregado",
+        "## 11. Propuesta completa: plan de carga y distancia al optimo",
         "",
-        ("Pendiente: correr 13- con --detallado." if det is None else tabla_detallado(det) + "\n\n"
-         + conclusion_detallado(det)),
+        seccion_propuesta(corr, det),
         "",
     ]
     lineas += list(extras)
@@ -763,9 +837,9 @@ def resumen_md(nombre, kappa, prueba, costos, corr, k, kb, val, diag, tab_tarifa
         "- Reserva: si la carga de una ventana no termina antes de la siguiente salida del bus, un bus ya cargado cubre esa "
         "salida (250 USD). En una ventana diurna la reserva toma el resto de la cadena (supuesto conservador).",
         "- La Etapa 3 no ve los puestos; la holgura de recarga los anticipa. La Etapa 4 decide con los puestos y la tarifa.",
-        "- Los modelos de la Etapa 4 escriben la capacidad en energia por bloque: es exacta salvo en los bloques de borde "
-        "('minutos sobre los puestos', en la ejecucion minuto a minuto, mide ese error). Solo la carga por orden de llegada "
-        "es exacta al minuto.",
+        "- La Propuesta completa es un plan de carga exacto al minuto: cada bus carga en minutos enteros en un puesto "
+        "identificado y en ningun minuto cargan mas buses que puestos. El modelo relajado (bloques de 15 min, capacidad "
+        "en energia) solo elige las reservas de partida y da la cota inferior.",
         "- Limitaciones: un solo electroterminal; recarga completa entre tramos; deadhead euclidiano; un dia tipo; "
         "flujo de un dia (no ciclico).",
     ]

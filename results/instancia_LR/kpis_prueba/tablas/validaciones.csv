@@ -1,0 +1,17 @@
+validacion;resultado;detalle
+Caso base: igual a la red completa filtrada;NO CORRIDO;falta correr 10-
+Caso base con interlining: igual a la red completa filtrada;NO CORRIDO;falta correr 10-
+Etapa 3 (holgura de recarga 0 min): cobertura exacta;OK;6,867 expediciones en 1,025 tramos
+Etapa 3 (holgura de recarga 0 min): todo tramo cabe en la bateria util;OK;maximo 314.9 kWh de 315
+Etapa 3 (holgura de recarga 0 min): flota = maximo de intervalos superpuestos;OK;flujo 735, intervalos 735
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): deficit 0;OK;orden de llegada 0.000 kWh, modelo relajado 0.000 kWh
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): ocupacion <= 60 por bloque (modelo relajado) y por minuto (orden de llegada);OK;"maximo del modelo relajado por bloque 60.00; orden de llegada por minuto 60; ejecucion minuto a minuto del modelo relajado: 117 min sobre 60 (informativo)"
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): modelo relajado <= orden de llegada (energia + reservas);OK;69,564.31 <= 107,949.48 USD
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): Propuesta completa, deficit 0;OK;0.000 kWh
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): Propuesta completa, buses cargando <= 60 en cada minuto;OK;maximo 60
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 1. Buses cargando por minuto <= puestos;OK;"maximo 60 de 60; puestos con dos buses a la vez en algun minuto: 0"
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 2. Cada carga: minutos enteros, puesto existente, <= 180 kW;OK;1,543 cargas en 60 puestos
+"Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 3. Toda carga con el bus en el patio; si termina despues de su salida, hay reserva";OK;"cargas fuera de [llegada, llegada + 24 h): 0; ventanas que terminan tarde: 163, sin reserva: 0"
+"Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 4. Cada ventana repone la energia de su tramo; ningun tramo supera la bateria util";OK;"diferencia maxima 5.68e-14 kWh; tramo mas largo 314.9 de 315 kWh"
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 5. Simulando 7 dias, cada salida tiene un bus cargado (buses de la Etapa 3 + reservas);OK;"735 buses + 163 reservas = 898 buses; salidas sin bus: 0"
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): plan de carga, 6. Energia y reservas recalculadas = informadas;OK;"energia 30,071.69 USD (informada 30,071.69); reservas 163 (informadas 163)"

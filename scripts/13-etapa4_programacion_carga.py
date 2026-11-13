@@ -24,7 +24,14 @@ E2 (modelo agregado). 24 h de una vez en bloques de Delta minutos, modulo 24 h:
     como solucion inicial. Los eventos de carga (fixed_charge_cost) se cuentan despues: tramos contiguos de
     bloques con carga.
 
-E2 detallado (--detallado). El agregado mas, por (ventana, bloque), una binaria de enchufe, el inicio de cada evento
+Propuesta completa (--exacto): programa exacto al minuto (docs/contexto_entrega_3/). Parte del modelo agregado
+    ("modelo relajado") ya resuelto en la misma carpeta: sus reservas son el punto de partida y su LP / cota del MILP es
+    la cota inferior. Un MILP por (ventana, minuto entero) cuenta la capacidad en buses por minuto (nunca mas buses
+    cargando que puestos), con reservas binarias solo en las ventanas candidatas; con las reservas fijas es un problema
+    de transporte y su LP es entero. Luego se pule (mismo costo, cargas continuas por orden de llegada) y a cada carga
+    se le asigna un puesto. Escribe en <carpeta>/exacto/; la validacion independiente es 15-validar_plan_carga.py.
+
+E2 detallado (--detallado, version anterior, ya no se usa). El agregado mas, por (ventana, bloque), una binaria de enchufe, el inicio de cada evento
     de carga con fixed_charge_cost en el objetivo y carga continua a plena potencia dentro del evento. Capacidad,
     reservas y deficit son los del agregado: la diferencia es solo la estructura de los eventos, que el agregado no ve.
     Se corre despues del agregado (lee sus reservas y su cota LP de la misma carpeta) y en dos fases: fase 1 con las
@@ -45,11 +52,12 @@ Output: results/instancia_<siglas>/etapa4/h<h>_d<Delta>/
 Uso:
     python scripts/13-etapa4_programacion_carga.py --terminal 4 --holgura 0 --delta 15
     python scripts/13-etapa4_programacion_carga.py --terminal 4 --holgura 0 --delta 5
-    python scripts/13-etapa4_programacion_carga.py --terminal 4 --holgura 0 --delta 15 --detallado
+    python scripts/13-etapa4_programacion_carga.py --terminal 4 --holgura 0 --delta 15 --exacto
     python scripts/13-etapa4_programacion_carga.py --prueba --puestos-prueba 5      # prueba chica (ventanas de etapa3_prueba)
 """
 
 import argparse
+import heapq
 import importlib.util
 import math
 import sys
@@ -371,6 +379,231 @@ def realizacion_por_minuto(seg, e, delta, kappa, kwh_min):
 
 
 # --------------------------------------------------------------------------- #
+# Programa exacto al minuto (--exacto): la Propuesta completa
+# --------------------------------------------------------------------------- #
+
+def minutos_ventana(v, kwh_min):
+    """Minutos enteros que puede usar cada ventana, con la misma regla que la carga por orden de llegada: parte en el
+    primer minuto entero tras llegar (m0) y ocupa n minutos de puesto; el ultimo minuto carga solo el resto. Dentro de la
+    ventana: m0..ult (el minuto que cruza la hora limite sirve si el resto alcanza a cargarse antes de salir). Con
+    reserva: hasta m_fin, el ultimo minuto que termina antes de 24 h desde la llegada."""
+    a, d, E = v["llegada_min"].values, v["limite_min"].values, v["kwh"].values
+    n = np.maximum(np.ceil(E / kwh_min - 1e-9), 1).astype(int)
+    resto = E - (n - 1) * kwh_min
+    m0 = np.ceil(a - 1e-9).astype(int)
+    fd = np.floor(d + 1e-9).astype(int)
+    ult = np.where(resto <= kwh_min * (d - fd) + 1e-9, fd, fd - 1)
+    m_fin = np.floor(a + DIA_MIN + 1e-9).astype(int) - 1
+    ult = np.minimum(np.maximum(ult, m0 - 1), m_fin)
+    return dict(m0=m0, ult=ult, m_fin=m_fin, n=n, resto=resto, sin_tiempo=(ult - m0 + 1) < n)
+
+
+def variables_exactas(mw, cand):
+    """Una variable por (ventana, minuto): los minutos dentro de la ventana y, si es candidata a reserva, los de la
+    extension. Devuelve ventana, minuto (desenrollado), si es extension y minutos desde el primer minuto posible."""
+    n_in = mw["ult"] - mw["m0"] + 1
+    cnt = n_in + np.where(cand, mw["m_fin"] - mw["ult"], 0)
+    w = np.repeat(np.arange(len(cnt)), cnt)
+    k = np.arange(cnt.sum()) - np.repeat(np.cumsum(cnt) - cnt, cnt)
+    return w, mw["m0"][w] + k, k >= n_in[w], k
+
+
+def resolver_exacto(v, mw, cand, r_ini, precio_min, kappa, kwh_min, costos, log_path, tiempo_s):
+    """Programa al minuto. Por (ventana, minuto), x = el bus ocupa un puesto ese minuto; la capacidad cuenta buses, no
+    energia, asi que no hay error de borde. Con las reservas fijas es un problema de transporte (ventanas x minutos del
+    reloj) y el LP da una solucion entera.
+      1. Arranque: reservas del modelo relajado fijas; si una ventana queda con deficit, pasa a reserva.
+      2. MILP: reservas binarias en las candidatas, partiendo del arranque.
+      3. Pulido: reservas fijas, se queda en la cara optima del LP (mismo costo) y desempata para que, a igual costo,
+         cargue antes el bus que llego antes (cargas continuas, como la carga por orden de llegada)."""
+    nW, n = len(v), mw["n"]
+    pen = parametros.PENALIZACION_DEFICIT_USD_KWH * kwh_min
+    r_fijo = r_ini.astype(float).copy()
+    info = dict(vueltas_arranque=0)
+    while True:
+        info["vueltas_arranque"] += 1
+        w, m, ext, k = variables_exactas(mw, cand)
+        t, nX = m % DIA_MIN, len(w)
+        A_dem = sps.csr_matrix((np.ones(nX), (w, np.arange(nX))), shape=(nW, nX))
+        A_ext = sps.csr_matrix((np.ones(ext.sum()), (w[ext], np.where(ext)[0])), shape=(nW, nX))
+        A_cap = sps.csr_matrix((np.ones(nX), (t, np.arange(nX))), shape=(DIA_MIN, nX))
+        mod = gp.Model()
+        mod.Params.OutputFlag = 0
+        x = mod.addMVar(nX, lb=0, ub=1, obj=precio_min[t] * kwh_min)
+        r = mod.addMVar(nW, lb=r_fijo, ub=r_fijo, obj=costos.vehicle_fixed_cost)
+        dl = mod.addMVar(nW, lb=0, obj=pen)
+        mod.addConstr(A_dem @ x + dl == n)
+        c_ext = mod.addConstr(A_ext @ x - sps.diags(n.astype(float)) @ r <= 0)
+        c_cap = mod.addConstr(A_cap @ x <= np.full(DIA_MIN, float(kappa)))
+        mod.optimize()
+        assert mod.Status == gp.GRB.OPTIMAL, f"El LP de arranque del programa exacto no resolvio (status {mod.Status})."
+        falta = dl.X > 1e-6
+        nuevas = falta & (r_fijo < 0.5)
+        if not nuevas.any():
+            break
+        r_fijo[nuevas] = 1.0
+        cand = cand | nuevas
+        print(f"  Arranque, vuelta {info['vueltas_arranque']}: {int(nuevas.sum())} ventanas no caben sin reserva; "
+              "pasan a reserva y se vuelve a resolver.")
+    info.update(variables=nX, candidatas=int(cand.sum()), objetivo_arranque=mod.ObjVal,
+                reservas_arranque=int(r_fijo.sum()), segundos_arranque=round(mod.Runtime, 1))
+
+    # --- MILP: reservas libres en las candidatas ---
+    x0, d0 = x.X, dl.X
+    r.VType = gp.GRB.BINARY
+    r.LB, r.UB = np.zeros(nW), cand.astype(float)
+    x.Start, r.Start, dl.Start = x0, r_fijo, d0
+    log_path.unlink(missing_ok=True)
+    mod.Params.LogToConsole = 0
+    mod.Params.LogFile = str(log_path)
+    mod.Params.OutputFlag = 1
+    mod.Params.MIPGap = parametros.GAP_EXACTO
+    mod.Params.TimeLimit = max(tiempo_s, 1.0)
+    mod.optimize()
+    assert mod.SolCount > 0, "El MILP del programa exacto no devolvio solucion pese a partir de una factible."
+    estado = {gp.GRB.OPTIMAL: "optimo (brecha pedida)", gp.GRB.TIME_LIMIT: "limite de tiempo"}.get(
+        mod.Status, f"status {mod.Status}")
+    r_opt = np.round(r.X)
+    info.update(estado=estado, objetivo_milp=mod.ObjVal, cota_milp=mod.ObjBound, brecha_milp=mod.MIPGap,
+                segundos_milp=round(mod.Runtime, 1), nodos=int(mod.NodeCount))
+
+    # --- Pulido: reservas fijas, cara optima del LP y desempate por orden de llegada ---
+    r.LB, r.UB = r_opt, r_opt
+    r.VType = gp.GRB.CONTINUOUS
+    mod.Params.MIPGap = 1e-4
+    mod.optimize()
+    assert mod.Status == gp.GRB.OPTIMAL, f"El LP de pulido no resolvio (status {mod.Status})."
+    obj_lp = mod.ObjVal
+    tol = 1e-7
+    rc = x.RC
+    x.UB = np.where(rc > tol, 0.0, 1.0)
+    x.LB = np.where(rc < -tol, 1.0, 0.0)
+    dl.UB = np.where(dl.RC > tol, 0.0, np.inf)
+    for c in (c_ext, c_cap):
+        c.Sense = np.where(np.abs(c.Pi) > tol, gp.GRB.EQUAL, gp.GRB.LESS_EQUAL)
+    # Prioridad estricta por orden de llegada (desempate por ventana_id): el costo pi_w x minutos desde la llegada hace
+    # que, al intercambiar dos minutos entre dos buses, convenga darle el mas temprano al de mayor prioridad. Asi una
+    # carga empezada no la interrumpe un bus que llego despues: cargas continuas, como en la carga por orden de llegada.
+    rango = np.empty(nW)
+    rango[np.lexsort((v["ventana_id"].values, mw["m0"]))] = np.arange(nW)
+    mod.setObjective(((nW - rango[w]) * k) @ x)
+    mod.optimize()
+    assert mod.Status == gp.GRB.OPTIMAL, f"El LP de desempate no resolvio (status {mod.Status})."
+    X = x.X
+    assert np.abs(X - np.round(X)).max() < 1e-6, "El programa pulido no quedo entero (un bus por puesto y minuto)."
+    X = np.round(X)
+    costo_pulido = float(precio_min[t] @ X * kwh_min + costos.vehicle_fixed_cost * r_opt.sum() + pen * dl.X.sum())
+    assert costo_pulido <= obj_lp + 1e-6 * abs(obj_lp) + 1e-3, "El desempate cambio el costo: no se quedo en la cara optima."
+    info.update(objetivo_pulido=costo_pulido, segundos_total=None)
+    return w, m, X, r_opt.astype(int), dl.X * kwh_min, info
+
+
+def corridas_y_puestos(v, w, m, X, mw, kwh_min, kappa, occ):
+    """Cada carga continua (minutos seguidos de una ventana) es un intervalo; se le asigna el puesto libre de menor
+    numero, recorriendo el dia desde el minuto con menos buses cargando (coloreo de intervalos: usa a lo mas el maximo
+    de buses a la vez, que es <= puestos). Devuelve una fila por carga en un puesto."""
+    sel = X > 0.5
+    ws, ms = w[sel], m[sel]
+    nuevo = np.r_[True, (ws[1:] != ws[:-1]) | (ms[1:] != ms[:-1] + 1)]
+    ini = np.where(nuevo)[0]
+    fin = np.r_[ini[1:], len(ws)]
+    runs = pd.DataFrame({"w": ws[ini], "ini": ms[ini], "minutos": fin - ini})
+    # energia: q por minuto; el ultimo minuto de la ventana carga solo lo que falta
+    runs["kwh"] = runs["minutos"] * kwh_min
+    usados = runs.groupby("w")["minutos"].sum()
+    exceso = (usados * kwh_min - np.minimum(v["kwh"].values[usados.index], usados * kwh_min)).values
+    ultima = runs.groupby("w").tail(1).index
+    runs.loc[ultima, "kwh"] -= exceso
+
+    t_corte = int(np.argmin(occ))
+    piezas = []
+    for i, r_ in enumerate(runs.itertuples()):
+        rel = (r_.ini - t_corte) % DIA_MIN
+        if rel + r_.minutos <= DIA_MIN:
+            piezas.append((rel, r_.minutos, i, 0))
+        else:                                   # cruza el minuto de corte: dos trozos (el bus puede cambiar de puesto)
+            primero = DIA_MIN - rel
+            piezas.append((rel, primero, i, 0))
+            piezas.append((0, r_.minutos - primero, i, primero))
+    piezas.sort()
+    ocupados, libres, siguiente, filas = [], [], 1, []
+    for rel, largo, i, offset in piezas:
+        while ocupados and ocupados[0][0] <= rel:
+            heapq.heappush(libres, heapq.heappop(ocupados)[1])
+        if libres:
+            p = heapq.heappop(libres)
+        else:
+            p, siguiente = siguiente, siguiente + 1
+        assert p <= kappa, f"La asignacion de puestos necesito el puesto {p} de {kappa}."
+        heapq.heappush(ocupados, (rel + largo, p))
+        r_ = runs.iloc[i]
+        ultimo_trozo = offset + largo == r_["minutos"]
+        kwh = largo * kwh_min - (r_["minutos"] * kwh_min - r_["kwh"] if ultimo_trozo else 0.0)
+        filas.append(dict(w=int(r_["w"]), puesto=p, inicio_min=int(r_["ini"]) + offset,
+                          fin_min=int(r_["ini"]) + offset + largo, kwh=kwh))
+    out = pd.DataFrame(filas).sort_values(["w", "inicio_min"]).reset_index(drop=True)
+    return runs, out, t_corte
+
+
+def hhmm(minuto):
+    m = int(round(minuto)) % DIA_MIN
+    return f"{m // 60:02d}:{m % 60:02d}"
+
+
+def graficar_buses_cargando(occ_f, occ_x, kappa, tarifa, path_png, titulo):
+    """Buses cargando a lo largo del dia: orden de llegada y Propuesta completa, frente a los puestos."""
+    horas = np.arange(DIA_MIN) / 60
+    fig, ax = plt.subplots(figsize=(10, 3.6))
+    caro = tarifa >= tarifa.max() - 1e-9
+    techo = kappa * 1.15
+    ax.fill_between(horas, 0, techo, where=caro, color=gr.PUNTA, alpha=0.08, step="post", linewidth=0,
+                    label="horas de tarifa mas cara")
+    ax.plot(horas, occ_f, color=gr.ESCENARIO["E2-FIFO"], linewidth=1.1, drawstyle="steps-post",
+            label="Carga por orden de llegada")
+    ax.plot(horas, occ_x, color=gr.ESCENARIO["E2"], linewidth=1.6, drawstyle="steps-post",
+            label="Propuesta completa (carga programada)")
+    ax.axhline(kappa, color=gr.PUESTOS, linestyle="--", linewidth=1, label=f"{kappa} puestos")
+    ax.set_xlim(0, 24)
+    ax.set_xticks(range(0, 25, 2))
+    ax.set_ylim(0, techo)
+    ax.set_xlabel("Hora del dia")
+    ax.set_ylabel("Buses cargando")
+    ax.set_title(titulo, fontsize=10, loc="left")
+    ax.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.18), ncol=4, frameon=False)
+    gr.estilo(ax)
+    gr.guardar(fig, path_png, pd.DataFrame({"minuto": np.arange(DIA_MIN), "orden_de_llegada": occ_f,
+                                            "propuesta_completa": occ_x, "puestos": kappa}))
+
+
+def graficar_puestos(piezas, kappa, tarifa, path_png, titulo):
+    """Una fila por puesto y una barra por carga: muestra que cada puesto atiende a un bus a la vez."""
+    fig, ax = plt.subplots(figsize=(10, max(3.5, kappa * 0.045)))
+    caro = tarifa >= tarifa.max() - 1e-9
+    ax.fill_between(np.arange(DIA_MIN) / 60, 0, kappa + 1, where=caro, color=gr.PUNTA, alpha=0.08, step="post",
+                    linewidth=0)
+    for p, g in piezas.groupby("puesto"):
+        ini = (g["inicio_min"].values % DIA_MIN) / 60
+        largo = (g["fin_min"].values - g["inicio_min"].values) / 60
+        tramos = []
+        for i0, l0 in zip(ini, largo):            # una carga que pasa la medianoche se dibuja en dos partes
+            if i0 + l0 <= 24:
+                tramos.append((i0, l0))
+            else:
+                tramos += [(i0, 24 - i0), (0, i0 + l0 - 24)]
+        ax.broken_barh(tramos, (p - 0.4, 0.8), facecolor=gr.ESCENARIO["E2"], edgecolor="white", linewidth=0.4)
+    ax.set_xlim(0, 24)
+    ax.set_xticks(range(0, 25, 2))
+    ax.set_ylim(0.3, kappa + 0.7)
+    ax.invert_yaxis()
+    ax.set_xlabel("Hora del dia")
+    ax.set_ylabel("Puesto de carga")
+    ax.set_title(titulo, fontsize=10, loc="left")
+    gr.estilo(ax)
+    datos = piezas.assign(inicio=piezas["inicio_min"].map(hhmm), fin=piezas["fin_min"].map(hhmm))
+    gr.guardar(fig, path_png, datos)
+
+
+# --------------------------------------------------------------------------- #
 # Salidas
 # --------------------------------------------------------------------------- #
 
@@ -647,6 +880,194 @@ def modo_detallado(args, salida, nombre, h_txt, delta, prueba, v, seg, costos, p
     print("\n=== FIN ETAPA 4 (detallado) ===")
 
 
+def modo_exacto(args, salida, nombre, h_txt, delta, prueba, v, costos, kappa, kwh_min, P, tarifa, prog_f, occ_f,
+                t_inicio):
+    """Propuesta completa: programa exacto al minuto, a partir del modelo relajado ya resuelto en la misma carpeta
+    (sus reservas son el punto de partida y su LP es la cota inferior). Escribe solo en <carpeta>/exacto/."""
+    tablas = salida / "tablas"
+    rutas = {f: tablas / f for f in ("programa_E2.csv", "modelo.csv", "programa_FIFO.csv")}
+    faltan = [f for f, r in rutas.items() if not r.exists()]
+    assert not faltan, (f"Faltan resultados del modelo relajado en {tablas} ({faltan}): correr antes 13- con --holgura "
+                        f"{h_txt} --delta {delta} sin --exacto.")
+    prog_rel = pd.read_csv(rutas["programa_E2.csv"], sep=CSV_SEP)
+    mod_rel = pd.read_csv(rutas["modelo.csv"], sep=CSV_SEP).set_index("modelo")
+    fifo_guardada = pd.read_csv(rutas["programa_FIFO.csv"], sep=CSV_SEP)
+    assert len(prog_rel) == len(v) and (prog_rel["ventana_id"].values == v["ventana_id"].values).all(), \
+        "El modelo relajado guardado no corresponde a estas ventanas de la Etapa 3: correr antes 13- sin --exacto."
+    cols = ["kwh_cargado", "reserva", "costo_energia_usd"]
+    dif = np.abs(prog_f[cols].round(4).values - fifo_guardada[cols].values).max()
+    assert dif < 1e-3, "La carga por orden de llegada no calza con la guardada: correr antes 13- sin --exacto."
+    # Cota inferior: el modelo relajado es una relajacion del programa al minuto (todo programa al minuto es factible para
+    # el), asi que su LP y la cota de su MILP valen como cota inferior; se usa la mayor.
+    cota = max(float(mod_rel.loc["E2 agregado - LP (cota)", "objetivo_usd"]),
+               float(mod_rel.loc["E2 agregado - MILP", "cota_usd"]))
+    sal = salida / "exacto"
+    sal.mkdir(exist_ok=True)
+
+    mw = minutos_ventana(v, kwh_min)
+    r_rel = prog_rel["reserva"].values.astype(bool)
+    r_fifo = prog_f["reserva"].values.astype(bool)
+    r_ini = r_rel | mw["sin_tiempo"]
+    cand = r_ini | r_fifo
+    print(f"\n--- Propuesta completa: programa exacto al minuto ---")
+    print(f"  Ventanas: {len(v):,}; sin tiempo para cargar dentro de la ventana: {int(mw['sin_tiempo'].sum())}; "
+          f"candidatas a reserva: {int(cand.sum())} (reservas del modelo relajado, de la carga por orden de llegada y "
+          "sin tiempo).")
+    t0 = time.perf_counter()
+    w, m, X, r, deficit_kwh, info = resolver_exacto(v, mw, cand, r_ini, tarifa, kappa, kwh_min, costos,
+                                                    sal / "gurobi.log", parametros.TIEMPO_LIMITE_S["exacto"])
+    seg = time.perf_counter() - t0
+    print(f"  Arranque: {info['reservas_arranque']} reservas, {info['objetivo_arranque']:,.2f} USD "
+          f"({info['vueltas_arranque']} vuelta(s), {info['variables']:,} variables).")
+    print(f"  MILP: {info['objetivo_milp']:,.2f} USD, {info['estado']}, brecha de Gurobi {info['brecha_milp']:.3%}, "
+          f"{info['segundos_milp']:.0f} s.")
+
+    # --- Programa y validaciones basicas (la validacion completa e independiente es 15-) ---
+    t_reloj = m % DIA_MIN
+    occ = np.bincount(t_reloj[X > 0.5], minlength=DIA_MIN).astype(float)
+    assert occ.max() <= kappa, f"Programa exacto: {occ.max():.0f} buses cargando a la vez con {kappa} puestos."
+    runs, piezas, t_corte = corridas_y_puestos(v, w, m, X, mw, kwh_min, kappa, occ)
+    usados = np.bincount(w[X > 0.5], minlength=len(v))
+    kwh_w = np.minimum(usados * kwh_min, v["kwh"].values)
+    deficit_kwh = v["kwh"].values - kwh_w            # el modelo lo cuenta en minutos; aqui en kWh exactos
+    assert np.allclose(kwh_w + deficit_kwh, v["kwh"].values, atol=1e-3), "Programa exacto: energia + deficit != consumida."
+    sel = X > 0.5
+    usa_ext = np.zeros(len(v), bool)
+    usa_ext[w[sel & (m > mw["ult"][w])]] = True
+    assert (r[usa_ext] == 1).all(), "Programa exacto: una ventana carga despues de su salida sin reserva."
+    # energia por minuto del reloj (el ultimo minuto de cada ventana carga el resto)
+    em = np.zeros(DIA_MIN)
+    for p in piezas.itertuples():
+        mins = np.arange(p.inicio_min, p.fin_min)
+        e = np.full(len(mins), kwh_min)
+        e[-1] = p.kwh - kwh_min * (len(mins) - 1)
+        np.add.at(em, mins % DIA_MIN, e)
+    assert abs(em.sum() - kwh_w.sum()) < 1e-3, "Programa exacto: la energia por minuto no calza con la de las cargas."
+    costo_w = np.zeros(len(v))
+    for p in piezas.itertuples():
+        mins = np.arange(p.inicio_min, p.fin_min)
+        e = np.full(len(mins), kwh_min)
+        e[-1] = p.kwh - kwh_min * (len(mins) - 1)
+        costo_w[p.w] += float(tarifa[mins % DIA_MIN] @ e)
+
+    fin_ult = runs.groupby("w").tail(1).set_index("w")
+    ini_pri = runs.groupby("w").head(1).set_index("w")
+    eventos = runs.groupby("w").size()
+    base = v[["ventana_id", "bus", "tipo", "tramo_id", "llegada_min", "limite_min", "kwh"]]
+    prog = base.copy()
+    prog["kwh_cargado"] = kwh_w
+    prog["deficit_kwh"] = deficit_kwh
+    prog["reserva"] = r
+    prog["inicio_carga_min"] = ini_pri["ini"].reindex(range(len(v))).values
+    prog["fin_carga_min"] = (fin_ult["ini"] + fin_ult["minutos"] - 1).reindex(range(len(v))).values + \
+        mw["resto"] / kwh_min
+    prog["eventos"] = eventos.reindex(range(len(v)), fill_value=0).values
+    prog["costo_energia_usd"] = costo_w
+    prog["termina_a_tiempo"] = prog["fin_carga_min"] <= prog["limite_min"] + 1e-6
+    tarde = ~prog["termina_a_tiempo"] & (prog["kwh_cargado"] > TOL_E)
+    assert (prog.loc[tarde, "reserva"] == 1).all(), "Programa exacto: una carga termina despues de la salida sin reserva."
+
+    energia_reservas = costo_w.sum() + costos.vehicle_fixed_cost * r.sum()
+    brecha = (energia_reservas - cota) / energia_reservas
+    obj_fifo = prog_f["costo_energia_usd"].sum() + costos.vehicle_fixed_cost * prog_f["reserva"].sum()
+    ev_x, ev_f = prog["eventos"].sum() * costos.fixed_charge_cost, prog_f["eventos"].sum() * costos.fixed_charge_cost
+    print(f"  [OK] Programa exacto: maximo {occ.max():.0f} buses cargando a la vez ({kappa} puestos) | cada carga en un "
+          f"puesto (usados {piezas['puesto'].max()}) | toda la energia repuesta | carga despues de la salida solo con "
+          "reserva.")
+    print(f"  Energia + reservas: {energia_reservas:,.2f} USD ({int(r.sum())} reservas); cota inferior del modelo "
+          f"relajado {cota:,.2f}: brecha {brecha:.2%}.")
+    print(f"  Eventos de carga: {int(prog['eventos'].sum()):,} ({prog['eventos'].sum() / len(v):.2f} por ventana).")
+    if energia_reservas + ev_x <= obj_fifo + ev_f + 1e-3:
+        print(f"  [OK] Mejor que la carga por orden de llegada ({energia_reservas + ev_x:,.2f} <= "
+              f"{obj_fifo + ev_f:,.2f} USD con eventos).")
+    else:
+        print(f"  [AVISO] No mejora a la carga por orden de llegada ({energia_reservas + ev_x:,.2f} > "
+              f"{obj_fifo + ev_f:,.2f} USD con eventos).")
+    if deficit_kwh.sum() > 1e-3:
+        print(f"  [AVISO] Quedan {deficit_kwh.sum():,.1f} kWh sin cargar: la energia no cabe en los puestos.")
+
+    # --- Salidas ---
+    precios = pd.read_csv(DATA_FILTRADO / "electricity_prices.csv", sep=CSV_SEP)
+    td = energia_por_periodo(precios, em)
+    valle = td["precio_usd_kwh"] <= td["precio_usd_kwh"].min() * 1.2
+    mem = medicion.pico_memoria_mb()
+    res = pd.DataFrame([resumen_politica("E2-exacto", prog, v, occ, kappa, costos, P, seg)])
+    for k_col, (col, valor) in enumerate((("terminal", nombre), ("holgura_min", args.holgura), ("delta_min", delta),
+                                          ("puestos", kappa), ("prueba", int(prueba)))):
+        res.insert(k_col, col, valor)
+    res["energia_sobre_capacidad_pct"] = round(v["kwh"].sum() / (kappa * P * 24) * 100, 2)
+    res["costo_medio_energia_usd_kwh"] = (res["costo_energia_usd"] / res["kwh_cargados"]).round(4)
+    res["pct_energia_valle"] = round(td.loc[valle, "kwh"].sum() / td["kwh"].sum() * 100, 2)
+    res["maximo_buses_cargando"] = int(occ.max())
+    res["segundos_total_script"] = round(time.perf_counter() - t_inicio, 1)
+    res["memoria_mb"] = round(mem)
+    modelo = pd.DataFrame([
+        dict(modelo="Modelo relajado, LP (cota inferior)", estado="optimo", objetivo_usd=round(cota, 2),
+             brecha=np.nan, segundos=np.nan),
+        dict(modelo="Programa exacto, arranque", estado="factible", objetivo_usd=round(info["objetivo_arranque"], 2),
+             brecha=np.nan, segundos=info["segundos_arranque"], variables=info["variables"],
+             reservas=info["reservas_arranque"]),
+        dict(modelo="Programa exacto, MILP", estado=info["estado"], objetivo_usd=round(info["objetivo_milp"], 2),
+             brecha=round(info["brecha_milp"], 6), segundos=info["segundos_milp"], variables=info["variables"],
+             binarias=info["candidatas"], reservas=int(r.sum())),
+        dict(modelo="Programa exacto, final (energia + reservas)", estado="entero y validado",
+             objetivo_usd=round(energia_reservas, 2), brecha=round(brecha, 6), segundos=round(seg, 1),
+             reservas=int(r.sum())),
+    ])
+    modelo.insert(0, "delta_min", delta)
+    modelo.insert(0, "holgura_min", args.holgura)
+    iw = piezas["w"].values
+    piezas_out = piezas.assign(ventana_id=v["ventana_id"].values[iw], bus=v["bus"].values[iw],
+                               tipo=v["tipo"].values[iw], reserva=r[iw],
+                               inicio_hora=piezas["inicio_min"].map(hhmm), fin_hora=piezas["fin_min"].map(hhmm))
+    piezas_out = piezas_out[["ventana_id", "bus", "tipo", "puesto", "inicio_min", "fin_min", "inicio_hora", "fin_hora",
+                             "kwh", "reserva"]]
+
+    prog.round(4).to_csv(sal / "programa_E2_exacto.csv", index=False, sep=CSV_SEP)
+    piezas_out.round(4).to_csv(sal / "programa_puestos.csv", index=False, sep=CSV_SEP)
+    res.to_csv(sal / "resumen.csv", index=False, sep=CSV_SEP)
+    modelo.to_csv(sal / "modelo.csv", index=False, sep=CSV_SEP)
+    pd.DataFrame({"minuto": np.arange(DIA_MIN), "e2_exacto": occ, "fifo": occ_f, "puestos": kappa}) \
+        .to_csv(sal / "ocupacion_minutos.csv", index=False, sep=CSV_SEP)
+    td.round(3).to_csv(sal / "energia_por_tarifa.csv", index=False, sep=CSV_SEP)
+    graficar_buses_cargando(occ_f, occ, kappa, tarifa, sal / "buses_cargando_24h.png",
+                            f"Buses cargando durante el dia en {nombre}")
+    graficar_puestos(piezas_out, kappa, tarifa, sal / "uso_de_cada_puesto.png", f"Uso de cada puesto de carga en {nombre} (cada barra es un bus "
+                     "cargando)")
+    lineas = [
+        f"# Etapa 4 - Programa de carga exacto al minuto, {nombre} ({kappa} puestos)",
+        "" if not prueba else "\n**PRUEBA: no es la instancia real.**\n",
+        "Cada bus carga en minutos enteros en un puesto identificado. En ningun minuto cargan mas buses que puestos.",
+        "",
+        f"- Energia + reservas: {energia_reservas:,.2f} USD/dia; {int(r.sum())} reservas "
+        f"({int(r[v['tipo'].values == 'intermedia'].sum())} diurnas, {int(r[v['tipo'].values == 'nocturna'].sum())} "
+        "nocturnas).",
+        f"- Cota inferior (modelo relajado): {cota:,.2f} USD/dia. Distancia al optimo: a lo mas {brecha:.2%}.",
+        f"- Eventos de carga: {int(prog['eventos'].sum()):,} ({prog['eventos'].sum() / len(v):.2f} por ventana).",
+        f"- Maximo de buses cargando a la vez: {occ.max():.0f} de {kappa}; puestos usados: {piezas['puesto'].max()}.",
+        f"- Carga por orden de llegada (misma Etapa 3): {obj_fifo:,.2f} USD/dia, {int(prog_f['reserva'].sum())} reservas.",
+        f"- Tiempo: {seg:,.0f} s; pico de memoria {mem:,.0f} MB.",
+        "",
+        "## Modelos",
+        "",
+        modelo.to_markdown(index=False),
+        "",
+        "## Energia por tramo horario",
+        "",
+        td.round(1).to_markdown(index=False),
+        "",
+        "## Archivos",
+        "- `programa_puestos.csv`: una fila por carga (ventana, bus, puesto, inicio, fin, kWh).",
+        "- `programa_E2_exacto.csv`: una fila por ventana (kWh, inicio y fin de la carga, eventos, reserva, costo).",
+        "- `buses_cargando_24h.png`, `uso_de_cada_puesto.png` (+ .csv), `ocupacion_minutos.csv`, `resumen.csv`, "
+        "`modelo.csv`, `energia_por_tarifa.csv`, `gurobi.log`.",
+    ]
+    (sal / "reporte.md").write_text(nombres.renombrar_texto("\n".join(lineas)), encoding="utf-8")
+    print(f"\n  -> {sal}")
+    print(f"\n  Tiempo: {time.perf_counter() - t_inicio:,.1f} s | pico de memoria: {mem:,.0f} MB")
+    print("\n=== FIN ETAPA 4 (programa exacto) ===")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--terminal", default=parametros.TERMINAL_INSTANCIA, help="depot_id del electroterminal.")
@@ -659,6 +1080,9 @@ def main():
     parser.add_argument("--detallado", action="store_true",
                         help="Corre solo el modelo detallado (en dos fases) a partir del agregado ya resuelto en la misma "
                              "carpeta (correr antes sin --detallado). Escribe en <carpeta>/detallado/ sin tocar el resto.")
+    parser.add_argument("--exacto", action="store_true",
+                        help="Propuesta completa: programa exacto al minuto a partir del modelo relajado ya resuelto en "
+                             "la misma carpeta (correr antes sin --exacto). Escribe en <carpeta>/exacto/.")
     args = parser.parse_args()
     t_inicio = time.perf_counter()
     delta, h_txt = args.delta, f"{args.holgura:g}"
@@ -734,6 +1158,11 @@ def main():
     obj_f_modelo = obj_f + float(desempate(seg) @ e_f)          # el mismo objetivo que ve el MILP (con desempate)
     print(f"  [OK] FIFO en la grilla de {delta} min: factible para el modelo agregado y mismo costo de energia "
           f"(energia + reservas: {obj_f:,.2f} USD).")
+
+    if args.exacto:
+        modo_exacto(args, salida, nombre, h_txt, delta, prueba, v, costos, kappa, kwh_min, P, tarifa, prog_f, occ_f,
+                    t_inicio)
+        return
 
     if args.detallado:
         modo_detallado(args, salida, nombre, h_txt, delta, prueba, v, seg, costos, precio_bloque, cap_bloque, kappa,

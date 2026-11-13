@@ -1,0 +1,8 @@
+corrida;estado;brecha;fuente_brecha;segundos
+Etapa 3 (holgura de recarga 0 min) (DP + flujo);optimo (flujo entero);0.0;flujo entero;1.9
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): Propuesta con carga por orden de llegada;heuristica (sin optimizacion);;-;0.74
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): Modelo relajado, LP (cota);optimo;0.0;Gurobi;3.35
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): Modelo relajado (MILP);optimo (brecha pedida);0.002646;Gurobi;30.45
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): Programa exacto, arranque;factible;;-;11.7
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): Programa exacto, MILP;optimo (brecha pedida);0.00204;Gurobi;120.5
+Etapa 4 (holgura de recarga 0 min, largo del bloque 15 min): Programa exacto, final (energia + reservas);entero y validado;0.020295;Gurobi;166.0

@@ -57,8 +57,11 @@ DELTAS_SENSIBILIDAD = [5, 15, 30]
 # El detallado (~80 mil binarias con Delta = 30, ~160 mil con Delta = 15) se resuelve en dos fases dentro del total de
 # "detallado": la fase 1 (reservas fijas en las del agregado) busca una solucion completa; la fase 2 (modelo completo)
 # parte de ella con el tiempo restante (docs/context/02_decisiones.md, G11).
-TIEMPO_LIMITE_S = {"agregado": 600, "detallado": 3600, "detallado_fase1": 1500}
+TIEMPO_LIMITE_S = {"agregado": 600, "detallado": 3600, "detallado_fase1": 1500, "exacto": 1800}
 GAP_MIP = 0.005                  # brecha de optimalidad pedida (0,5% del objetivo de la Etapa 4)
+# Programa exacto al minuto (13- --exacto, docs/contexto_entrega_3/plan_etapa4.md): la capacidad se cuenta en buses por
+# minuto y cada bus ocupa el puesto en minutos enteros. Las reservas son binarias solo en las ventanas candidatas.
+GAP_EXACTO = 0.005
 GAP_DETALLADO_FASE1 = 0.01       # la fase 1 solo construye el punto de partida de la fase 2
 # Penalizacion por kWh no repuesto (M del deficit). Muy por sobre el costo de una reserva (250 USD), para que el
 # deficit solo aparezca si la energia no cabe en los puestos en 24 h.

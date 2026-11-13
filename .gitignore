@@ -30,9 +30,15 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-prompts_redaccion_informe2.md
-plan_redaccion_informe2.md
-prompt_sesion_implementacion.md
+docs/prompts_redaccion_informe2.md
+docs/plan_redaccion_informe2.md
+docs/prompt_sesion_implementacion.md
+
+docs/Informe 2/
 
 
 
+
+# Entrega de codigos: datos del curso y salidas se crean al correr
+docs/codigos_entrega/scripts/datos/
+docs/codigos_entrega/scripts/resultados/

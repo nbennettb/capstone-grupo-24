@@ -1,0 +1,61 @@
+Este anexo reúne tres tablas citadas en el cuerpo del informe: los \textit{scripts} entregados (Sección \ref{sec:implementacion}), la comparación entre el modelo agregado y el detallado (Sección \ref{sec:validacion-carga}) y la Carta Gantt hasta la entrega final (Sección \ref{sec:plan}).
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llp{7.2cm}}
+\toprule
+\textit{Script} & Etapa & Resultados que entrega \\
+\midrule
+1, 2 & Datos & Filtro a buses de RED y al día laboral (Sección \ref{sec:datos-informe2}) \\
+3, 13 & 0 & 64.502 expediciones, cierre ida y vuelta de las rutas y Figura \ref{fig:demanda-tarifa} \\
+4 & 1 & Asignación de rutas a electroterminales \\
+5, 6, 7 & 2 & Factor de desvío medido, jornadas sin batería, escalera de escenarios y sensibilidades (Sección \ref{sec:supuestos-informe2}) \\
+8, 9 & Caso base & Carga reactiva en toda la red y en La Reina, y barrido del nivel de batería (Figura \ref{fig:caso-base-red}) \\
+10 & 3 & Cortes, reencadenamiento y ventanas de carga \\
+11 & 4 & Carga por orden de llegada, modelo agregado y modelo detallado \\
+12 & KPI & Tablas \ref{tab:kpis-lr} y \ref{tab:detallado-agregado}, sensibilidades (Sección \ref{sec:sensibilidad}) y Figuras \ref{fig:escalera} a \ref{fig:sensibilidad} \\
+\bottomrule
+\end{tabular}
+\caption{\textit{Scripts} entregados.}
+\label{tab:scripts}
+\end{table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{6.8cm}rr}
+\toprule
+ & Modelo agregado & Modelo detallado \\
+\midrule
+Reservas & 218 & 217 \\
+Eventos de carga & 5.866 & 1.675 \\
+Energía + reservas (USD/día) & 100.905 & 100.666 \\
+Costo de carga con eventos (USD/día) & 130.235 & 109.041 \\
+Minutos sobre los puestos (minuto a minuto) & 124 & 32 \\
+Tiempo de cómputo (s) & 89 & 3.605 \\
+Brecha de optimalidad & 0,32\% & 0,66\% \\
+\bottomrule
+\end{tabular}
+\caption{Modelo agregado frente al modelo detallado, con bloques de 15 min. El tiempo del agregado corresponde solo a su MILP.}
+\label{tab:detallado-agregado}
+\end{table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{4.3cm}p{2.6cm}p{2.3cm}cccccc}
+\toprule
+Actividad & Depende de & Responsable(s) & S1 & S2 & S3 & S4 & S5 & S6 \\
+\midrule
+(i) Propuesta en toda la red & Código actual & Todos & X & X & & & & \\
+(ii) Flujo cíclico en la Etapa 3 & Código actual & Todos & X & X & X & & & \\
+(iii) Sensibilidades pendientes & (i) & Todos & & & X & X & X & \\
+(iv) Otros tipos de día (sábado y domingo) & (i) & Todos & & & & X & X & \\
+(v) Entregables e informe final & (i) a (iv) & Todos & & & & X & X & X \\
+Hito: entrega final, 27 de noviembre & (v) & Todos & & & & & & X \\
+\bottomrule
+\end{tabular}
+\caption{Carta Gantt hasta la entrega final.}
+\label{tab:gantt-informe2}
+\end{table}

@@ -1,0 +1,142 @@
+\section{Descripción del problema}
+
+
+La red de buses de RED organiza su servicio en rutas, la mayoría con un sentido de ida y otro de vuelta, y cada viaje se repite durante el día con una frecuencia que cambia según la hora. Los buses salen de un electroterminal, realizan uno o más viajes y regresan a él para recargarse. Un electroterminal es una instalación donde los buses se estacionan y cargan, y en cada instante solo pueden cargar tantos buses como puestos de carga tenga. Además, la electricidad no cuesta lo mismo a toda hora, sino que su precio depende del tramo horario.
+
+En este escenario intervienen cuatro actores. El operador de la red define los viajes que deben cubrirse y busca hacerlo al menor costo. La flota aporta los buses, todos del mismo modelo. Los electroterminales ofrecen el lugar y los puestos donde esos buses pueden recargarse. Por último, el sistema eléctrico fija la tarifa de la energía según el tramo horario. Los pasajeros no se modelan como actor, y la oferta programada hace de demanda.
+
+El problema consiste en planificar, para un día laboral tipo, de lunes a viernes, la operación de una flota homogénea de buses eléctricos BYD K9 de RED. El día incluye 64.502 viajes programados, denominados expediciones, repartidos en 417 rutas. Cada bus tiene una batería de 350 kWh, que entrega una autonomía útil de 225 km, y se recarga con una potencia de 180 kW, lo que toma unos 105 min entre el 10\% y el 100\%. La carga solo puede hacerse en cinco electroterminales, que en conjunto tienen 700 puestos, y cada puesto atiende un bus a la vez.
+
+Hay tres decisiones por tomar. La primera es qué bus realiza cada expedición y en qué orden. La segunda son los traslados sin pasajeros, que incluyen salir del electroterminal hacia el primer viaje, volver al terminar y moverse entre viajes consecutivos, y que en conjunto se denominan \textit{deadhead}. La tercera es la recarga, es decir, cuándo, dónde y cuánta energía recibe cada bus.
+
+La solución debe cumplir seis reglas. Cada expedición se cubre exactamente una vez. La secuencia de cada bus debe ser posible en el tiempo, de modo que alcance a trasladarse entre un viaje y el siguiente. La batería nunca baja del 10\%. En ningún momento hay más buses cargando que puestos disponibles. Cada bus debe volver al electroterminal del que salió y cada bus termina el día con la misma batería con que lo empezó, porque al día siguiente se repite el ciclo y de otro modo se estaría usando energía que nadie repone.
+
+Por último, el objetivo principal es minimizar el costo total de operación, como se muestra en la siguiente ecuación:
+
+\begin{equation}
+    \min
+    \left\{
+        250 B + 0{,}5 K_{\mathrm{dh}} + 0{,}03 T_{\mathrm{espera}}
+        + 5 N_{\mathrm{cargas}}
+        + \sum_{h \in H} p_h E_h
+    \right\}.
+    \label{eq:objetivo-global}
+\end{equation}
+
+Aquí, $B$ es el tamaño de la flota, que es irrestricto, $K_{\mathrm{dh}}$ los kilómetros recorridos sin pasajeros, $T_{\mathrm{espera}}$ los minutos de espera, $N_{\mathrm{cargas}}$ el número de eventos de carga, y $E_h$ la energía (en kWh) cargada durante el tramo horario $h$, cuyo precio es $p_h$ (entre 0,10 y 0,22 USD/kWh).
+
+
+
+\section{Datos y preparación}
+\label{sec:datos-informe2}
+
+Los datos provienen de dos fuentes. La primera es la programación de la red de buses de RED en formato GTFS (\textit{General Transit Feed Specification}), vigente entre julio y diciembre de 2026, que describe las rutas, los patrones de viaje con sus horarios y frecuencias, los paraderos y los trazados de cada recorrido. La segunda son los parámetros entregados por el curso, que fijan los electroterminales, las características del bus, los costos y las tarifas por tramo horario.
+
+Por otra parte, se filtraron estos datos. Primero, se conservaron solo los buses de RED, excluyendo Metro, Metrotren y el bus al aeropuerto, y solo el día laboral.
+
+Segundo, como los viajes se definen por frecuencia y no por horarios fijos, cada uno de los 6.620 patrones se expandió en las salidas que realiza durante el día. Un mismo patrón se repite varias veces, así que su identificador no distingue entre salidas, y por eso se asignó un identificador propio a cada expedición. Tercero, se calculó para cada expedición su distancia y su energía, esta última como la distancia por un consumo de 1,4 kWh por kilómetro.
+
+Los datos no incluyen distancias de traslado sin pasajeros ni una asignación previa de viajes a buses, por lo que ambos se construyen en el modelo.
+
+\section{Análisis de datos y hallazgos}
+\label{sec:modelo-informe2}
+La Figura \ref{fig:demanda-tarifa} del Anexo \ref{anx:figuras} contiene información sobre la demanda de buses y las tarifas energéticas durante el día.
+
+Como se puede ver en la Figura \ref{fig:demanda-tarifa}, la demanda de expediciones presenta dos puntas, una a las 8:00 con 6.539 buses circulando simultáneamente, y otra a las 18:30 con 6.462. Esta primera punta es una cota inferior del tamaño de flota para cualquier metodología.
+
+Por otra parte, la demanda en general se concentra durante el día, por lo que lógicamente las recargas se concentrarán principalmente en horarios nocturnos, que justo coinciden con los tramos horarios en que las tarifas son más baratas, de 0:00 a 8:00 y de 22:00 a 24:00. En cambio, los tramos más caros, de 14:00 a 17:00 y de 19:00 a 22:00, coinciden con horarios en que la demanda aún es intensa, pero no está en su punto máximo.
+
+También se encontraron distintos hallazgos que condicionaron la modelación de este problema. De las 300 rutas cuyos dos sentidos son identificables, el 94,7\% termina la ida a menos de 500 m del punto donde comienza la vuelta, con una mediana de 85 m. Esto respalda agrupar las rutas completas al asignarlas a un electroterminal y no cada viaje por separado.
+
+Por otro lado, se unió el electroterminal de Los Espinos con el de Santa Rosa, que distan 1,1 km entre sí, mientras que los demás electroterminales están a entre 12 y 18 km de ellos. Esta unión se debe a que al evaluar el caso base con ambos separados, Los Espinos resulta infactible, porque la energía que debe reponer equivale a entre 102,6\% y 104,0\% de la que sus puestos pueden entregar en un día. Unido a Santa Rosa, ese porcentaje baja a 82,5\% y el déficit desaparece. Por esta razón, los dos se tratan como un solo electroterminal de 270 puestos.
+
+Por último, los datos presentan limitaciones que conviene tener presentes al interpretar los resultados. En primer lugar, la oferta programada por RED hace de demanda, de modo que el plan debe cubrir todas las expediciones, incluso aquellas que en la práctica irían con pocos pasajeros. A esto se suma que todas las expediciones de un mismo patrón de viaje tienen igual duración y consumo energético, por lo que no se consideran la congestión, la topografía ni la variabilidad de la operación real. En consecuencia, en horas punta los viajes reales serían más lentos, y los encadenamientos posibles entre viajes resultan algo optimistas.
+
+\section{Supuestos}
+\label{sec:supuestos-informe2}
+
+Para el desarrollo de la metodología, fue necesario definir una serie de supuestos. Cada uno se presenta con sus respectivas justificaciones, sus límites y el análisis de sensibilidad realizado o planificado para la próxima entrega.
+
+\subsection{Factor de desvío de \textit{deadhead}}
+\label{sup:desvio}
+
+Todo desplazamiento sin pasajeros (\textit{deadhead}) se calcula como la distancia en línea recta multiplicada por 1,3, a una velocidad de 20 km/h. No se utiliza la red vial de OpenStreetMap.
+
+Usar distancia euclidiana es una simplificación del grupo, por lo que se respaldó el factor con datos propios. En los 839 trazados GTFS se revisaron los puntos separados por 1--3 km y 5--15 km de recorrido, escalas que corresponden al \textit{interlining} y a las salidas y regresos al electroterminal (\textit{pullout}/\textit{pullin}), respectivamente, y se comparó su distancia real con su distancia en línea recta (Tabla \ref{tab:factor-desvio}).
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+Tipo de desplazamiento & Escala & Factor real (mediana) \\
+\midrule
+\textit{Interlining} & 1--3 km & 1,04--1,22 \\
+\textit{Pullout}/\textit{pullin} & 5--15 km & 1,29--1,38 \\
+\bottomrule
+\end{tabular}
+\caption{Factor de desvío medido en los trazados GTFS.}
+\label{tab:factor-desvio}
+\end{table}
+
+Se concluye que en el caso del \textit{interlining} el factor de 1,3 es conservador, ya que queda sobre la mediana, mientras que en los desplazamientos de \textit{pullout}/\textit{pullin} queda cercano a la mediana medida, pero podría subestimar levemente la distancia a escalas largas.
+
+Para el análisis de sensibilidad, sobre las jornadas de la Etapa 2 con \textit{interlining}, variar el factor entre 1,2 y 1,5 mueve la flota entre $-1$\% y $+1$\%. Usar el valor medido (1,35) aumenta el costo de operación en 0,6\%. El factor afecta principalmente el costo de los kilómetros sin pasajeros y no la factibilidad del \textit{interlining}, que ocurre a distancias cortas. La sensibilidad a la velocidad (15 y 25 km/h) está planificada y queda pendiente de ejecución.
+
+\subsection{Radio máximo de \textit{interlining}}
+\label{sup:radio}
+
+Solo se permite encadenar viajes de rutas distintas cuando la distancia de desplazamiento entre ellos es menor o igual a 3 km. Este valor se compara contra la distancia ya multiplicada por 1,3, por lo que equivale a unos 2,3 km en línea recta, es decir, unos 9 min de traslado a 20 km/h.
+El radio es una decisión de tamaño del modelo. Sin un límite habría que considerar casi todos los pares de viajes posibles, del orden de miles de millones de arcos. No responde a una medición.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lrrr}
+\toprule
+Radio de \textit{interlining} & Cantidad de buses & Variación de flota & Variación de costo \\
+\midrule
+1 km & 8.198 & +11,3\% & +11,0\% \\
+2 km & 7.577 & +2,9\% & +2,8\% \\
+3 km & 7.366 & referencia & referencia \\
+4 km & 7.201 & $-2{,}2$\% & $-2{,}2$\% \\
+5 km & 7.118 & $-3{,}4$\% & $-3{,}3$\% \\
+\bottomrule
+\end{tabular}
+\caption{Sensibilidad al radio máximo de \textit{interlining}, respecto del radio de 3 km.}
+\label{tab:radio}
+\end{table}
+
+Al pasar de 1 a 5 km, el tiempo de resolución sube de unos 20 s a unos 120 s (Tabla \ref{tab:radio}). La reducción de flota presenta rendimientos decrecientes: cada kilómetro adicional permite reducirla menos que el anterior.
+
+Se mantiene el radio de 3 km, porque ampliarlo exigiría rehacer la etapa de carga con jornadas más largas. Elegir el radio por costo total incluyendo la carga queda como trabajo para la entrega final.
+
+\subsection{Nivel de carga cíclico}
+\label{sup:ciclo}
+
+Todo bus inicia y termina el día con el mismo nivel de batería $L$, que además es el tope de carga. Se considera $L = 100$\%, y los ciclos que la carga no alcanza a cerrar se cubren con buses de reserva.
+
+El nivel no se fijó por criterio propio. Se realizó un barrido de ocho niveles (100\%, 90\%, 80\%, 70\%, 65\%, 60\%, 55\% y 50\%) y se eligió el de menor costo total entre las soluciones factibles, entendiendo la condición cíclica como una restricción y no como un indicador. En el caso base sin \textit{interlining} y en el con \textit{interlining}, el menor costo total corresponde a 100\%. Ningún nivel entre 100\% y 55\% cumple el ciclo sin reservas con la política de carga reactiva.
+
+
+\section{Indicadores de desempeño (KPI)}
+\label{sec:kpis-informe2}
+Los indicadores de la Tabla \ref{tab:kpis-def} se definieron para responder a una decisión concreta del problema. Cada uno se obtiene para los cuatro escenarios de la escalera: caso base, caso base con \textit{interlining}, propuesta con carga por orden de llegada y propuesta completa, lo que permite aislar el efecto de cada decisión al comparar escenarios consecutivos.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lp{3.6cm}p{4.6cm}p{4.2cm}}
+\toprule
+ & KPI & Definición & Decisión que evalúa \\
+\midrule
+1 & Costo total (USD/día) & Flota + reservas + km sin pasajeros + espera + energía + eventos de carga & Todas (es el objetivo) \\
+2 & Número de buses & Flota operativa + buses de reserva & Asignación de rutas (Etapa 1) y encadenamiento \\
+3 & \% km de \textit{deadheading} & km sin pasajeros / km totales & Encadenamiento y asignación de rutas (Etapa 1) \\
+4 & Costo medio de la energía & USD/kWh cargado & Programación de carga \\
+5 & Tiempo de cómputo & Segundos de ejecución de las etapas de cada escenario, sin la Etapa 2 & Qué modelo de carga llevar a toda la red \\
+\bottomrule
+\end{tabular}
+\caption{Indicadores de desempeño.}
+\label{tab:kpis-def}
+\end{table}

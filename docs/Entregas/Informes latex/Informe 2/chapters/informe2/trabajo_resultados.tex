@@ -1,0 +1,98 @@
+\section{Implementación y herramientas}
+\label{sec:implementacion}
+
+\subsection{Herramientas y equipo}
+
+Todo el trabajo se implementó en Python 3.11.9. Los datos y las matrices de restricciones se manejan con pandas 2.2.3 y numpy 2.1.1. Los modelos de optimización se resuelven con Gurobi 13.0.2, que resuelve los flujos de costo mínimo de las Etapas 2 y 3, y los MILP de la Etapa 4. Los programas lineales auxiliares se resuelven con HiGHS, a través de scipy 1.15.3. Son dos: la cota de la energía que cabe en las ventanas del caso base y el reparto minuto a minuto que mide cuántos minutos supera los puestos un programa de la Etapa 4. Las figuras se generan con matplotlib 3.9.2. Todos los tiempos de este capítulo se midieron en un computador con un procesador Intel Core i5-1035G4 de 4 núcleos.
+
+\subsection{Estructura del código y reproducibilidad}
+
+Los códigos se entregan en un archivo .zip con la carpeta \texttt{scripts}, que contiene trece \textit{scripts} numerados en el orden en que se corren, el \textit{script} \texttt{correr\_todo.py} y la carpeta \texttt{common}, donde están los supuestos, parámetros y las funciones compartidas. Cada \textit{script} lee lo que dejó el anterior, valida sus resultados, imprime en consola las cifras reportadas en este informe y guarda sus tablas y figuras en la carpeta \texttt{scripts/resultados}. La Tabla \ref{tab:scripts} del Anexo \ref{anx:tablas} indica qué hace cada \textit{script} y dónde se usan sus resultados.
+
+Para reproducir los resultados se debe crear la carpeta \texttt{scripts/datos} y copiar en ella los archivos GTFS (carpeta con archivos .txt) y CSV que fueron entregados por el profesor. Luego se corre el archivo \texttt{correr\_todo.py} o cada \textit{script} individualmente siguiendo el orden de la Tabla \ref{tab:scripts}. El código es determinista, por lo que repetir una corrida entrega las mismas jornadas, ventanas y costos. La excepción son los MILP de Gurobi con límite de tiempo, cuya brecha final puede variar levemente según el computador.
+
+
+\subsection{Instancia de prueba de concepto: modelo completo corrido en el electroterminal La Reina}
+
+El caso base se evaluó en toda la red, pero las Etapas 3 y 4 se probaron en un solo electroterminal, La Reina. Se decidió hacer así y no con una muestra de buses porque, después de la Etapa 1, cada electroterminal es un subproblema independiente.
+
+La Reina tiene 100 puestos, 10.327 expediciones de 67 rutas y 1.203 jornadas con \textit{interlining}. Se eligió este y no otro porque es el electroterminal con menos rutas de los realmente congestionados. La energía que la propuesta debe reponer es el 79,5\% de lo que sus puestos entregan en 24 h, y en el caso base con \textit{interlining} sus puestos se usan en promedio un 80,9\% del día y necesita 315 buses de reserva. Con esto, se puede medir bien el efecto de las Etapas 3 y 4 de la metodología. Vespucio Norte es el electroterminal con menos rutas asignadas, pero se descartó porque usa sus puestos un 34,8\% del día, y sin congestión la Etapa 4 prácticamente se reduciría a cargar en la hora más barata.
+
+\section{Resultados y análisis}
+
+\subsection{Caso base en toda la red}
+
+El caso base cuesta 3.958.063 USD/día y el caso base con \textit{interlining} 3.751.250 USD/día, un 5,2\% menos. Sin considerar la batería, el \textit{interlining} reduce la flota de 8.654 a 7.366 buses, un 14,9\% menos, y queda a 4,4\% de la cota inferior de 7.055 buses que se obtiene sin exigir el retorno al electroterminal. Al incluir la carga, la ventaja se reduce a 745 buses, un 5,6\%, porque las jornadas con \textit{interlining} son más largas y consumen más. Con \textit{interlining} hay que partir más jornadas y agregar más buses de reserva (Figura \ref{fig:caso-base-red} del Anexo \ref{anx:figuras}).
+
+El resultado principal es que la batería es el cuello de botella. Al incluir la carga, la flota sube un 53\% en el caso base y un 70\% con \textit{interlining} con respecto a las jornadas sin batería. La carga reactiva casi nunca carga durante el día, hace solo 53 recargas intermedias en el caso base y 60 con \textit{interlining}, aunque el 30,0\% y el 39,7\% de las jornadas consumen más que la batería útil. En su lugar, parte la jornada, porque el bus no tiene tiempo de volver, cargar y llegar a su siguiente expedición. Todos los electroterminales llegan al 100\% de ocupación en algún momento del día, y los buses esperan en total 56.071 h por un puesto en el caso base y 59.286 h con \textit{interlining}. Este resultado es el que motiva las Etapas 3 y 4: la Etapa 3 aborda las jornadas partidas y la Etapa 4, las reservas.
+
+\subsection{Comparación de escenarios en La Reina}
+\label{sec:res-escenarios}
+
+La Tabla \ref{tab:kpis-lr} presenta los KPI de los cuatro escenarios en La Reina. La propuesta completa reduce el costo total de 594.602 a 424.300 USD/día frente al caso base, un 28,6\% menos, y la flota de 2.045 a 1.383 buses, un 32,4\% menos.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{4.6cm}rrrr}
+\toprule
+KPI & Caso base & \parbox[b]{2cm}{\raggedleft Caso base con \textit{interlining}} & \parbox[b]{2.4cm}{\raggedleft Propuesta con carga por orden de llegada} & \parbox[b]{1.9cm}{\raggedleft Propuesta completa} \\
+\midrule
+Costo total (USD/día) & 594.602 & 567.807 & 488.464 & 424.300 \\
+Número de buses & 2.045 & 1.953 & 1.638 & 1.383 \\
+\% km de \textit{deadheading} & 16,14 & 15,10 & 14,25 & 14,25 \\
+Costo medio de la energía (USD/kWh) & 0,1372 & 0,1369 & 0,1369 & 0,1352 \\
+Tiempo de cómputo (s) & 1,2 & 1,7 & 4,1 & 3.608,1 \\
+\bottomrule
+\end{tabular}
+\caption{KPI de los cuatro escenarios en La Reina.}
+\label{tab:kpis-lr}
+\end{table}
+
+Cada escalón de la escalera mejora al anterior (Figuras \ref{fig:escalera} y \ref{fig:costo} del Anexo \ref{anx:figuras}). El \textit{interlining} ahorra 26.795 USD/día, un 4,5\%, y 92 buses, un resultado parecido al 5,2\% de toda la red. La Etapa 3 es el escalón más grande, con 79.343 USD/día menos, un 14,0\%, y 315 buses menos. La Etapa 4 ahorra otros 64.164 USD/día, un 13,1\%, y 255 buses. El porcentaje de km de \textit{deadheading} baja de 15,10\% a 14,25\% con la Etapa 3, y el costo medio de la energía cambia poco, por razones que se explican en la Sección \ref{sec:origen-mejora}. El tiempo de cómputo, que no incluye la Etapa 2 porque se corre una vez, sube a 3.608 s en la propuesta completa, porque usa el modelo detallado (Sección \ref{sec:validacion-carga}).
+
+\subsection{De dónde proviene la mejora}
+\label{sec:origen-mejora}
+
+Frente al caso base con \textit{interlining}, la propuesta completa ahorra 143.507 USD/día. De ese ahorro, 118.000 USD/día vienen de la flota operativa (82\%) y 24.500 USD/día de las reservas (17\%). El resto, 1.007 USD/día, es el efecto neto de la energía, los km de \textit{deadheading}, la espera y los eventos de carga. La mejora es entonces de flota, y la explican la Etapa 3 y las reservas de la Etapa 4.
+
+Las 1.203 jornadas sin batería necesitan 1.203 buses. Si un bus pudiera volver al electroterminal y salir de nuevo sin cargar, bastarían 1.130 buses, 73 menos (efecto del reúso). Si cada tramo cortado fuera un bus, harían falta 1.640. La Etapa 3 completa necesita 1.166 buses, solo 36 más que el reúso sin batería. La batería le cuesta entonces 36 buses a la Etapa 3, mientras a la carga reactiva le cuesta 435 buses operativos, de 1.203 a 1.638. El reúso, que el caso base no permite, explica 73 de los 472 buses operativos de diferencia entre ambos, y los otros 399 vienen de cortar las jornadas donde menos cuesta y de reencadenar los tramos (Figura \ref{fig:gantt}). Considerando también las reservas, los buses adicionales por batería bajan de 750 en el caso base con \textit{interlining} a 180 en la propuesta completa, un 76\% menos.
+
+La Etapa 3 sola no reduce las reservas, sino que las aumenta. Con la carga por orden de llegada hay 472 reservas, 30 diurnas y 442 nocturnas, frente a 315 del caso base con \textit{interlining}. Se esperaba este efecto, porque la Etapa 3 no ve los puestos, cada bus queda listo justo cuando terminaría de cargar si tuviera un puesto libre al llegar, y con los puestos llenos 15,1 h al día la carga por orden de llegada no alcanza a cumplir esas ventanas. La Etapa 4 baja las reservas a 217, un 54\% menos, y elimina las 30 diurnas. De las 217, 53 no se pueden evitar con ninguna programación de carga, porque sus ventanas nocturnas no alcanzan a recargar ni con un puesto libre todo el tiempo, y 38 de ellas son cadenas de más de 24 h. De su ahorro de 64.164 USD/día, 63.750 USD/día vienen de las reservas, el 99\%.
+
+La Figura \ref{fig:ocupacion} del Anexo \ref{anx:figuras} muestra que en los tres escenarios los puestos están llenos desde las 20:00 hasta cerca de las 13:00 del día siguiente. La propuesta completa casi deja de cargar entre las 14:00 y las 17:00 y concentra esa carga entre las 17:00 y las 19:00. En la ejecución minuto a minuto supera los 100 puestos durante 32 min del día, con un máximo de 115 buses entre las 7:00 y las 8:00, porque la capacidad se impone por bloque y no por minuto.
+
+Por otro lado, se esperaba que uno de los aportes principales de la Etapa 4 fuera cargar en las horas baratas, pero su ahorro de energía es de solo 589 USD/día, un 1,3\%, frente a la carga por orden de llegada. La razón es que el valle ya está lleno. Entre las 0:00 y las 8:00 la propuesta completa carga 144.000 kWh, que es exactamente lo que entregan 100 puestos a 180 kW durante 8 h, y entre las 22:00 y las 24:00 carga 36.000 kWh, también el máximo. Lo que la Etapa 4 sí puede mover es la carga de la tarde. Baja la carga entre las 14:00 y las 17:00, a 0,22 USD/kWh, de 6.779 a 1.036 kWh frente al caso base con \textit{interlining}, y la lleva al tramo de 17:00 a 19:00, a 0,15 USD/kWh, donde sube de 10.196 a 16.465 kWh. Por eso el costo medio de la energía casi no cambia, de 0,1369 a 0,1352 USD/kWh, y el valor de la Etapa 4 está en las reservas.
+
+\subsection{Validación del modelo de carga y tiempos de cómputo}
+\label{sec:validacion-carga}
+
+El modelo detallado es la formulación de la Etapa 4, y el agregado es su relajación sin carga continua ni eventos de carga (Sección \ref{sec:etapa4}). La Tabla \ref{tab:detallado-agregado} del Anexo \ref{anx:tablas} compara ambos con bloques de 15 min.
+
+Los dos modelos toman casi las mismas decisiones. El agregado programa 218 reservas y el detallado 217, y su costo de energía más reservas difiere en 0,24\%. La diferencia está en los eventos. El agregado no ve el costo de 5 USD por evento y reparte la carga de cada bloque entre muchos buses, con 3,6 eventos por ventana. Contados después de resolver, sus 5.866 eventos cuestan 29.330 USD/día, frente a 8.375 del detallado, que tiene 1.675 eventos, casi uno por ventana. Por eso el costo de carga del detallado es 16,3\% menor. El detallado también supera menos los puestos al ejecutarse minuto a minuto, 32 min frente a 124, porque sus cargas son continuas y tienen menos bordes dentro de los bloques.
+
+El precio del detallado es el tiempo. El agregado llega a una brecha de 0,32\% en 89 s, y el detallado necesita una hora para llegar a 0,66\%, unas 40 veces más. Por eso el agregado es el candidato para la red completa. Sus reservas y su energía son prácticamente las del detallado, y su error de eventos se puede corregir después, por ejemplo resolviendo el detallado con las reservas del agregado fijas.
+
+\subsection{Análisis de sensibilidad}
+\label{sec:sensibilidad}
+
+Las sensibilidades se hicieron con el modelo agregado, que es el que se corrió en todas las variantes, para que todas se comparen con el mismo modelo (Figura \ref{fig:sensibilidad} del Anexo \ref{anx:figuras}).
+
+\paragraph{Holgura de recarga.}
+Con una holgura de 0, 30 y 60 min, la Etapa 3 necesita 1.166, 1.196 y 1.219 buses operativos, y la propuesta completa programa 218, 203 y 190 reservas. El total de buses sube de 1.384 a 1.399 y 1.409, y el costo total de 445.495 a 448.862 y 452.702 USD/día. Se esperaba que la holgura cambiara reservas por flota, y así ocurre, pero con 60 min agrega 53 buses operativos y solo quita 28 reservas. Se concluye que la holgura no reemplaza la coordinación entre las Etapas 3 y 4, y que retroalimentar la capacidad a la Etapa 3 es una mejora más prometedora.
+
+\paragraph{Largo del bloque.}
+Las decisiones casi no dependen del largo del bloque. El costo de energía más reservas varía menos de 0,5\% y las reservas entre 217 y 219. El costo baja con bloques más largos, porque un bloque grueso relaja la capacidad. Lo que sí cambia es el tamaño del modelo, el tiempo y los eventos, por lo que el largo se elige por representación y tiempo. Un bloque de 15 min calza con las horas exactas en que cambian las tarifas y equivale a 45 kWh, de modo que una carga completa ocupa unos 7 bloques. Con bloques de 30 min serían 90 kWh, un 29\% de la batería útil, una resolución gruesa para cargas diurnas. Con bloques de 5 min el modelo triplica sus variables sin cambiar el resultado.
+
+\subsection{Discusión y limitaciones}
+\label{sec:discusion}
+
+La prueba de concepto confirma que la metodología funciona en un electroterminal real y que cada etapa aporta. La batería es el cuello de botella del problema. En toda la red aumenta la flota del caso base entre 53\% y 70\%, y en La Reina le cuesta al caso base con \textit{interlining} 750 buses adicionales. La propuesta reduce ese costo a 180 buses. Casi todo el ahorro viene de usar menos buses y no de la tarifa. La Etapa 3 reutiliza los buses después de cargar, y la Etapa 4 programa la carga para evitar reservas. El ahorro de energía es pequeño porque la tarifa de valle ya se usa al máximo en todos los escenarios.
+
+Los resultados tienen límites que hay que declarar.
+\begin{itemize}
+    \item \textbf{Reservas inevitables.} 53 de las 217 reservas no se pueden evitar con ninguna programación de carga, y 38 de ellas vienen de cadenas de más de 24 h, que existen porque el flujo es de un día y no cíclico.
+    \item \textbf{Capacidad por bloque.} El programa reportado supera los 100 puestos durante 32 min del día, con un máximo de 115 buses.
+    \item \textbf{Optimalidad y tiempo.} El detallado tiene una brecha de 0,66\% y tarda una hora (tiempo que se fijó como máximo) en La Reina, que no es de los electroterminales más grandes.
+    \item \textbf{Un electroterminal.} La propuesta no se ha probado en los electroterminales más grandes, que tienen 180 y 270 puestos.
+\end{itemize}

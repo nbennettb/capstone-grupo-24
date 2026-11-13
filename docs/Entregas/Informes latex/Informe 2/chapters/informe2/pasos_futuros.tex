@@ -1,0 +1,20 @@
+\section{Avance respecto del plan del Informe 1}
+\label{sec:avance}
+
+El Informe 1 planificó cinco pasos: formular el modelo, implementarlo, probarlo con los datos de RED en electroterminales individuales, ajustar sus parámetros y analizar los resultados. Se cumplieron los cuatro primeros, aunque la descomposición espaciotemporal con horizonte rodante, que la revisión del Informe 1 consideró demasiado compleja, se reemplazó por una por tipo de decisión, exacta en casi todas sus etapas. La unión de Los Espinos y Santa Rosa se decidió con evidencia, y el caso base se corrió en toda la red y la propuesta solo en La Reina.
+
+Hubo dos dificultades. La primera versión del modelo de carga se probó en muestras de buses con los puestos escalados y no respondía una pregunta concreta, por lo que se rehízo sobre un electroterminal completo. Además, el modelo detallado no alcanzaba una brecha útil en una hora hasta que se resolvió partiendo de las reservas del modelo agregado.
+
+\section{Plan de trabajo actualizado}
+\label{sec:plan}
+
+\begin{enumerate}
+    \renewcommand{\labelenumi}{(\roman{enumi})}
+    \item \textbf{Propuesta en toda la red.} Correr las Etapas 3 y 4 en los cuatro electroterminales con el modelo agregado, que entrega prácticamente las mismas reservas y energía que el detallado en 89 s frente a una hora, y consolidar después sus eventos de carga (Sección \ref{sec:validacion-carga}).
+    \item \textbf{Flujo cíclico en la Etapa 3.} Reemplazar el flujo por uno de 24 h estricto, para quitar las 38 reservas que vienen de cadenas de más de 24 h (Sección \ref{sec:discusion}).
+    \item \textbf{Sensibilidades pendientes.} Consumo de $\pm$10\%, velocidad (15 y 25 km/h), tiempo de preparación y radio de \textit{interlining} elegido por el costo total con la carga.
+    \item \textbf{Otros tipos de día.} Evaluar cómo funciona el modelo y los cambios que presenta en los días sábado y domingo.
+    \item \textbf{Entregables e informe final.} Jornadas por bus, programa de carga y desglose de costos de toda la red, comparados con el caso base con los mismos KPI.
+\end{enumerate}
+
+La Carta Gantt, con las dependencias, los responsables y las semanas de cada actividad hasta el hito de la entrega final, se presenta en la Tabla \ref{tab:gantt-informe2} del Anexo \ref{anx:tablas}.

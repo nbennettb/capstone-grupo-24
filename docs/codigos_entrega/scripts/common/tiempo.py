@@ -1,0 +1,40 @@
+"""Horas GTFS (pueden pasar de 24:00:00) y expansion de frequencies.txt a expediciones (una fila por salida)."""
+
+import numpy as np
+import pandas as pd
+
+
+def time_to_min(serie_hhmmss: pd.Series) -> pd.Series:
+    """Convierte una columna de horas 'HH:MM:SS' (con HH pudiendo ser >=24,
+    como usa GTFS para viajes que cruzan medianoche) a minutos desde las
+    00:00 del dia de servicio. Vectorizado: NO usar pd.to_datetime, que
+    falla con horas >=24.
+    """
+    partes = serie_hhmmss.str.split(":", expand=True).astype(int)
+    return partes[0] * 60 + partes[1] + partes[2] / 60
+
+
+def expandir_frecuencias(frequencies: pd.DataFrame) -> pd.DataFrame:
+    """Expande frequencies.txt (un patron con headway) a una fila por
+    salida real. Devuelve columnas: trip_id, dep_min (minuto de salida de
+    esa expedicion especifica), k (indice de la salida dentro de su
+    patron, 0, 1, 2, ...) y expedicion_id (trip_id + '#' + k), que es el
+    identificador UNICO de cada expedicion: OJO, trip_id por si solo NO
+    es unico por expedicion (un mismo patron se repite muchas veces por
+    headway), asi que no debe usarse como clave en pasos posteriores.
+
+    Ejemplo: un patron con start=05:30, end=07:30, headway=900s (15 min)
+    genera 8 filas (una cada 15 min entre 05:30 y 07:30, exclusive del
+    extremo derecho segun el estandar GTFS).
+    """
+    fq = frequencies.copy()
+    fq["s"] = time_to_min(fq["start_time"])
+    fq["e"] = time_to_min(fq["end_time"])
+    fq["h"] = fq["headway_secs"].astype(float) / 60
+    fq["n"] = np.ceil((fq["e"] - fq["s"]) / fq["h"] - 1e-9).astype(int)
+
+    expandido = fq.loc[fq.index.repeat(fq["n"])].copy()
+    expandido["k"] = expandido.groupby(level=0).cumcount()
+    expandido["dep_min"] = expandido["s"] + expandido["k"] * expandido["h"]
+    expandido["expedicion_id"] = expandido["trip_id"] + "#" + expandido["k"].astype(str)
+    return expandido[["trip_id", "k", "expedicion_id", "dep_min"]].reset_index(drop=True)

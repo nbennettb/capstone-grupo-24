@@ -5,7 +5,9 @@
 > - el "agregado" se presenta como "modelo relajado";
 > - la sensibilidad de holgura se descartó;
 > - Los Espinos + Santa Rosa no separa patios;
-> - la tabla de la red completa (`17-`) se hace después de las corridas;
+> - la tabla de la red completa (`17-red_completa.py`) está hecha y los cuatro terminales están corridos y validados;
+> - las sesiones 3 y 4 de la sección 7 están cerradas, salvo la figura de la metodología (9.3), que pasa a la sesión de
+>   gráficos. El estado vigente está en `00_LEEME.md` y lo que sigue en `04_prompt_sesion_siguiente.md`;
 > - el script por terminal es `scripts/correr_terminal.py`.
 
 Alcance de este plan: la parte asignada a Nicolás. La Etapa 4 tiene que entregar un plan de carga que se pueda ejecutar

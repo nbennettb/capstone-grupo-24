@@ -118,3 +118,21 @@ Cada decisión tiene qué se decidió, por qué y su evidencia (medida o razonad
   declara como supuesto (están a 1,1 km).
 - **Flujo cíclico, otros tipos de día, sensibilidad del consumo:** quedan para el informe final, según el feedback de
   la presentación.
+
+## J9. Robustez y cargas cortadas: se declaran y se espera el feedback
+
+- **Qué:** no se corre la sensibilidad a la holgura con el plan exacto, ni un post-proceso para juntar los tramos cortos
+  de carga. Las dos cosas se declaran como limitaciones, con sus números (`03_resultados_y_mensajes.md`, sección 4).
+- **Por qué:**
+  - el análisis crítico de los resultados concluyó que el enfoque sirve y que ninguna de las dos invalida los
+    resultados;
+  - agregarlas antes de la presentación suma casos que pueden confundir;
+  - el feedback del profesor dirá cuál priorizar para el informe final.
+- **Evidencia (medido, red completa):**
+  - 2.248 de 10.304 ventanas cargan en dos o más tramos, y casi todas cambian de puesto;
+  - 1.608 pausas son de 5 min o menos;
+  - el costo de los eventos (5 USD cada uno) sí está en el modelo.
+- **Si se retoma:**
+  - holgura: `--holgura 15` en 12-, 13- y 15- para La Reina (~5 min);
+  - tramos cortos: post-proceso que intercambia minutos entre buses dentro de un mismo período de tarifa y mantiene el
+    puesto del bus, sin cambiar costos ni capacidad.

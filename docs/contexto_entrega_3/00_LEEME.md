@@ -8,6 +8,8 @@ escrita para el grupo. El detalle técnico y las alternativas que se descartaron
 | `00_LEEME.md` | Qué se hizo y cómo explicarlo (este archivo) |
 | `01_como_correr.md` | Comandos, tiempos, qué revisar y qué devolver |
 | `02_decisiones.md` | Cada decisión nueva con su porqué y su evidencia |
+| `03_resultados_y_mensajes.md` | Resultados de la red, mensajes para la presentación, limitaciones y preguntas probables |
+| `04_prompt_sesion_siguiente.md` | Pasos que siguen y prompt para la próxima sesión (Etapa 1 nueva, correr todo, gráficos) |
 | `plan_etapa4.md` | Plan técnico completo (alternativas analizadas y formulación) |
 
 ## 1. El problema que había
@@ -83,6 +85,9 @@ Siglas de las carpetas: `LR` La Reina, `VN` Vespucio Norte, `EC` El Conquistador
 | Vespucio Norte y El Conquistador | Listas, todas las validaciones OK (brecha 0,0% y 1,6%) |
 | Los Espinos + Santa Rosa | Lista, todas las validaciones OK (brecha 1,4%) |
 | Tabla de la red completa (suma de los 4 terminales, `17-red_completa.py`) | Lista, en `results/red_completa/` |
+| Análisis crítico de los resultados | Hecho: el enfoque sirve; se declaran limitaciones (`03_resultados_y_mensajes.md`) |
+| Etapa 1 del compañero | En curso. Si cambia la asignación de rutas, se vuelve a correr todo (`04_prompt_sesion_siguiente.md`) |
+| Gráficos para la presentación | Pendiente, después de la Etapa 1 nueva |
 
 Red completa, contra el caso base con interlining:
 - costo de 3,64 a **2,76 millones de USD/día (−24,3%)**;

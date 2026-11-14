@@ -90,13 +90,21 @@ Comprimir y enviar la carpeta del terminal: `results/instancia_<siglas>/` (`VN`,
 
 ## 7. Si cambia el clustering (Etapa 1)
 
-1. Correr el script de la Etapa 1 que deje el compañero.
-2. Correr la Etapa 2 (`6-vsp_asignacion_buses.py`) para los escenarios E0 y E1.
-3. Correr el caso base de la red completa (`10-caso_base_carga_reactiva.py --escenario E0` y `--escenario E1`, sin
-   `--terminal`), que deja `results/caso_base/`.
-4. Repetir la sección 3 para los cuatro terminales y luego `17-red_completa.py`.
+Todo lo que viene después de la Etapa 1 depende de la asignación de rutas a electroterminales. Hoy esa asignación es
+`data-processed/rutas_cluster_c1b.csv`, y la usan los dos escenarios. Con el clustering de la entrega 2, la cadena es:
+```
+python scripts/4-clustering_c1.py                       # Etapa 1 (o el script que deje el compañero)
+python scripts/6-vsp_asignacion_buses.py --modo ruta    --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --etiqueta E0
+python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --etiqueta E1
+python scripts/10-caso_base_carga_reactiva.py --escenario E0     # caso base de la red completa
+python scripts/10-caso_base_carga_reactiva.py --escenario E1
+python scripts/correr_terminal.py --terminal 1                   # y 2, 3, 4
+python scripts/17-red_completa.py
+```
 
-Los comandos exactos de los pasos 1 a 3 se agregan aquí cuando el compañero cierre el clustering.
+Cuando el compañero entregue su Etapa 1, esta cadena se reemplaza por un solo script (`correr_todo.py`) con sus
+instrucciones y tiempos, y se vuelve a correr todo. Total estimado: ~45 min de la Etapa 4, más lo que tomen la Etapa 1
+y la Etapa 2.
 
 ## 8. Pruebas chicas (para revisar el código, no son resultados)
 

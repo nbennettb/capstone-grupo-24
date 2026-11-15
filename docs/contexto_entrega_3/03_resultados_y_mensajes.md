@@ -1,8 +1,7 @@
 # Resultados de la red y cómo presentarlos
 
-Cifras de la corrida actual: clustering de la entrega 2 y los cuatro terminales. Si el compañero cambia la Etapa 1 y se
-vuelve a correr todo, las cifras cambian. Lo que no debería cambiar son los mensajes ni la estructura de este archivo:
-solo se reemplazan los números. La fuente de todas las cifras es `results/red_completa/resumen_para_analisis.md`.
+Cifras de la corrida de la entrega 3: clustering de la entrega 2 y los cuatro terminales. Son las cifras de la
+presentación. La fuente de todas es `results/red_completa/resumen_para_analisis.md`.
 
 ## 1. Los cinco mensajes de la presentación
 

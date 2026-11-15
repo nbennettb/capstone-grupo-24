@@ -29,7 +29,7 @@ Cada decisión tiene qué se decidió, por qué y su evidencia (medida o razonad
     No hacen falta binarias de enchufe, que eran las que hacían lento al detallado (1 h).
   - El relajado es una relajación del plan al minuto: todo plan al minuto es factible para él. Por eso su costo es
     una cota inferior válida y permite decir a cuánto del óptimo queda el plan.
-- **Alternativas descartadas** (detalle en `plan_etapa4.md`, sección 3):
+- **Alternativas descartadas:**
   - detallado con bloques más finos: sigue superando los puestos;
   - contar buses enchufados el bloque entero: pierde 394 puesto-horas, medido en la entrega 2;
   - corregir el relajado con una heurística: sin garantía de calidad;

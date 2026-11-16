@@ -1,0 +1,9 @@
+concepto;valor
+Bus (flota o reserva);250 USD por bus y día
+Km sin pasajeros;0,50 USD/km
+Espera del bus;0,03 USD/min
+Evento de carga (cada vez que un bus se conecta);5 USD
+Energía (USD/kWh, según la hora);"00–08 h: 0,10; 08–14 h: 0,15; 14–17 h: 0,22; 17–19 h: 0,15; 19–22 h: 0,22; 22–24 h: 0,11"
+Batería;"350 kWh; mínimo 10%; consumo 1,4 kWh/km"
+Potencia de carga;180 kW por puesto
+Puestos de carga;"Vespucio Norte 150; El Conquistador 180; Los Espinos + Santa Rosa 270; La Reina 100"

@@ -1,0 +1,7 @@
+control;Vespucio Norte;El Conquistador;Los Espinos + Santa Rosa;La Reina
+1. Nunca hay más buses cargando que puestos, ni dos buses en un puesto;✓ OK;✓ OK;✓ OK;✓ OK
+2. Cada carga dura minutos enteros, en un puesto que existe, a 180 kW como máximo;✓ OK;✓ OK;✓ OK;✓ OK
+3. Cada bus carga solo mientras está en el patio;✓ OK;✓ OK;✓ OK;✓ OK
+4. Cada carga repone la energía de su tramo, y ningún tramo supera la batería útil;✓ OK;✓ OK;✓ OK;✓ OK
+5. Simulando 7 días seguidos, ninguna salida queda sin bus cargado;✓ OK;✓ OK;✓ OK;✓ OK
+6. Los costos recalculados desde cero son iguales a los informados;✓ OK;✓ OK;✓ OK;✓ OK

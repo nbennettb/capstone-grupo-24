@@ -1,0 +1,16 @@
+indicador;Caso base;Caso base con interlining;Propuesta con carga por orden de llegada;Propuesta completa
+Costo total (USD/día);3.857.136;3.644.537;3.087.832;2.760.492
+   Flota;2.814.750;2.573.750;1.839.000;1.839.000
+   Buses de reserva;497.000;551.750;739.750;409.750
+   Km sin pasajeros;129.831;120.668;109.794;109.794
+   Espera;44.343;36.504;43.387;43.387
+   Energía;314.652;310.090;304.380;290.906
+   Eventos de carga;56.560;51.775;51.520;67.655
+Buses que operan;11.259;10.295;7.356;7.356
+Buses de reserva;1.988;2.207;2.959;1.639
+Buses totales;13.247;12.502;10.315;8.995
+Km sin pasajeros (% del total);16,2%;15,2%;14,0%;14,0%
+Costo medio de la energía (USD/kWh);0,140;0,140;0,139;0,133
+Energía en horario barato;50,4%;51,4%;51,4%;53,5%
+Eventos de carga;11.312;10.355;10.304;13.531
+Utilización de los buses;26,6%;28,1%;34,1%;39,1%

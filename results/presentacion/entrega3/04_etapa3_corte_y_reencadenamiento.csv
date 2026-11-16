@@ -1,0 +1,42 @@
+jornada;fila;actividad;inicio;fin
+5039;Etapa 2: un bus;vacio;05:16;05:45
+5039;Etapa 2: un bus;viaje;05:45;06:35
+5039;Etapa 2: un bus;vacio;06:35;06:35
+5039;Etapa 2: un bus;espera;06:35;06:39
+5039;Etapa 2: un bus;viaje;06:39;07:44
+5039;Etapa 2: un bus;vacio;07:44;07:48
+5039;Etapa 2: un bus;espera;07:48;07:52
+5039;Etapa 2: un bus;viaje;07:52;09:23
+5039;Etapa 2: un bus;vacio;09:23;09:23
+5039;Etapa 2: un bus;espera;09:23;09:30
+5039;Etapa 2: un bus;viaje;09:30;10:24
+5039;Etapa 2: un bus;vacio;10:24;10:25
+5039;Etapa 2: un bus;espera;10:25;10:55
+5039;Etapa 2: un bus;viaje;10:55;13:17
+5039;Etapa 2: un bus;vacio;13:17;13:17
+5039;Etapa 2: un bus;espera;13:17;13:30
+5039;Etapa 2: un bus;viaje;13:30;16:07
+5039;Etapa 2: un bus;vacio;16:07;16:07
+5039;Etapa 2: un bus;espera;16:07;16:56
+5039;Etapa 2: un bus;viaje;16:56;20:14
+5039;Etapa 2: un bus;vacio;20:14;20:14
+5039;Etapa 2: un bus;espera;20:14;20:30
+5039;Etapa 2: un bus;viaje;20:30;22:46
+5039;Etapa 2: un bus;vacio;22:46;22:46
+5039;Etapa 2: un bus;espera;22:46;23:00
+5039;Etapa 2: un bus;viaje;23:00;00:48 (+1)
+5039;Etapa 2: un bus;vacio;00:48 (+1);02:01 (+1)
+5039;Bus A;viajes del grupo;05:13;16:39
+5039;Bus A;en el patio;16:39;17:00
+5039;Bus A;cargando;17:00;18:20
+5039;Bus A;en el patio;18:20;18:25
+5039;Bus A;otro tramo (otra jornada);18:25;00:22 (+1)
+5039;Bus A;en el patio;00:22 (+1);04:28 (+1)
+5039;Bus A;cargando;04:28 (+1);05:12 (+1)
+5039;Bus B;otro tramo (otra jornada);05:21;11:49
+5039;Bus B;en el patio;11:49;11:50
+5039;Bus B;cargando;11:50;12:36
+5039;Bus B;en el patio;12:36;16:21
+5039;Bus B;viajes del grupo;16:21;02:01 (+1)
+5039;Bus B;en el patio;02:01 (+1);04:05 (+1)
+5039;Bus B;cargando;04:05 (+1);05:20 (+1)

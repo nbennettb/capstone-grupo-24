@@ -1,0 +1,6 @@
+terminal;modelo;binarias;minutos;estado
+La Reina;modelo detallado (entrega 2);160720;60.1;limite de tiempo
+Vespucio Norte;plan exacto;33;0.4;optimo (brecha pedida)
+El Conquistador;plan exacto;1172;10.1;optimo (brecha pedida)
+Los Espinos + Santa Rosa;plan exacto;1912;25.7;optimo (brecha pedida)
+La Reina;plan exacto;563;3.5;optimo (brecha pedida)

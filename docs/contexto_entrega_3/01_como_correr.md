@@ -90,20 +90,30 @@ Comprimir y enviar la carpeta del terminal: `results/instancia_<siglas>/` (`VN`,
 
 ## 7. Correr toda la cadena desde cero
 
-Todo lo que viene después de la Etapa 1 depende de la asignación de rutas a electroterminales,
-`data-processed/rutas_cluster_c1b.csv`, que usan los dos escenarios. La cadena, con el clustering de la entrega 2, es:
+Un comando corre todo, desde `data-filtrado/` (que está en el repositorio) hasta la red completa:
 ```
-python scripts/4-clustering_c1.py                       # Etapa 1
-python scripts/6-vsp_asignacion_buses.py --modo ruta    --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --etiqueta E0
-python scripts/6-vsp_asignacion_buses.py --modo cluster --asignacion data-processed/rutas_cluster_c1b.csv --unir-electroterminales --etiqueta E1
-python scripts/10-caso_base_carga_reactiva.py --escenario E0     # caso base de la red completa
-python scripts/10-caso_base_carga_reactiva.py --escenario E1
-python scripts/correr_terminal.py --terminal 1                   # y 2, 3, 4
-python scripts/17-red_completa.py
+python scripts/correr_todo.py
 ```
 
-Esta cadena se va a reemplazar por un solo script (`correr_todo.py`) con sus instrucciones y tiempos. Total estimado:
-~45 min de la Etapa 4, más lo que tomen la Etapa 1 y la Etapa 2.
+| Paso | Qué | Script | Tiempo |
+|---|---|---|---|
+| 1 | Etapa 0: expediciones | `3-` | 13 s (medido) |
+| 2 | Etapa 1: rutas a electroterminales (clustering de la entrega 2) | `4-` | 3 s (medido) |
+| 3-4 | Etapa 2: jornadas del caso base y con interlining | `6-` | 15 s y 36 s (medido) |
+| 5-6 | Caso base y caso base con interlining de la red completa | `10-` | ~1-2 min (estimado) |
+| 7-10 | Los cuatro terminales (Vespucio Norte, El Conquistador, Los Espinos + Santa Rosa, La Reina) | `correr_terminal.py` | ~44 min (medido, sección 4) |
+| 11 | Red completa | `17-` | 4 s (medido) |
+
+- **Total:** ~45-50 min. **Memoria:** 3,6 GB como máximo (El Conquistador y Los Espinos + Santa Rosa).
+- **Log:** `results/correr_todo.log`, con todo lo que se imprimió y el tiempo de cada paso al final. Cada terminal deja
+  además su `correr_terminal.log`.
+- **Si falla:** se detiene y dice cómo retomar, por ejemplo `python scripts/correr_todo.py --desde 7`. Con `--hasta 6`
+  corre solo las Etapas 0-2 y el caso base de la red.
+- **Qué no corre:** `1-` y `2-`, porque los GTFS crudos no viajan en el repositorio (`data-filtrado/` ya es su salida),
+  ni los scripts de comparación y sensibilidad (`5-`, `7-`, `8-`, `9-`, `11-`), que no alimentan la cadena.
+- Los pasos 1 a 4 se probaron en una copia del repositorio y reproducen byte a byte `data-processed/`.
+- **Gráficos de la presentación**, después de la cadena: `python scripts/18-graficos_presentacion.py` (segundos; solo lee
+  `results/` y escribe en `results/presentacion/entrega3/`).
 
 ## 8. Pruebas chicas (para revisar el código, no son resultados)
 

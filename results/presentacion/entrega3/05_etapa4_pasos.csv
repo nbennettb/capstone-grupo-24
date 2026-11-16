@@ -1,0 +1,6 @@
+paso;como;sale
+1. Modelo relajado;MILP en bloques de 15 min (Gurobi). Cuenta energía por bloque, no buses por minuto.;Qué buses probablemente necesitan reserva y una cota inferior del costo (690.325 USD/día en la red).
+2. Plan exacto al minuto;MILP con una variable por bus y minuto (Gurobi). Cuenta buses por minuto: nunca más que puestos. Solo las reservas son binarias (563 en La Reina).;Minutos de carga de cada bus y 1.639 reservas.
+3. Ordenar las cargas;A igual costo, carga primero el bus que llegó primero.;Cargas continuas, con menos cortes.
+4. Asignar puestos;Cada carga al puesto libre de menor número (coloreo de intervalos).;Para cada bus: puesto, hora de inicio y de fin.
+5. Validación independiente;Lee solo el plan, sin el código del modelo. 6 controles y 7 días simulados.;Los 6 controles OK en los 4 electroterminales.

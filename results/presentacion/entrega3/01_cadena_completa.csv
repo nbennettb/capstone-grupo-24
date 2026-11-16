@@ -1,0 +1,6 @@
+etapa;nombre;decide;sale;herramienta_y_tiempo
+Etapa 0;Preproceso;Arma los viajes del día laboral;64.502 viajes con hora, km y kWh;Python · 13 s
+Etapa 1;Rutas a electroterminales;A qué electroterminal va cada ruta;417 rutas en 4 electroterminales;Python · 3 s
+Etapa 2;Jornadas sin batería;Qué viajes hace cada bus;7.366 jornadas;Gurobi (flujo de costo mínimo) · 51 s
+Etapa 3;Cortes y re-encadenamiento;Dónde cortar las jornadas para cargar y cómo unir los tramos;7.356 buses y 10.304 ventanas de carga;Python + Gurobi · 4 a 8 s por terminal
+Etapa 4;Plan de carga;Cuándo y en qué puesto carga cada bus, y qué reservas usar;Plan al minuto con 1.639 reservas;Gurobi (MILP) · 0,5 a 27 min por terminal

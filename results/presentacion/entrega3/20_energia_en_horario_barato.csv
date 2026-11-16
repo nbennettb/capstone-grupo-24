@@ -1,0 +1,21 @@
+terminal;escenario;pct_valle
+Vespucio Norte;Caso base;66.87
+Vespucio Norte;Caso base con interlining;70.44
+Vespucio Norte;Propuesta con carga por orden de llegada;64.49
+Vespucio Norte;Propuesta completa;85.44
+El Conquistador;Caso base;49.18
+El Conquistador;Caso base con interlining;49.9
+El Conquistador;Propuesta con carga por orden de llegada;50.55
+El Conquistador;Propuesta completa;50.53
+Los Espinos + Santa Rosa;Caso base;47.45
+Los Espinos + Santa Rosa;Caso base con interlining;48.04
+Los Espinos + Santa Rosa;Propuesta con carga por orden de llegada;48.83
+Los Espinos + Santa Rosa;Propuesta completa;48.79
+La Reina;Caso base;50.94
+La Reina;Caso base con interlining;51.56
+La Reina;Propuesta con carga por orden de llegada;52.06
+La Reina;Propuesta completa;52.06
+Red completa;Caso base;50.44
+Red completa;Caso base con interlining;51.39
+Red completa;Propuesta con carga por orden de llegada;51.42
+Red completa;Propuesta completa;53.52

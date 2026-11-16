@@ -85,8 +85,9 @@ Siglas de las carpetas: `LR` La Reina, `VN` Vespucio Norte, `EC` El Conquistador
 | Tabla de la red completa (suma de los 4 terminales, `17-red_completa.py`) | Lista, en `results/red_completa/` |
 | Análisis crítico de los resultados | Hecho: el enfoque sirve; se declaran limitaciones (`03_resultados_y_mensajes.md`) |
 | Etapa 1 | Se mantiene la de la entrega 2 |
-| Script que corre toda la cadena con un comando (`correr_todo.py`) | Pendiente |
-| Gráficos de implementación y resultados para la presentación | Pendiente |
+| Script que corre toda la cadena con un comando (`correr_todo.py`) | Listo; probado por partes (`01_como_correr.md`, sección 7) |
+| Gráficos de implementación y resultados para la presentación | Listos: `scripts/18-graficos_presentacion.py`, catálogo y propuesta de láminas en `results/presentacion/entrega3/catalogo.md` |
+| Láminas de implementación, resultados y cierre (Canva) | En curso |
 
 Red completa, contra el caso base con interlining:
 - costo de 3,64 a **2,76 millones de USD/día (−24,3%)**;

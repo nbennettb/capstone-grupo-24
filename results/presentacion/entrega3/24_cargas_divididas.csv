@@ -1,0 +1,9 @@
+tabla;terminal;ventanas;divididas;pct;duracion;pausas
+ventanas;Vespucio Norte;1038.0;150.0;14.5;;
+ventanas;El Conquistador;3003.0;724.0;24.1;;
+ventanas;Los Espinos + Santa Rosa;4623.0;965.0;20.9;;
+ventanas;La Reina;1640.0;409.0;24.9;;
+pausas;;;;;5 min o menos;1608.0
+pausas;;;;;5 a 15 min;276.0
+pausas;;;;;15 a 60 min;315.0
+pausas;;;;;Más de 60 min;1028.0

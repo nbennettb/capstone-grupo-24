@@ -1,17 +1,9 @@
 escenario;nivel_pct;buses_totales;buses_reserva;costo_total_usd;factible
-Caso base con interlining;100;12502;2207;3751250;True
-Caso base con interlining;90;13208;1417;3973783;True
-Caso base con interlining;80;13513;246;4069352;True
-Caso base con interlining;70;14820;73;4424005;True
-Caso base con interlining;65;15986;50;4737923;True
-Caso base con interlining;60;17737;20;5206564;True
-Caso base con interlining;55;19684;13;5732581;True
-Caso base con interlining;50;22823;274;6573732;False
-Caso base;100;13247;1988;3958063;True
-Caso base;90;13805;1211;4136249;True
-Caso base;80;14285;341;4278994;True
-Caso base;70;15503;81;4618207;True
-Caso base;65;16612;46;4916373;True
-Caso base;60;18459;36;5416121;True
-Caso base;55;20330;27;5911993;True
-Caso base;50;23735;494;6823497;False
+Caso base;100;12502;2207;3751250;True
+Caso base;90;13208;1417;3973783;True
+Caso base;80;13513;246;4069352;True
+Caso base;70;14820;73;4424005;True
+Caso base;65;15986;50;4737923;True
+Caso base;60;17737;20;5206564;True
+Caso base;55;19684;13;5732581;True
+Caso base;50;22823;274;6573732;False

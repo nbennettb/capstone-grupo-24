@@ -1,13 +1,13 @@
 parametro;valor;buses;delta_buses_vs_base_pct;delta_costo_vs_base_pct
-factor de desvio;1.2;7294;-0.98;-1.32
-factor de desvio;1.3;7366;0.0;0.0
-factor de desvio;1.35;7401;0.48;0.63
-factor de desvio;1.5;7441;1.02;1.72
-layover (min);0.0;7161;-2.78;-2.7
-layover (min);3.0;7366;0.0;0.0
-layover (min);10.0;7810;6.03;5.92
-radio de interlining (km);1.0;8198;11.3;11.04
-radio de interlining (km);2.0;7577;2.86;2.81
-radio de interlining (km);3.0;7366;0.0;0.0
-radio de interlining (km);4.0;7201;-2.24;-2.17
-radio de interlining (km);5.0;7118;-3.37;-3.26
+Factor de desvío de los traslados;1.2;7294;-0.98;-1.32
+Factor de desvío de los traslados;1.3;7366;0.0;0.0
+Factor de desvío de los traslados;1.35;7401;0.48;0.63
+Factor de desvío de los traslados;1.5;7441;1.02;1.72
+Tiempo mínimo entre viajes (min);0.0;7161;-2.78;-2.7
+Tiempo mínimo entre viajes (min);3.0;7366;0.0;0.0
+Tiempo mínimo entre viajes (min);10.0;7810;6.03;5.92
+Radio para encadenar rutas (km);1.0;8198;11.3;11.04
+Radio para encadenar rutas (km);2.0;7577;2.86;2.81
+Radio para encadenar rutas (km);3.0;7366;0.0;0.0
+Radio para encadenar rutas (km);4.0;7201;-2.24;-2.17
+Radio para encadenar rutas (km);5.0;7118;-3.37;-3.26

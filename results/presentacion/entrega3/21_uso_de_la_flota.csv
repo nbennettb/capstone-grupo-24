@@ -1,5 +1,4 @@
 escenario;utilizacion_bus_pct;pct_km_vacios
-Caso base;26.57;16.18
-Caso base con interlining;28.15;15.21
+Caso base;28.15;15.21
 Propuesta con carga por orden de llegada;34.12;14.03
 Propuesta completa;39.12;14.03

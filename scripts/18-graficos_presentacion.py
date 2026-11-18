@@ -38,12 +38,15 @@ SALIDA = RESULTS_DIR / "presentacion" / "entrega3"
 TERMINALES = {"VN": "Vespucio Norte", "EC": "El Conquistador", "LESR": "Los Espinos + Santa Rosa", "LR": "La Reina"}
 RED = "Red completa"
 EXACTO = Path("etapa4") / "h0_d15" / "exacto"
-CODIGO = ["E0", "E1", "E2-FIFO", "E2"]
-ESC = [nombres.ESCENARIO[c] for c in CODIGO]
-COL = {nombres.ESCENARIO[c]: gr.ESCENARIO[c] for c in CODIGO}
-ETQ = dict(zip(ESC, ["Caso base", "Caso base\ncon interlining", "Propuesta con\ncarga por orden\nde llegada",
-                     "Propuesta\ncompleta"]))
-REF, PROP = ESC[1], ESC[3]
+# Decision del grupo: en la presentacion el caso base oficial es el que tiene interlining y se llama solo "Caso base"
+# (mantiene su color). El caso base sin interlining no se muestra.
+CODIGO = ["E1", "E2-FIFO", "E2"]
+NOMBRE = {"E1": "Caso base", "E2-FIFO": nombres.ESCENARIO["E2-FIFO"], "E2": nombres.ESCENARIO["E2"]}
+DE_DATOS = {nombres.ESCENARIO[c]: NOMBRE[c] for c in CODIGO}      # nombre en los CSV -> nombre en la presentacion
+ESC = [NOMBRE[c] for c in CODIGO]
+COL = {NOMBRE[c]: gr.ESCENARIO[c] for c in CODIGO}
+ETQ = dict(zip(ESC, ["Caso base", "Propuesta con\ncarga por orden\nde llegada", "Propuesta\ncompleta"]))
+REF, FIFO, PROP = ESC
 
 ANCHO, ALTO = 12.0, 6.75                      # 16:9
 GRIS_OSC, GRIS_1, GRIS_2 = "#4b4b4b", "#8a8984", "#c3c2b7"
@@ -224,7 +227,7 @@ def tabla(ax, encabezados, filas, anchos, alin=None, fs=13, color_celda=None, fo
         chars = [[max(4, int((a * px - 14) / ancho_letra(fs, i == 0))) for a in anchos] for i in range(len(todas))]
         cortadas = [[cortar(c, ch) for c, ch in zip(f, chs)] for f, chs in zip(todas, chars)]
         largo = any(len(l) > ch for f, chs in zip(cortadas, chars) for c, ch in zip(f, chs) for l in c)
-        alto_linea, pad = fs * 1.3 / py, 7 / py
+        alto_linea, pad = fs * 1.3 / py, fs * 0.5 / py
         alturas = [max(len(c) for c in f) * alto_linea + 2 * pad for f in cortadas]
         if (sum(alturas) <= 1 and not largo) or fs <= 9:
             break
@@ -285,7 +288,8 @@ def modulo_13():
 
 def cargar():
     d = {}
-    d["kpis"] = leer(RESULTS_DIR / "red_completa" / "tablas" / "kpis_red.csv")
+    k = leer(RESULTS_DIR / "red_completa" / "tablas" / "kpis_red.csv")
+    d["kpis"] = k[k["escenario"].isin(DE_DATOS)].assign(escenario=lambda x: x["escenario"].map(DE_DATOS))
     d["red"] = d["kpis"][d["kpis"]["terminal"] == RED].set_index("escenario").loc[ESC]
     d["plan"] = leer(RESULTS_DIR / "red_completa" / "tablas" / "plan_de_carga_por_terminal.csv").set_index("terminal")
     d["ahorro"] = leer(RESULTS_DIR / "red_completa" / "tablas" / "costo_por_terminal.csv").set_index("terminal")
@@ -343,8 +347,7 @@ def g01_cadena(d):
     for i, borde, fondo, estilo, parrafos in [
             (1, GRIS_1, "#f4f4f2", "-", [("Se corre una vez y queda guardada en un archivo.",
                                          dict(color=gr.TEXTO_SECUNDARIO))]),
-            (2, gr.ESCENARIO["E0"], "#f4f7fc", "--", [("Caso base (no es etapa)", dict(fontweight="bold",
-                                                                                        color=gr.ESCENARIO["E0"])),
+            (2, COL[REF], "#fdf3ee", "--", [("Caso base (no es etapa)", dict(fontweight="bold", color=COL[REF])),
                                                       ("Etapa 2 + carga cuando el bus la necesita", {})]),
             (4, OK_COLOR, "white", "-", [("Validación independiente", dict(fontweight="bold", color=OK_COLOR)),
                                          ("6 controles y 7 días simulados", {})])]:
@@ -561,9 +564,9 @@ def g04b_caso_base_vs_propuesta(d):
                         Patch(color=OTRO_VIAJE, label="Viajes de otra jornada"), Patch(color=CARGA, label="Cargando"),
                         Patch(color=PATIO, label="En el patio"), Patch(color=GRIS_OSC, label="Detenido el resto del día")], 3)
     datos = f2.copy()
-    datos["panel"] = datos["panel"].str.replace("Etapa 3 y Propuesta completa", PROP)
+    datos["panel"] = datos["panel"].map(lambda t: REF if t.startswith("Caso base") else PROP)
     guardar(fig, "04b_caso_base_vs_propuesta_un_bus", datos, titulo,
-            "La misma jornada en el caso base con interlining (se parte) y en la Propuesta completa (dos tramos con carga).",
+            "La misma jornada en el caso base (se parte) y en la Propuesta completa (dos tramos con carga).",
             "Contexto: diferencia entre caso base y propuesta", "Implementación")
 
 
@@ -752,7 +755,7 @@ SUPUESTOS = [
 
 def g09_supuestos(d):
     titulo = "Supuestos y simplificaciones, y qué efecto tienen"
-    sub = "Todos aplican igual a los cuatro escenarios, así que la comparación entre ellos es justa."
+    sub = "Todos aplican igual a los tres escenarios, así que la comparación entre ellos es justa."
     fig, ax = figura(titulo, sub, abajo=0.02, izq=0.015, der=0.985)
     tabla(ax, ["Supuesto", "Por qué", "Efecto en los resultados"], [list(s) for s in SUPUESTOS], [0.42, 0.25, 0.33],
           fs=12)
@@ -852,29 +855,29 @@ def etiquetas_escenarios(ax, x):
 def g12_costo(d):
     red = d["red"]
     m = red["costo_total"].values / 1e6
-    ref = m[1]
-    ahorro = 100 * (1 - m[3] / ref)
-    titulo = f"La Propuesta completa baja el costo diario de la red {pct(ahorro)} frente al caso base con interlining"
+    ref = m[0]
+    ahorro = 100 * (1 - m[-1] / ref)
+    titulo = f"La Propuesta completa baja el costo diario de la red {pct(ahorro)} frente al caso base"
     sub = ("Costo diario de operación de la red completa: flota, buses de reserva, km sin pasajeros, espera, energía y "
-           "eventos de carga. Los % son contra el caso base con interlining, la comparación justa.")
+           "eventos de carga. Los % son contra el caso base.")
     fig, ax = figura(titulo, sub, abajo=0.17, izq=0.08)
-    x = np.arange(4)
-    ax.bar(x, m, width=0.58, color=[COL[e] for e in ESC], edgecolor="white", linewidth=2)
+    x = np.arange(len(ESC))
+    ax.bar(x, m, width=0.5, color=[COL[e] for e in ESC], edgecolor="white", linewidth=2)
     for xi, v, e in zip(x, m, ESC):
         t = f"{num(v, 2)} M"
-        if xi >= 2:
+        if xi >= 1:
             t += f"\n{num(100 * (v / ref - 1), 1)}%"
         ax.text(xi, v + m.max() * 0.015, t, ha="center", va="bottom", fontsize=16, color=gr.TEXTO,
-                fontweight="bold" if xi == 3 else "normal")
+                fontweight="bold" if xi == len(ESC) - 1 else "normal")
     etiquetas_escenarios(ax, x)
     ax.set_ylabel("Millones de USD por día", fontsize=14)
     ax.set_ylim(0, m.max() * 1.25)
     formato_eje(ax, d=1)
     estilo_ejes(ax)
     datos = pd.DataFrame({"escenario": ESC, "costo_total_usd": red["costo_total"].round(0).values,
-                          "variacion_vs_caso_base_con_interlining_pct": (100 * (m / ref - 1)).round(2)})
+                          "variacion_vs_caso_base_pct": (100 * (m / ref - 1)).round(2)})
     guardar(fig, "12_costo_red", datos, titulo, "Costo diario de la red por escenario, con el % contra el caso base "
-            "con interlining.", "3 (ahorra 24,3%)", "Resultados")
+            "", "3 (ahorra 24,3%)", "Resultados")
 
 
 def g13_componentes(d):
@@ -882,8 +885,8 @@ def g13_componentes(d):
     titulo = "El ahorro viene de la flota y de los buses de reserva; la energía cambia poco"
     sub = "Costo diario de la red completa por componente, millones de USD."
     fig, ax = figura(titulo, sub, abajo=0.27, izq=0.08)
-    x = np.arange(4)
-    base = np.zeros(4)
+    x = np.arange(len(ESC))
+    base = np.zeros(len(ESC))
     for c, et, col in COMPONENTES:
         v = red[c].values / 1e6
         ax.bar(x, v, 0.58, bottom=base, color=col, edgecolor="white", linewidth=2, label=et)
@@ -907,7 +910,7 @@ def g13_componentes(d):
 
 def g14_cascada(d):
     red = d["red"]
-    a, b, c = red.loc[REF], red.loc[ESC[2]], red.loc[PROP]
+    a, b, c = red.loc[REF], red.loc[FIFO], red.loc[PROP]
     nombres_c = {k: et for k, et, _ in COMPONENTES}
     color_c = {k: col for k, _, col in COMPONENTES}
     filas = []
@@ -921,7 +924,7 @@ def g14_cascada(d):
     s4 = df.loc[df["etapa"] == "Etapa 4", "cambio_usd"].sum()
     tot = s3 + s4
     titulo = (f"Dos tercios del ahorro vienen de la Etapa 3 (menos buses) y un tercio de la Etapa 4 (menos reservas)")
-    sub = (f"Cambio en el costo diario de la red, del caso base con interlining a la Propuesta completa, miles de USD. "
+    sub = (f"Cambio en el costo diario de la red, del caso base a la Propuesta completa, miles de USD. "
            f"Etapa 3: {num(s3 / 1e3)} ({pct(100 * s3 / tot, 0)}). Etapa 4: {num(s4 / 1e3)} ({pct(100 * s4 / tot, 0)}). "
            f"Total: {num(tot / 1e3)}.")
     fig, ax = figura(titulo, sub, abajo=0.12, izq=0.33, der=0.95)
@@ -961,12 +964,12 @@ def g15_buses(d):
     red = d["red"]
     op, res = red["buses_operativos"].values, red["reservas"].values
     tot = op + res
-    titulo = f"La propuesta necesita {num(tot[1] - tot[3])} buses menos: {num(tot[3])} en vez de {num(tot[1])}"
+    titulo = f"La propuesta necesita {num(tot[0] - tot[-1])} buses menos: {num(tot[-1])} en vez de {num(tot[0])}"
     sub = ("Buses de la red completa: los que operan las jornadas y los de reserva, que salen en lugar de un bus que "
            "todavía está cargando.")
     fig, ax = figura(titulo, sub, abajo=0.24, izq=0.1)
-    x = np.arange(4)
-    ax.bar(x, op, 0.58, color=[COL[e] for e in ESC], edgecolor="white", linewidth=2)
+    x = np.arange(len(ESC))
+    ax.bar(x, op, 0.5, color=[COL[e] for e in ESC], edgecolor="white", linewidth=2)
     ax.bar(x, res, 0.58, bottom=op, color=GRIS_2, edgecolor="white", linewidth=2)
     for xi, o, r, t in zip(x, op, res, tot):
         ax.text(xi, o / 2, num(o), ha="center", va="center", fontsize=14, color=gr.TEXTO)
@@ -989,7 +992,7 @@ def g16_ahorro_terminal(d):
     v = a["ahorro_propuesta_completa_pct"].values
     usd = a["ahorro_propuesta_completa_usd"].values
     titulo = f"Todos los electroterminales ahorran entre {pct(v[:-1].min(), 0)} y {pct(v[:-1].max(), 0)}"
-    sub = "Ahorro diario de la Propuesta completa frente al caso base con interlining."
+    sub = "Ahorro diario de la Propuesta completa frente al caso base."
     fig, ax = figura(titulo, sub, abajo=0.06, izq=0.25, der=0.95)
     y = np.arange(len(a))
     colores = [gr.ESCENARIO["E2"]] * (len(a) - 1) + [GRIS_OSC]
@@ -1107,23 +1110,23 @@ def g20_valle(d):
            "puestos están llenos de noche y el % casi no cambia.")
     fig, ax = figura(titulo, sub, abajo=0.24, izq=0.09)
     x = np.arange(len(orden))
-    ancho = 0.2
+    ancho = 0.26
     for i, e in enumerate(ESC):
         v = k[k["escenario"] == e].set_index("terminal").reindex(orden)["pct_valle"].values
-        ax.bar(x + (i - 1.5) * ancho, v, width=ancho, color=COL[e], edgecolor="white", linewidth=1.5)
+        ax.bar(x + (i - 1) * ancho, v, width=ancho, color=COL[e], edgecolor="white", linewidth=1.5)
         if e == PROP:
             for xi, vi in zip(x, v):
-                ax.text(xi + 1.5 * ancho, vi + 1, num(vi, 0), ha="center", va="bottom", fontsize=13, fontweight="bold")
-        if e == ESC[2]:
+                ax.text(xi + ancho, vi + 1, num(vi, 0), ha="center", va="bottom", fontsize=13, fontweight="bold")
+        if e == FIFO:
             for xi, vi in zip(x, v):
-                ax.text(xi + 0.5 * ancho, vi + 1, num(vi, 0), ha="center", va="bottom", fontsize=12,
+                ax.text(xi, vi + 1, num(vi, 0), ha="center", va="bottom", fontsize=12,
                         color=gr.TEXTO_SECUNDARIO)
     ax.set_xticks(x, [o.replace(" + ", " +\n") for o in orden], fontsize=13.5)
     ax.set_ylim(0, 100)
     ax.set_ylabel("% de la energía en horario barato", fontsize=13.5)
     formato_eje(ax, sufijo="%")
     estilo_ejes(ax)
-    leyenda_abajo(fig, [Patch(color=COL[e], label=e) for e in ESC], 2)
+    leyenda_abajo(fig, [Patch(color=COL[e], label=e) for e in ESC], 3)
     datos = k[k["terminal"].isin(orden)][["terminal", "escenario", "pct_valle"]].round(2)
     guardar(fig, "20_energia_en_horario_barato", datos, titulo, "% de la energía en horario barato por escenario y "
             "terminal.", "4 (la tarifa solo se aprovecha donde sobran puestos)", "Resultados")
@@ -1137,7 +1140,7 @@ def g21_uso_flota(d):
            "traslados al patio y entre viajes, como % de los km totales.")
     fig, axs = figura(titulo, sub, ncols=2, abajo=0.17, izq=0.07, der=0.98)
     fig.subplots_adjust(wspace=0.2)
-    x = np.arange(4)
+    x = np.arange(len(ESC))
     for ax, col, et in [(axs[0], "utilizacion_bus_pct", "Utilización de los buses"),
                         (axs[1], "pct_km_vacios", "Km sin pasajeros")]:
         v = red[col].values
@@ -1150,7 +1153,7 @@ def g21_uso_flota(d):
         ax.yaxis.set_major_locator(matplotlib.ticker.MultipleLocator(10 if v.max() > 25 else 5))
         formato_eje(ax, sufijo="%")
         estilo_ejes(ax)
-    leyenda_abajo(fig, [Patch(color=COL[e], label=e) for e in ESC], 2)
+    leyenda_abajo(fig, [Patch(color=COL[e], label=e) for e in ESC], 3)
     datos = red[["utilizacion_bus_pct", "pct_km_vacios"]].round(2).reset_index()
     guardar(fig, "21_uso_de_la_flota", datos, titulo, "Utilización de los buses y % de km sin pasajeros por escenario.",
             "3 (por qué hacen falta menos buses)", "Resultados")
@@ -1169,12 +1172,12 @@ def g22_tabla_kpis(d):
                  ("Utilización de los buses", "utilizacion_bus_pct", 1, "%")]
     filas = [[n] + [num(red.loc[e, c], dd) + s for e in ESC] for n, c, dd, s in filas_def]
     titulo = "Indicadores de la red completa por escenario"
-    sub = f"Día laboral típico. Ahorro de la Propuesta completa contra el caso base con interlining: " \
+    sub = f"Día laboral típico. Ahorro de la Propuesta completa contra el caso base: " \
           f"{pct(100 * (1 - red.loc[PROP, 'costo_total'] / red.loc[REF, 'costo_total']))}."
     fig, ax = figura(titulo, sub, abajo=0.02, izq=0.015, der=0.985)
-    tabla(ax, ["Indicador"] + [e for e in ESC], filas, [0.32, 0.15, 0.17, 0.2, 0.16], alin=["left"] + ["right"] * 4,
-          fs=12.5, fondo_col=4,
-          color_celda=lambda i, j, v: dict(fontweight="bold") if (i in (0, 9) or j == 4) else None)
+    tabla(ax, ["Indicador"] + [e for e in ESC], filas, [0.37, 0.18, 0.26, 0.19], alin=["left"] + ["right"] * 3,
+          fs=12.5, fondo_col=3,
+          color_celda=lambda i, j, v: dict(fontweight="bold") if (i in (0, 9) or j == 3) else None)
     datos = pd.DataFrame(filas, columns=["indicador"] + ESC)
     guardar(fig, "22_tabla_kpis", datos, titulo, "Tabla de KPIs de la red completa por escenario.",
             "3 (resumen de resultados)", "Resultados")
@@ -1187,7 +1190,7 @@ def g23a_bateria(d):
            "energía (no factible). El costo incluye la espera nocturna en el patio, como en la entrega 2; por eso es "
            "algo mayor que en los demás gráficos.")
     fig, ax = figura(titulo, sub, abajo=0.17, izq=0.08, der=0.97)
-    for cod in ["E0", "E1"]:
+    for cod in ["E1"]:
         g = b[b["escenario"] == cod].sort_values("nivel_pct", ascending=False)
         f = g["factible"].astype(bool).values
         ax.plot(g["nivel_pct"], g["costo_total_usd"] / 1e6, color=gr.ESCENARIO[cod], linewidth=2.2, zorder=2)
@@ -1196,24 +1199,24 @@ def g23a_bateria(d):
         ax.scatter(g["nivel_pct"][~f], g["costo_total_usd"][~f] / 1e6, s=70, facecolor="white",
                    edgecolor=gr.ESCENARIO[cod], linewidth=2, zorder=3)
         fin = g.iloc[0]
-        arriba_ = cod == "E0"
-        ax.annotate(f"{nombres.ESCENARIO[cod]}: {num(fin['costo_total_usd'] / 1e6, 2)} M",
+        arriba_ = True
+        ax.annotate(f"{NOMBRE[cod]}: {num(fin['costo_total_usd'] / 1e6, 2)} M",
                     (100, fin["costo_total_usd"] / 1e6), xytext=(-4, 16 if arriba_ else -18),
                     textcoords="offset points", ha="left", va="bottom" if arriba_ else "top", fontsize=13,
                     color=gr.TEXTO)
     ax.set_xlim(103, 48)
-    ax.set_ylim(3.2, b["costo_total_usd"].max() / 1e6 * 1.05)
+    ax.set_ylim(3.2, b.loc[b["escenario"] == "E1", "costo_total_usd"].max() / 1e6 * 1.05)
     ax.set_xlabel("Nivel hasta el que carga cada bus", fontsize=13.5)
     ax.set_ylabel("Millones de USD por día", fontsize=13.5)
     formato_eje(ax, d=1)
     formato_eje(ax, "x", sufijo="%")
     estilo_ejes(ax)
     leyenda_abajo(fig, [Line2D([], [], color=gr.ESCENARIO[c], lw=2.2, marker="o", markersize=8,
-                               label=nombres.ESCENARIO[c]) for c in ["E0", "E1"]]
+                               label=NOMBRE[c]) for c in ["E1"]]
                   + [Line2D([], [], color=GRIS_OSC, lw=0, marker="o", markerfacecolor="white", markersize=9,
-                            label="No factible (falta energía)")], 3)
+                            label="No factible (falta energía)")], 2)
     datos = b[["escenario", "nivel_pct", "buses_totales", "buses_reserva", "costo_total_usd", "factible"]].copy()
-    datos["escenario"] = datos["escenario"].map(nombres.ESCENARIO)
+    datos = datos[datos["escenario"] == "E1"].assign(escenario=NOMBRE["E1"])
     guardar(fig, "23a_sensibilidad_bateria_caso_base", datos, titulo,
             "Costo del caso base de la red según el nivel de carga de la batería (sensibilidad de la entrega 2).",
             "Sensibilidad ya corrida (justifica el caso base)", "Resultados")
@@ -1222,7 +1225,7 @@ def g23a_bateria(d):
 def g23b_traslados(d):
     s = leer(RESULTS_DIR / "etapa2_vsp" / "tablas" / "sensibilidad_deadhead.csv")
     titulo = "Los traslados en línea recta × 1,3 son un supuesto de bajo impacto: entre 1,2 y 1,5 la flota cambia ±1%"
-    sub = ("Sensibilidad ya corrida de la Etapa 2 (jornadas sin batería, con interlining, red completa): cambio en los "
+    sub = ("Sensibilidad ya corrida de la Etapa 2 (jornadas sin batería, red completa): cambio en los "
            "buses al mover un parámetro. El punto negro es el valor usado.")
     fig, axs = figura(titulo, sub, ncols=3, abajo=0.15, izq=0.07, der=0.98, sharey=True)
     fig.subplots_adjust(wspace=0.12)
@@ -1251,9 +1254,10 @@ def g23b_traslados(d):
     axs[0].yaxis.set_major_locator(matplotlib.ticker.MultipleLocator(2))
     formato_eje(axs[0], d=0, sufijo="%")
     datos = s[["parametro", "valor", "buses", "delta_buses_vs_base_pct", "delta_costo_vs_base_pct"]]
+    datos = datos.assign(parametro=datos["parametro"].map(titulos))
     guardar(fig, "23b_sensibilidad_traslados", datos, titulo,
-            "Cambio en la flota de la Etapa 2 al variar el factor de desvío, el tiempo entre viajes y el radio de "
-            "interlining.", "Sensibilidad ya corrida; responde la pregunta del feedback sobre el deadhead", "Resultados")
+            "Cambio en la flota de la Etapa 2 al variar el factor de desvío, el tiempo entre viajes y el radio para "
+            "encadenar rutas.", "Sensibilidad ya corrida; responde la pregunta del feedback sobre el deadhead", "Resultados")
 
 
 def g24_cargas_divididas(d):
@@ -1264,10 +1268,11 @@ def g24_cargas_divididas(d):
     pausas = np.concatenate([dv[n]["pausas"] for n in orden])
     bins = [(0, 5, "5 min\no menos"), (5, 15, "5 a\n15 min"), (15, 60, "15 a\n60 min"), (60, 1e9, "Más de\n60 min")]
     cuenta = np.array([((pausas > a) & (pausas <= b)).sum() if a > 0 else (pausas <= b).sum() for a, b, _ in bins])
-    titulo = (f"Limitación: {pct(100 * div.sum() / ven.sum(), 0)} de las cargas se hacen en dos o más tramos, y la "
-              "mitad de las pausas dura 5 minutos o menos")
-    sub = (f"Propuesta completa, red completa: {num(div.sum())} de {num(ven.sum())} ventanas de carga. Entre tramos el "
-           "bus cambia de puesto. Cada tramo paga su evento de carga (5 USD), pero la maniobra no está modelada.")
+    titulo = (f"Limitación: {pct(100 * div.sum() / ven.sum(), 0)} de las cargas se interrumpen, y la mitad de las "
+              "pausas dura 5 minutos o menos")
+    sub = (f"Propuesta completa, red completa: {num(div.sum())} de {num(ven.sum())} cargas. Carga interrumpida: el bus "
+           "carga, cede el puesto a otro bus y vuelve a cargar más tarde, a veces en otro puesto. Cada reanudación paga "
+           "su evento de carga (5 USD), pero la maniobra no está modelada.")
     fig, axs = figura(titulo, sub, ncols=2, abajo=0.12, izq=0.2, der=0.97)
     fig.subplots_adjust(wspace=0.35)
     y = np.arange(len(orden))
@@ -1278,14 +1283,14 @@ def g24_cargas_divididas(d):
     axs[0].set_yticks(y, [o.replace(" + ", " +\n") for o in orden], fontsize=13.5)
     axs[0].invert_yaxis()
     axs[0].set_xlim(0, p.max() * 1.7)
-    axs[0].set_title("Ventanas cargadas en dos o más tramos", loc="left", fontsize=14.5, color=gr.TEXTO)
+    axs[0].set_title("Cargas interrumpidas (% de las cargas)", loc="left", fontsize=14.5, color=gr.TEXTO)
     xb = np.arange(len(bins))
     axs[1].bar(xb, cuenta, 0.6, color=[gr.ESCENARIO["E2"]] + [GRIS_1] * 3)
     for xi, c in zip(xb, cuenta):
         axs[1].text(xi, c + cuenta.max() * 0.02, num(c), ha="center", va="bottom", fontsize=14)
     axs[1].set_xticks(xb, [b[2] for b in bins], fontsize=12.5)
     axs[1].set_ylim(0, cuenta.max() * 1.2)
-    axs[1].set_title("Duración de las pausas entre tramos", loc="left", fontsize=14.5, color=gr.TEXTO)
+    axs[1].set_title("Duración de cada pausa", loc="left", fontsize=14.5, color=gr.TEXTO)
     formato_eje(axs[1])
     for ax, g_ in zip(axs, ("x", "y")):
         estilo_ejes(ax, grilla=g_)
@@ -1295,8 +1300,8 @@ def g24_cargas_divididas(d):
                        pd.DataFrame({"tabla": "pausas", "duracion": [b[2].replace("\n", " ") for b in bins],
                                      "pausas": cuenta})],
                       ignore_index=True)
-    guardar(fig, "24_cargas_divididas", datos, titulo, "Ventanas cargadas en dos o más tramos por terminal y duración "
-            "de las pausas entre tramos.", "Limitación declarada (análisis crítico)", "Limitaciones")
+    guardar(fig, "24_cargas_divididas", datos, titulo, "Cargas interrumpidas por terminal y duración de las pausas "
+            "dentro de una carga.", "Limitación declarada (análisis crítico)", "Limitaciones")
 
 
 def g25_buses_etapa3(d):
@@ -1309,7 +1314,7 @@ def g25_buses_etapa3(d):
     cb = d["red"].loc[REF, "buses_operativos"]
     titulo = (f"Re-encadenar los tramos cubre la red con {num(s['etapa3'])} buses, casi los mismos que si no hubiera "
               "batería")
-    sub = (f"Red completa, buses que operan (sin contar reservas). En el caso base con interlining la carga reactiva "
+    sub = (f"Red completa, buses que operan (sin contar reservas). En el caso base la carga reactiva "
            f"parte jornadas y llega a {num(cb)} buses: {num(cb - s['etapa3'])} más que la Etapa 3.")
     fig, ax = figura(titulo, sub, abajo=0.08, izq=0.36, der=0.95)
     etq = ["Jornadas sin batería (Etapa 2)", f"{REF}\n(jornadas partidas por la carga)",
@@ -1327,7 +1332,7 @@ def g25_buses_etapa3(d):
     ax.spines["bottom"].set_visible(False)
     estilo_ejes(ax, grilla=None)
     datos = pd.DataFrame({"concepto": [e.replace("\n", " ") for e in etq], "buses": v})
-    guardar(fig, "25_buses_etapa3", datos, titulo, "Buses que operan: jornadas sin batería, caso base con interlining, "
+    guardar(fig, "25_buses_etapa3", datos, titulo, "Buses que operan: jornadas sin batería, caso base, "
             "cada tramo un bus y Etapa 3.", "3 (de dónde sale el ahorro de flota)", "Resultados")
 
 
